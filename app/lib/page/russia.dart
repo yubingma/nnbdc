@@ -1130,6 +1130,9 @@ class RussiaPageState extends State<RussiaPage>
   void _onGameBegin() {
     setState(() {
       _showOpponentJoinedBanner = false;
+      currWord = null;
+      distractorWords.clear();
+      hasMistakeInCurrentWord = false;
       myScore = 0;
       opponentScore = 0;
       myCombo = 0;
@@ -1162,10 +1165,12 @@ class RussiaPageState extends State<RussiaPage>
       _leftCurrentGame = false;
     });
 
-    // 新一局开打：清空上一局的单词包与排队指令。
-    // 先播开场动画（双人「开始对战」/ 单人「练习开始」），播完再出第一题
+    // 新一局开打：清空上一局的单词包与排队指令，重置帧时钟并主动预取首包单词。
+    // 在开场动画（双人「开始对战」/ 单人「练习开始」）播放期间首包就绪，播完立刻出第一题。
+    _lastElapsed = Duration.zero;
     _wordPack.reset();
     _pendingUserCmds.clear();
+    _requestWordPack(0);
   }
 
   /// 向服务端要一段单词包（从 fromIndex 开始的连续若干词）：开局、预取、词包用尽时各要一次

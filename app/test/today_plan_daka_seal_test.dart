@@ -216,6 +216,9 @@ void main() {
 
     await seedTodayPlan(dakaed: true, extraWords: 5, extraDone: 2);
     await pumpTodayPlan(tester);
+    // 学习轨道默认收起（只露新词 / 旧词两枚数字），打卡印章在展开后才出现
+    await tester.tap(find.text('学习轨道'));
+    await tester.pumpAndSettle();
     await pumpUntil(tester, seal);
 
     expect(seal, findsOneWidget, reason: '今天打过卡，环心要盖上印章');

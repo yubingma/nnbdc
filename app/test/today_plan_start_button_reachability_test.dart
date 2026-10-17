@@ -232,6 +232,14 @@ void main() {
     }
   }
 
+  /// 学习轨道默认收起（只露新词 / 旧词数字），展开后才有「今日目标」与完整轨迹。
+  Future<void> expandTrack(WidgetTester tester) async {
+    if (find.text('学习轨道').evaluate().isNotEmpty) {
+      await tester.tap(find.text('学习轨道'));
+      await tester.pumpAndSettle();
+    }
+  }
+
   /// 两种背景必须渲染同一套结构：中心目标岛 + 左任务量卡（新词 / 旧词）+ 主操作卡。
   void expectSharedStructure() {
     expect(find.text('今日目标'), findsOneWidget, reason: '中心目标岛（壁纸底/主题底共用）');
@@ -294,6 +302,7 @@ void main() {
           bottomSafeArea: 34,
           wallpaper: wallpaper);
       await pumpUntil(tester, find.text('开始学习'));
+      await expandTrack(tester);
 
       expectSharedStructure();
       await expectButtonReachable(tester, find.text('开始学习'), bottomSafeArea: 34);
@@ -309,6 +318,7 @@ void main() {
           bottomSafeArea: 0,
           wallpaper: wallpaper);
       await pumpUntil(tester, find.text('开始学习'));
+      await expandTrack(tester);
 
       expectSharedStructure();
       await expectButtonReachable(tester, find.text('开始学习'), bottomSafeArea: 0);
@@ -324,6 +334,7 @@ void main() {
           bottomSafeArea: 21,
           wallpaper: wallpaper);
       await pumpUntil(tester, find.text('开始学习'));
+      await expandTrack(tester);
 
       expectSharedStructure();
       await expectButtonReachable(tester, find.text('开始学习'), bottomSafeArea: 21);
@@ -340,6 +351,7 @@ void main() {
           textScale: 2.0,
           wallpaper: wallpaper);
       await pumpUntil(tester, find.text('开始学习'));
+      await expandTrack(tester);
 
       expectSharedStructure();
       await expectButtonReachable(tester, find.text('开始学习'), bottomSafeArea: 0);
@@ -353,6 +365,7 @@ void main() {
     await pumpTodayPlanInShell(tester,
         logicalSize: const Size(393, 852), topSafeArea: 59, bottomSafeArea: 34, wallpaper: true);
     await pumpUntil(tester, find.text('开始学习'));
+    await expandTrack(tester);
     final wallpaperGeometry = layoutGeometry(tester);
 
     // 彻底卸载页面再重建，让它重新读取壁纸设置切到主题底
@@ -360,6 +373,7 @@ void main() {
     await pumpTodayPlanInShell(tester,
         logicalSize: const Size(393, 852), topSafeArea: 59, bottomSafeArea: 34, wallpaper: false);
     await pumpUntil(tester, find.text('开始学习'));
+    await expandTrack(tester);
     final themeGeometry = layoutGeometry(tester);
 
     expect(themeGeometry, equals(wallpaperGeometry),

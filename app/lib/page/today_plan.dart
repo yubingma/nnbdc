@@ -132,6 +132,10 @@ class TodayPlanPage extends StatefulWidget {
 class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMixin, WidgetsBindingObserver {
   int? newWordCount;
   int? oldWordCount;
+
+  /// 学习轨道是否展开。默认收起：壁纸上只留「新词数 / 旧词数」两枚数字，
+  /// 卡片很矮、不遮壁纸；用户点一下才展开完整轨道（环节多的时候卡片会很高）。
+  bool _trackExpanded = false;
   int? todayWordCount;
   bool dataLoaded = false;
   UserVo? user;
@@ -1088,13 +1092,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         ],
       );
       painter.layout();
-      if (painter.width > widest) widest = painter.width;
+      // 实际渲染是「数字 Text + SizedBox(3) + 加量 Text」两个控件，
+      // 而这里量的是把它们拼成一段文字的宽度，差的就是那个 3px 间隙（实测 2.0x 下 4.4px）。
+      final double renderedWidth = painter.width + (row.extra > 0 ? 6 : 0);
+      if (renderedWidth > widest) widest = renderedWidth;
     }
     // 实测在「刚好等于可用宽」时仍会溢出 1~3px：TextPainter 量的是文字本身，
     // 不含 Row 里基线与加量小字之间的对齐余量。留 4% 安全余量。
-    const double safety = 0.96;
+    const double safety = 0.92;
     if (widest <= maxWidth * safety) return 1;
-    return (maxWidth * safety / widest).clamp(0.35, 1.0);
+    // 下限放到 0.22：2.0x 系统字号 + 「1000 + 200」需要缩到约 0.30，
+    // 原来卡在 0.35 会缩不下去，数字行仍差 4px 溢出。
+    return (maxWidth * safety / widest).clamp(0.22, 1.0);
   }
 
   /// 连线颜色。
@@ -1230,7 +1239,69 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 一条完整轨道（新词或旧词）。
+  /// 数字块：今天要学的词数 + 「新词 / 旧词」标签，点它进对应词表。
+  /// 收起态只渲染这一块，所以卡片很矮、不遮壁纸。
+  Widget _buildTrackCountBlock({
+    required String title,
+    required int count,
+    required int extraCount,
+    required Key countKey,
+    required Key extraKey,
+    required ({Color primary, Color muted, Color faint}) ink,
+    required VoidCallback onTap,
+    required double countScale,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 数字行按「两条轨道共用的缩放比」缩小字号（而不是各自 FittedBox），
+          // 这样新词与旧词的数字渲染高度始终一致，大字号 + 四位数字时也不会溢出。
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '$count',
+                key: countKey,
+                style: TextStyle(
+                  fontSize: 32 * countScale,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -1.1,
+                  height: 1,
+                  color: ink.primary,
+                  fontFamily: 'Roboto',
+                ),
+              ),
+              if (extraCount > 0) ...[
+                const SizedBox(width: 3),
+                Text(
+                  ' + $extraCount',
+                  key: extraKey,
+                  style: TextStyle(
+                    fontSize: 11 * countScale,
+                    fontWeight: FontWeight.w600,
+                    color: ink.faint,
+                    fontFamily: 'Roboto',
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            title,
+            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: ink.faint, letterSpacing: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 一条完整轨道：数字块 + （展开时）测评 → 答对/答错分叉 → 各自环节。
   Widget _buildTrackColumn({
     required String title,
     required int count,
@@ -1251,105 +1322,69 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required List<Shadow>? shadows,
     required VoidCallback onTapCount,
     required double countScale,
+    required bool showTrack,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 起点：今天要学的词数（点它进对应词表）
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
+        _buildTrackCountBlock(
+          title: title,
+          count: count,
+          extraCount: extraCount,
+          countKey: countKey,
+          extraKey: extraKey,
+          ink: ink,
           onTap: onTapCount,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          countScale: countScale,
+        ),
+        if (showTrack) ...[
+          _trackVLine(20, line),
+          Text(
+            '测评',
+            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: ink.faint, letterSpacing: 1.6),
+          ),
+          const SizedBox(height: 2),
+          _trackNode(
+            text: StudyStepExt.displayName(checkStep),
+            inkColor: ok,
+            bg: ok.withValues(alpha: 0.075),
+            borderColor: ok.withValues(alpha: 0.24),
+            fontSize: 12.5,
+            shadows: shadows,
+          ),
+          _trackVLine(18, line),
+          _trackFork(height: 26, leftColor: okLine, rightColor: noLine),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 数字行按「两条轨道共用的缩放比」缩小字号（而不是各自 FittedBox），
-              // 这样新词与旧词的数字渲染高度始终一致，大字号 + 四位数字时也不会溢出。
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    '$count',
-                    key: countKey,
-                    style: TextStyle(
-                      fontSize: 32 * countScale,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -1.1,
-                      height: 1,
-                      color: ink.primary,
-                      fontFamily: 'Roboto',
-                    ),
-                  ),
-                    if (extraCount > 0) ...[
-                      const SizedBox(width: 3),
-                      Text(
-                        ' + $extraCount',
-                        key: extraKey,
-                        style: TextStyle(
-                          fontSize: 11 * countScale,
-                          fontWeight: FontWeight.w600,
-                          color: ink.faint,
-                          fontFamily: 'Roboto',
-                        ),
-                      ),
-                    ],
-                  ],
+              Expanded(
+                child: _trackBranch(
+                  label: '答对',
+                  labelColor: ok,
+                  lineColor: okLine,
+                  steps: correctSteps,
+                  inkColor: ink.primary,
+                  nodeBg: nodeBg,
+                  nodeBorder: nodeBorder,
+                  shadows: shadows,
                 ),
-              const SizedBox(height: 3),
-              Text(
-                title,
-                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: ink.faint, letterSpacing: 1.4),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _trackBranch(
+                  label: '答错',
+                  labelColor: no,
+                  lineColor: noLine,
+                  steps: wrongSteps,
+                  inkColor: ink.primary,
+                  nodeBg: nodeBg,
+                  nodeBorder: nodeBorder,
+                  shadows: shadows,
+                ),
               ),
             ],
           ),
-        ),
-        _trackVLine(20, line),
-        Text(
-          '测评',
-          style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: ink.faint, letterSpacing: 1.6),
-        ),
-        const SizedBox(height: 2),
-        _trackNode(
-          text: StudyStepExt.displayName(checkStep),
-          inkColor: ok,
-          bg: ok.withValues(alpha: 0.075),
-          borderColor: ok.withValues(alpha: 0.24),
-          fontSize: 12.5,
-          shadows: shadows,
-        ),
-        _trackVLine(18, line),
-        _trackFork(height: 26, leftColor: okLine, rightColor: noLine),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _trackBranch(
-                label: '答对',
-                labelColor: ok,
-                lineColor: okLine,
-                steps: correctSteps,
-                inkColor: ink.primary,
-                nodeBg: nodeBg,
-                nodeBorder: nodeBorder,
-                shadows: shadows,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _trackBranch(
-                label: '答错',
-                labelColor: no,
-                lineColor: noLine,
-                steps: wrongSteps,
-                inkColor: ink.primary,
-                nodeBg: nodeBg,
-                nodeBorder: nodeBorder,
-                shadows: shadows,
-              ),
-            ),
-          ],
-        ),
+        ],
       ],
     );
   }
@@ -1403,6 +1438,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         nodeBorder: nodeBorder,
         shadows: shadows,
         countScale: countScale,
+        showTrack: _trackExpanded,
         onTapCount: () {
           final future = isNew ? toTodayNewWordsListPage(true) : toTodayOldWordsListPage(true);
           future?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
@@ -1413,7 +1449,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     return LayoutBuilder(
       builder: (context, constraints) {
         // 两条轨道共用一个数字缩放比，保证新词与旧词的数字一样大、且都不溢出。
-        final double perTrack = ((constraints.maxWidth - gap) / 2).clamp(40.0, double.infinity);
+        // 必须扣掉卡片左右内边距（14 × 2）：LayoutBuilder 量到的是卡片外的宽，
+        // 用外宽去算缩放会少缩约 14px，于是数字行溢出（实测 11~12px）。
+        // 再留 8px：TextPainter 量的是文字本身，Row 里基线与加量小字之间还有几像素
+        // 的对齐余量（实测 2.0x 字号下差 4.4px）。
+        const double cardHPadding = 14 * 2;
+        // 收起态要在两枚数字之间塞一枚「学习轨道」按钮（省掉它单独占的一行），
+        // 这里按它的大致宽度预留；展开态则是两条轨道之间的间隙。
+        const double toggleReserve = 96;
+        final double reserved = _trackExpanded ? gap : gap + toggleReserve;
+        final double perTrack =
+            ((constraints.maxWidth - cardHPadding - reserved - 8) / 2).clamp(40.0, double.infinity);
         final double countScale = _sharedTrackCountScale(
           context: context,
           maxWidth: perTrack,
@@ -1429,24 +1475,68 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           bgColor: skin.bg,
           borderColor: skin.border,
           shadow: skin.shadow,
-          padding: const EdgeInsets.fromLTRB(14, 18, 14, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: track(isNew: true, countScale: countScale)),
-                  SizedBox(width: gap),
-                  Expanded(child: track(isNew: false, countScale: countScale)),
+          // 收起态把上下内边距压到最小，卡片高度只够两枚数字，壁纸能露出来
+          padding: _trackExpanded
+              ? const EdgeInsets.fromLTRB(14, 16, 14, 4)
+              : const EdgeInsets.fromLTRB(14, 12, 14, 2),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: _trackExpanded ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: track(isNew: true, countScale: countScale)),
+                    // 收起态：按钮夹在两枚数字中间，不额外占纵向空间
+                    if (!_trackExpanded) _buildTrackToggle(inkColor: ink.faint),
+                    if (_trackExpanded) SizedBox(width: gap),
+                    Expanded(child: track(isNew: false, countScale: countScale)),
+                  ],
+                ),
+                if (_trackExpanded) ...[
+                  const SizedBox(height: 12),
+                  _buildDakaStatusLine(ink: ink, onDark: onDark),
+                  _buildTrackToggle(inkColor: ink.faint),
                 ],
-              ),
-              const SizedBox(height: 12),
-              _buildDakaStatusLine(ink: ink, onDark: onDark),
-            ],
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  /// 轨道展开 / 收起按钮：默认收起，只露新词旧词两枚数字，点它才展开整条轨道。
+  Widget _buildTrackToggle({required Color inkColor}) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _trackExpanded = !_trackExpanded),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+        // 大字号下这行「学习轨道 ▾」也可能撑破卡片（2.0x 实测 4.4px），
+        // 放不下就等比缩，不截断。
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _trackExpanded ? '收起学习轨道' : '学习轨道',
+              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: inkColor, letterSpacing: 0.6),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              _trackExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+              size: 15,
+              color: inkColor,
+            ),
+          ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1666,10 +1756,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       key: key,
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: Center(
-          child: FittedBox(fit: BoxFit.scaleDown, child: child),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 18),
+        // 这里不能用 Center：它在无宽度约束下会撑满父级，按钮就永远是全宽的。
+        // 宽度交给内容自己决定，水平居中由外层 Column 的 center 负责。
+        child: FittedBox(fit: BoxFit.scaleDown, child: child),
       ),
     );
   }
