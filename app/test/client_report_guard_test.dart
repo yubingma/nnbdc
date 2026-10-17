@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/client_error_reporter.dart';
@@ -81,4 +82,79 @@ void main() {
     expect(claimClientReportSlot(category, 'scene_0'), isNotNull,
         reason: '跨天后去重集合也应清空');
   });
+
+  test('currentAppSceneSummary 能够正确结合解析器与当前 Tab 渲染场景摘要', () {
+    currentAppSceneResolver = null;
+    currentNavTabLabel = null;
+    expect(currentAppSceneSummary(), isEmpty);
+
+    currentAppSceneResolver = () => '/bdc';
+    expect(currentAppSceneSummary(), '/bdc');
+
+    currentAppSceneResolver = () => '/index';
+    currentNavTabLabel = '学习';
+    expect(currentAppSceneSummary(), '/index(学习)');
+
+    currentNavTabLabel = null;
+    expect(currentAppSceneSummary(), '/index');
+
+    currentAppSceneResolver = null;
+  });
+
+  test('formatFlutterCrashDetails 能够完整提取位置、诊断上下文、结构化收集器与堆栈', () {
+    currentAppSceneResolver = () => '/index(学习)';
+    final details = FlutterErrorDetails(
+      exception: Exception('BoxConstraints forces an infinite width'),
+      library: 'rendering library',
+      context: ErrorSummary('while performing layout at RenderConstrainedBox'),
+      informationCollector: () => [
+        DiagnosticsNode.message('The offending constraints were: BoxConstraints(w=Infinity, 30.0<=h<=Infinity)'),
+      ],
+      stack: StackTrace.fromString(
+        List.generate(40, (i) => '#$i SomeClass.someMethod (package:some/path.dart:$i)').join('\n'),
+      ),
+    );
+
+    final formatted = formatFlutterCrashDetails(details);
+    expect(formatted, contains('【当前位置】/index(学习)'));
+    expect(formatted, contains('【异常库】rendering library'));
+    expect(formatted, contains('【异常信息】Exception: BoxConstraints forces an infinite width'));
+    expect(formatted, contains('【诊断上下文】'));
+    expect(formatted, contains('while performing layout at RenderConstrainedBox'));
+    expect(formatted, contains('【结构化诊断树】'));
+    expect(formatted, contains('BoxConstraints(w=Infinity, 30.0<=h<=Infinity)'));
+    expect(formatted, contains('【调用堆栈】'));
+    expect(formatted, contains('#0 SomeClass.someMethod'));
+    expect(formatted, contains('... (10 行已略)'), reason: '前 30 行保留，多出的 10 行应被裁剪');
+
+    currentAppSceneResolver = null;
+  });
+
+  test('formatAsyncCrashDetails 能够提取位置、异常描述与堆栈', () {
+    currentAppSceneResolver = () => '/russia';
+    final formatted = formatAsyncCrashDetails(
+      'HttpException: 502 Bad Gateway',
+      StackTrace.fromString('#0 api.call (package:nnbdc/api.dart:10)'),
+    );
+
+    expect(formatted, contains('【当前位置】/russia'));
+    expect(formatted, contains('【异常信息】HttpException: 502 Bad Gateway'));
+    expect(formatted, contains('【调用堆栈】'));
+    expect(formatted, contains('#0 api.call'));
+
+    currentAppSceneResolver = null;
+  });
+
+  test('不同页面的崩溃能够各自放行，相同页面的同类崩溃会被去重', () {
+    freshBusinessDay(7);
+    const crashType = 'CLIENT_CRASH';
+
+    expect(claimClientReportSlot(crashType, '框架错误:/index(学习)'), isNotNull,
+        reason: '今日计划页崩溃首次放行');
+    expect(claimClientReportSlot(crashType, '框架错误:/index(学习)'), isNull,
+        reason: '同页面同类崩溃去重');
+    expect(claimClientReportSlot(crashType, '框架错误:/bdc'), isNotNull,
+        reason: '背单词页发生崩溃不能被主页的崩溃压制');
+  });
 }
+

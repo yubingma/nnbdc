@@ -112,6 +112,15 @@ void main() async {
         }
       }
 
+      // 注入当前页面/场景解析器，供错误上报带上现场位置
+      currentAppSceneResolver = () {
+        try {
+          return goRouter.routerDelegate.currentConfiguration.uri.toString();
+        } catch (_) {
+          return '';
+        }
+      };
+
       // 捕获Flutter框架层的错误（同步错误）
       FlutterError.onError = (FlutterErrorDetails details) {
         // 检查是否为图像相关的错误（非致命错误，不需要在控制台显示）
@@ -164,12 +173,12 @@ void main() async {
             });
           }
 
-          // 上报服务端：白屏/闪退过去只躺在友盟后台，不在告警体系里；
-          // 崩溃是最该第一时间知道的一类，把现场带进 sys_error。
+          // 上报服务端：带上当前页面场景与 Flutter 结构化诊断树（包含违规 RenderObject、约束信息与精简堆栈）
+          final scene = currentAppSceneSummary();
           unawaited(reportClientFailure(
             errorType: kClientCrashErrorType,
-            scene: '框架错误',
-            details: '${details.exceptionAsString()}\n${details.stack ?? ''}',
+            scene: scene.isNotEmpty ? '框架错误:$scene' : '框架错误',
+            details: formatFlutterCrashDetails(details),
           ));
         }
       };
@@ -196,10 +205,11 @@ void main() async {
         }
 
         // 上报服务端（同上：错误已经被这个回调咽掉，不报就没人知道）
+        final scene = currentAppSceneSummary();
         unawaited(reportClientFailure(
           errorType: kClientCrashErrorType,
-          scene: '平台/异步错误',
-          details: '$error\n$stack',
+          scene: scene.isNotEmpty ? '异步错误:$scene' : '平台/异步错误',
+          details: formatAsyncCrashDetails(error, stack),
         ));
 
         return true; // 返回true表示错误已处理

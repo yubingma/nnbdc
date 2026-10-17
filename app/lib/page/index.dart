@@ -17,6 +17,7 @@ import 'me.dart';
 import '../global.dart';
 import '../state.dart';
 import '../util/asr.dart';
+import '../util/client_error_reporter.dart';
 
 class IndexPageArgs {
   final int buttonIndex;
@@ -62,6 +63,13 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     super.initState();
     // 进入主页时强制关闭 ASR，确保状态干净
     Asr().stopMicrophone();
+    currentNavTabLabel = _currentTab.label;
+  }
+
+  @override
+  void dispose() {
+    currentNavTabLabel = null;
+    super.dispose();
   }
 
   @override
@@ -91,6 +99,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     if (visibleTabs.contains(tab)) {
       setState(() {
         _currentTab = tab;
+        currentNavTabLabel = tab.label;
       });
       _checkRefreshTab(tab);
     } else {
@@ -105,6 +114,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       }
       setState(() {
         _currentTab = visibleTabs.contains(NavTabKey.me) ? NavTabKey.me : visibleTabs.first;
+        currentNavTabLabel = _currentTab.label;
       });
     }
   }

@@ -117,3 +117,104 @@ String? claimClientReportSlot(String category, String scene) {
   _reportsTodayByCategory[category] = reportedToday + 1;
   return dedupeKey;
 }
+
+/// 当前应用场景获取器（由应用层 router/main 初始化时注入，保持底层 reporter 解耦）
+typedef AppSceneResolver = String Function();
+AppSceneResolver? currentAppSceneResolver;
+
+/// 当前底栏选中的 Tab 名称（如"学习"、"词表"、"查词"、"我"），供 `/index` 场景细化
+String? currentNavTabLabel;
+
+/// 获取当前页面/场景短名（如 `/index(学习)` 或 `/bdc`）
+String currentAppSceneSummary() {
+  try {
+    final route = currentAppSceneResolver?.call() ?? '';
+    if (route.isEmpty) return '';
+    if (route == '/index' && currentNavTabLabel != null && currentNavTabLabel!.isNotEmpty) {
+      return '/index($currentNavTabLabel)';
+    }
+    return route;
+  } catch (_) {
+    return '';
+  }
+}
+
+/// 格式化 Flutter 框架级未捕获异常（RenderObject 布局断言、Widget 构建异常等）
+///
+/// 特别提取：
+/// 1. 当前所在页面与场景（如 `/index(学习)`）
+/// 2. 异常库（如 rendering library）
+/// 3. 核心异常描述（如 BoxConstraints forces an infinite width）
+/// 4. 诊断上下文（details.context，如 while performing layout）
+/// 5. 结构化诊断树（details.informationCollector，包含违规的 RenderObject 节点与尺寸约束）
+/// 6. 调用堆栈（裁剪保留前 30 行，防止长递归刷屏）
+String formatFlutterCrashDetails(FlutterErrorDetails details) {
+  final buf = StringBuffer();
+
+  final scene = currentAppSceneSummary();
+  if (scene.isNotEmpty) {
+    buf.writeln('【当前位置】$scene');
+  }
+
+  if (details.library != null && details.library!.isNotEmpty) {
+    buf.writeln('【异常库】${details.library}');
+  }
+
+  buf.writeln('【异常信息】${details.exceptionAsString()}');
+
+  if (details.context != null) {
+    try {
+      final ctxStr = details.context!.toStringDeep().trim();
+      if (ctxStr.isNotEmpty) {
+        buf.writeln('【诊断上下文】\n$ctxStr');
+      }
+    } catch (_) {}
+  }
+
+  if (details.informationCollector != null) {
+    try {
+      final nodes = details.informationCollector!();
+      final collectorText = nodes
+          .map((n) => n.toStringDeep().trim())
+          .where((s) => s.isNotEmpty)
+          .join('\n');
+      if (collectorText.isNotEmpty) {
+        buf.writeln('【结构化诊断树】\n$collectorText');
+      }
+    } catch (_) {}
+  }
+
+  if (details.stack != null) {
+    buf.writeln('【调用堆栈】');
+    final stackLines = details.stack.toString().split('\n');
+    final taken = stackLines.take(30).join('\n');
+    buf.writeln(taken);
+    if (stackLines.length > 30) {
+      buf.writeln('... (${stackLines.length - 30} 行已略)');
+    }
+  }
+
+  return buf.toString().trim();
+}
+
+/// 格式化平台层与异步未捕获异常
+String formatAsyncCrashDetails(Object error, StackTrace stack) {
+  final buf = StringBuffer();
+
+  final scene = currentAppSceneSummary();
+  if (scene.isNotEmpty) {
+    buf.writeln('【当前位置】$scene');
+  }
+
+  buf.writeln('【异常信息】$error');
+
+  buf.writeln('【调用堆栈】');
+  final stackLines = stack.toString().split('\n');
+  final taken = stackLines.take(30).join('\n');
+  buf.writeln(taken);
+  if (stackLines.length > 30) {
+    buf.writeln('... (${stackLines.length - 30} 行已略)');
+  }
+
+  return buf.toString().trim();
+}

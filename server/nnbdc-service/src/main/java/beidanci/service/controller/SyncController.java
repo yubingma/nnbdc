@@ -280,8 +280,8 @@ public class SyncController {
         }
     }
 
-    /** 客户端上报内容的长度上限，避免异常内容异常巨大撑爆表与告警邮件 */
-    private static final int MAX_REPORTED_DETAILS_LENGTH = 1000;
+    /** 客户端上报内容的长度上限。放宽到 5000，确保 Flutter 框架错误的 RenderObject 结构化诊断树与堆栈不被截断 */
+    private static final int MAX_REPORTED_DETAILS_LENGTH = 5000;
 
     /**
      * 接收客户端上报的系统与同步异常

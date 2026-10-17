@@ -280,7 +280,7 @@ public class SysErrorBo extends BaseBo<SysError> {
                 + "</div>"
                 + "</div>"
                 + "<div style=\"font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px;\">异常堆栈 / 现场上下文：</div>"
-                + "<div style=\"background-color: #1a202c; color: #edf2f7; padding: 14px; border-radius: 8px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.5; max-height: 400px; overflow-y: auto; word-break: break-all;\">"
+                + "<div style=\"background-color: #1a202c; color: #edf2f7; padding: 14px; border-radius: 8px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.5; max-height: 1200px; overflow-y: auto; word-break: break-all; white-space: pre-wrap;\">"
                 + safeDetails
                 + "</div>"
                 + "<div style=\"margin-top: 20px; padding-top: 12px; border-top: 1px solid #edf2f7; font-size: 12px; color: #a0aec0; text-align: center;\">"
