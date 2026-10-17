@@ -288,7 +288,93 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
               ),
               const SizedBox(height: 18),
 
-              // 2. 今日最少新词卡片
+              // 2. 每组单词数卡片
+              _buildSectionCard(
+                isDarkMode: isDarkMode,
+                title: '每组单词数',
+                badgeText: _isStarted ? '$_selectedBatchSize 词/组' : null,
+                child: Column(
+                  children: [
+                    if (!_isStarted) ...[
+                      _buildStepper(
+                        isDarkMode: isDarkMode,
+                        valueText: '$_selectedBatchSize',
+                        unitText: '词/组',
+                        canMinus: _selectedBatchSize > 1,
+                        canPlus: _selectedBatchSize < StudyConfig.maxBatchSize,
+                        onMinus: () {
+                          setState(() {
+                            _selectedBatchSize = (_selectedBatchSize - 1).clamp(1, StudyConfig.maxBatchSize);
+                          });
+                        },
+                        onPlus: () {
+                          setState(() {
+                            _selectedBatchSize = (_selectedBatchSize + 1).clamp(1, StudyConfig.maxBatchSize);
+                          });
+                        },
+                        onTapValue: () async {
+                          final inputVal = await _showCustomNumberInputDialog(
+                            parentContext: context,
+                            title: '自定义每组单词数',
+                            unit: '词',
+                            min: 1,
+                            max: StudyConfig.maxBatchSize,
+                            subtitle: '范围 1 ~ ${StudyConfig.maxBatchSize} 词/组',
+                            currentValue: _selectedBatchSize,
+                            primaryColor: primaryColor,
+                            isDarkMode: isDarkMode,
+                          );
+                          if (inputVal != null) {
+                            setState(() {
+                              _selectedBatchSize = inputVal.clamp(1, StudyConfig.maxBatchSize);
+                            });
+                          }
+                        },
+                        onHorizontalDragStart: (_) => _batchSizeDragAccumulator = 0,
+                        onHorizontalDragUpdate: (details) {
+                          _batchSizeDragAccumulator += details.primaryDelta ?? 0;
+                          final threshold = _selectedBatchSize > 50 ? 6.0 : 8.0;
+                          if (_batchSizeDragAccumulator.abs() >= threshold) {
+                            final dir = _batchSizeDragAccumulator > 0 ? 1 : -1;
+                            final step = _selectedBatchSize > 100
+                                ? dir * 5
+                                : (_selectedBatchSize > 30 ? dir * 2 : dir);
+                            _batchSizeDragAccumulator = 0;
+                            final next = (_selectedBatchSize + step).clamp(1, StudyConfig.maxBatchSize);
+                            if (next != _selectedBatchSize) {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _selectedBatchSize = next;
+                              });
+                            }
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          for (final chip in [5, 10, 20, 30, 50]) ...[
+                            if (chip != 5) const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildQuickChip(
+                                '$chip词',
+                                chip,
+                                _selectedBatchSize,
+                                (v) => setState(() => _selectedBatchSize = v),
+                                primaryColor,
+                                isDarkMode,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // 3. 今日最少新词卡片
               _buildSectionCard(
                 isDarkMode: isDarkMode,
                 title: '今日最少新词',
@@ -370,92 +456,6 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
                               Expanded(child: _buildQuickChip('全学新词', _selectedWordsPerDay, _selectedMinNewWords, (v) => setState(() => _selectedMinNewWords = v), primaryColor, isDarkMode, enabled: _selectedWordsPerDay > 0)),
                             ],
                           ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-
-              // 3. 每组单词数卡片
-              _buildSectionCard(
-                isDarkMode: isDarkMode,
-                title: '每组单词数',
-                badgeText: _isStarted ? '$_selectedBatchSize 词/组' : null,
-                child: Column(
-                  children: [
-                    if (!_isStarted) ...[
-                      _buildStepper(
-                        isDarkMode: isDarkMode,
-                        valueText: '$_selectedBatchSize',
-                        unitText: '词/组',
-                        canMinus: _selectedBatchSize > 1,
-                        canPlus: _selectedBatchSize < StudyConfig.maxBatchSize,
-                        onMinus: () {
-                          setState(() {
-                            _selectedBatchSize = (_selectedBatchSize - 1).clamp(1, StudyConfig.maxBatchSize);
-                          });
-                        },
-                        onPlus: () {
-                          setState(() {
-                            _selectedBatchSize = (_selectedBatchSize + 1).clamp(1, StudyConfig.maxBatchSize);
-                          });
-                        },
-                        onTapValue: () async {
-                          final inputVal = await _showCustomNumberInputDialog(
-                            parentContext: context,
-                            title: '自定义每组单词数',
-                            unit: '词',
-                            min: 1,
-                            max: StudyConfig.maxBatchSize,
-                            subtitle: '范围 1 ~ ${StudyConfig.maxBatchSize} 词/组',
-                            currentValue: _selectedBatchSize,
-                            primaryColor: primaryColor,
-                            isDarkMode: isDarkMode,
-                          );
-                          if (inputVal != null) {
-                            setState(() {
-                              _selectedBatchSize = inputVal.clamp(1, StudyConfig.maxBatchSize);
-                            });
-                          }
-                        },
-                        onHorizontalDragStart: (_) => _batchSizeDragAccumulator = 0,
-                        onHorizontalDragUpdate: (details) {
-                          _batchSizeDragAccumulator += details.primaryDelta ?? 0;
-                          final threshold = _selectedBatchSize > 50 ? 6.0 : 8.0;
-                          if (_batchSizeDragAccumulator.abs() >= threshold) {
-                            final dir = _batchSizeDragAccumulator > 0 ? 1 : -1;
-                            final step = _selectedBatchSize > 100
-                                ? dir * 5
-                                : (_selectedBatchSize > 30 ? dir * 2 : dir);
-                            _batchSizeDragAccumulator = 0;
-                            final next = (_selectedBatchSize + step).clamp(1, StudyConfig.maxBatchSize);
-                            if (next != _selectedBatchSize) {
-                              HapticFeedback.selectionClick();
-                              setState(() {
-                                _selectedBatchSize = next;
-                              });
-                            }
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          for (final chip in [5, 10, 20, 30, 50]) ...[
-                            if (chip != 5) const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildQuickChip(
-                                '$chip词',
-                                chip,
-                                _selectedBatchSize,
-                                (v) => setState(() => _selectedBatchSize = v),
-                                primaryColor,
-                                isDarkMode,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ],
