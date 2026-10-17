@@ -23,6 +23,7 @@ Run the gate command yourself (`cd app && flutter test`). The hook prints a copy
 | **B. Real production defect captured by a NEW test** | The failing assertion lives in a test file **created or edited in the commit you are pushing**, and it encodes intended behavior that production code violates | Fix **production code** at the source. Keep the new assertion byte-for-byte — a freshly added test that fails is the gate working, not a test bug. Never relax or rewrite the new expected value to green it |
 | **C. Gate artifact / cross-test state pollution** | Passes alone, fails in the full run (or only under parallelism `-j`) | Find the shared singleton / global cache / temp file / prefs that leaks between files. Confirm with a single-file run |
 | **D. Gate status logic bug** | Tests are all green but the hook still exits 1 | Fix the hook's **status extraction** (see Step 2) |
+| **E. Push dies *after* a green gate** | The hook prints its success line, then `git push` exits **141** (SIGPIPE) or hangs, often with `Connection to <github-ip> closed by remote host`. Trivial/short hooks push fine | **Not a hook bug** — the gate's runtime idles out the SSH connection git opened first. Fix the *connection*, not the hook (see Trap 3) |
 
 **Bucket A vs B is the trap.** Do not assume "the refactor broke the tests"; one new test can be the only thing catching a real regression. Check whether the production code or the test is the newer artifact, and whether the asserted behavior matches the product's stated semantics.
 
@@ -51,6 +52,17 @@ If you find yourself thinking "never touch the hook", you are about to leave a l
 
 **Trap 2: dirty tree ≠ HEAD.** The hook tests the **working tree**, but `git push` ships **HEAD**. If they differ, a green run does not describe what you are pushing. Before claiming success, make the tested tree equal HEAD.
 
+**Trap 3: a long gate can kill the push *after* it passes (exit 141 / hang).** For a push, git connects to the remote **first**, then runs `pre-push` (the hook is fed the remote's ref list). That SSH connection then sits **idle for the whole hook run**. With no keepalives (`ssh -G github.com` shows `serveraliveinterval 0`), the remote drops the idle connection (GitHub: ~10 min), and when the hook returns git sends the pack over a dead socket → **SIGPIPE, exit 141** (or a stall).
+
+Diagnose it (fast, no suite needed): a hook that only `sleep 700` before `git lfs pre-push "$@"` reproduces 141 and prints `Connection to <ip> closed by remote host`. Confirm with `ssh -G github.com | grep -i serveraliveinterval`.
+
+Fix the **connection**, not the hook: send keepalives.
+```bash
+ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 git@github.com   # verify
+GIT_SSH_COMMAND="ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20" git push origin main
+```
+Then persist it in `~/.ssh/config` under the host (or repo-local `git config core.sshCommand`) so future pushes need no prefix. Do **not** "fix" this by deleting/short-circuiting the gate — a 2-minute hook is normal; the missing keepalive is the bug.
+
 ## Step 3 — Verify
 
 1. Failing files alone → green.
@@ -73,6 +85,8 @@ If you find yourself thinking "never touch the hook", you are about to leave a l
 
 - Trusting a green run from a dirty tree as proof the pushed commit is green
 
+- Calling exit 141 / a post-gate hang a "hook problem" and touching the hook — it's the SSH connection idling out (bucket E)
+
 - Committing on the user's behalf (this repo: `不得自行 git commit`)
 
 ## Common Mistakes
@@ -86,6 +100,7 @@ If you find yourself thinking "never touch the hook", you are about to leave a l
 
 ## Repo-specific anchors
 
-- `/Volumes/ssd/ppdc/.git/hooks/pre-push` — **local, untracked**; fresh clones have no gate. If it must survive, add a tracked install script.
+- Gate source of truth: `tools/git-hooks/pre-push` (tracked), installed to `.git/hooks/` by `tools/install_git_hooks.sh`. A fresh clone must run the installer once, or there is no gate at all.
+- This repo's `~/.ssh/config` lists `Host github.com` with **no** `ServerAliveInterval` → pushes over a slow (≳10 min) gate hit bucket E. The gate runs ~2 min idle, ~7–12 min when the IDE is also building.
 - Wallpaper/legibility tests read ink colors and card glass by refactored widget keys — the classic bucket A surface.
 - `AppClock`-driven cross-day tests and audio-session singletons are the usual bucket C leakers.
