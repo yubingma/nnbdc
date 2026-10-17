@@ -99,7 +99,6 @@ class ModeComponents {
     double topPadding = 8,
     AppThemeConfig? themeConfig,
   }) {
-    final meaningStr = word.word.getMeaningStr();
     final textMeaning = themeConfig?.textPrimary ??
         (isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B));
     final posColor = themeConfig?.textMuted.withValues(alpha: 0.85) ??

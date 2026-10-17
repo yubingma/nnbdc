@@ -81,6 +81,7 @@ class MeaningRenderUtil {
     required TextStyle meaningStyle,
     required Color dotColor,
     required bool showDots,
+    String Function(String)? textTransformer,
   }) {
     List<MeaningPartVo> parts = item.parts != null ? List.from(item.parts!) : [];
     if (parts.isEmpty && (item.meaning ?? '').isNotEmpty) {
@@ -115,6 +116,9 @@ class MeaningRenderUtil {
 
       // 清理释义文本内部尾部标点
       var cleanText = part.text.trim();
+      if (textTransformer != null) {
+        cleanText = textTransformer(cleanText).trim();
+      }
       while (cleanText.endsWith(';') ||
           cleanText.endsWith('；') ||
           cleanText.endsWith(',') ||

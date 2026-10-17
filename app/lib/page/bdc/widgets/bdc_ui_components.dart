@@ -3442,19 +3442,6 @@ extension BdcPageStateUIComponents on BdcPageState {
       itemVerticalGap = 2.5;
     }
 
-    String cleanMeaning(String? raw) {
-      if (raw == null) return '';
-      var text = notifier.hideParenthesesContent(raw).trim();
-      while (text.endsWith(';') ||
-          text.endsWith('；') ||
-          text.endsWith(',') ||
-          text.endsWith('，') ||
-          text.endsWith('。')) {
-        text = text.substring(0, text.length - 1).trim();
-      }
-      return text;
-    }
-
     final cixingColor = context.textNeutral;
     // 今天最近一次作答答错的词：题目（中文释义）标红，提醒"这个词你刚答错过"。
     // 与英译汉环节把英文拼写标红同一口径（见 _buildWordStepCard）。
@@ -3526,6 +3513,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   ),
                                   dotColor: meaningColor,
                                   showDots: MeaningRenderUtil.hasMultipleMeanings(displayItems),
+                                  textTransformer: notifier.hideParenthesesContent,
                                 ),
                               ),
                               textAlign: TextAlign.start,
