@@ -3398,7 +3398,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final primaryColor = themeConfig.primaryColor;
     final currentValue = user?.effectiveWordsPerDay ?? 20;
     final bool started = user?.todayStudyStarted == true;
-    const wordOptions = <int>[2, 3, 5, 10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
+    const wordOptions = <int>[2, 3, 5, 10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500, 800, 1000];
 
     showModalBottomSheet(
       context: context,

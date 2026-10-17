@@ -192,17 +192,17 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
                         valueText: '$_selectedWordsPerDay',
                         unitText: '词',
                         canMinus: _selectedWordsPerDay > 2,
-                        canPlus: _selectedWordsPerDay < 500,
+                        canPlus: _selectedWordsPerDay < 1000,
                         onMinus: () {
                           setState(() {
-                            _selectedWordsPerDay = (_selectedWordsPerDay - 1).clamp(2, 500);
+                            _selectedWordsPerDay = (_selectedWordsPerDay - 1).clamp(2, 1000);
                             if (_selectedMinNewWords > _selectedWordsPerDay) {
                               _selectedMinNewWords = _selectedWordsPerDay;
                             }
                           });
                         },
                         onPlus: () {
-                          final next = (_selectedWordsPerDay + 1).clamp(2, 500);
+                          final next = (_selectedWordsPerDay + 1).clamp(2, 1000);
                           if (!UserPrivilegeManager.isDailyWordsAllowed(next)) {
                             ToastUtil.info('开通会员可选择更多单词数量');
                             return;
@@ -242,7 +242,7 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
                           if (_wordsPerDayDragAccumulator.abs() >= 8.0) {
                             final dir = _wordsPerDayDragAccumulator > 0 ? 1 : -1;
                             _wordsPerDayDragAccumulator = 0;
-                            final next = (_selectedWordsPerDay + dir).clamp(2, 500);
+                            final next = (_selectedWordsPerDay + dir).clamp(2, 1000);
                             if (next != _selectedWordsPerDay) {
                               if (next > _selectedWordsPerDay && !UserPrivilegeManager.isDailyWordsAllowed(next)) {
                                 return;
