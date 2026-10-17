@@ -14,10 +14,10 @@ import 'package:nnbdc/widget/guardian_pet.dart';
 ///   - 压缩脚本一度把透明区域压成实色，整只宠物破图，而编译与运行都不报错。
 void main() {
   const assetDir = 'assets/images/pet';
-  /// 完成页里宠物的显示高度（逻辑像素）。
+  /// 完成页里守护兽的显示高度（逻辑像素）。
   const displayHeight = 116;
-  /// 素材目标高度 = 显示高度的 3 倍（3 倍屏下每个物理像素都有对应像素）。
-  const targetHeight = displayHeight * 3;
+  /// 今日计划页里陪伴兽（berry）的显示高度（逻辑像素，见 today_plan.dart 的 _buildPetCompanion）。
+  const companionDisplayHeight = 132;
 
   List<File> pngsIn(String dir) => Directory(dir)
       .listSync(recursive: true)
@@ -84,21 +84,32 @@ void main() {
     expect(onDisk, declared, reason: 'moods 目录的文件必须与 PetMood 枚举一一对应');
   });
 
-  test('所有宠物素材等高，且不超过显示高度的 3 倍（防止再塞回 1116px 大图）', () async {
-    final pngs = pngsIn(assetDir);
-    expect(pngs, isNotEmpty);
-    final heights = <int>{};
-    for (final file in pngs) {
-      final image = await decode(file);
-      expect(
-        image.height,
-        lessThanOrEqualTo(targetHeight),
-        reason: '${file.path} 高 ${image.height}px，超过显示高度 3 倍（$targetHeight）；'
-            '应执行 tools/pet_assets/quantize_assets.py 重新压缩',
-      );
-      heights.add(image.height);
+  test('各宠物素材族等高，且不超过各自显示高度的 3 倍（防止再塞回大图）', () async {
+    // 素材族 = 会互相叠合渲染、必须整族等高的一组图：
+    //   - 守护兽：身体层/眼睛层/光核层与情绪图在完成页叠合，整族必须等高，否则叠层错位；
+    //   - 陪伴兽（berry）：今日计划页独立渲染，不与守护兽叠合，只与同族比高。
+    // 每族都不能有超过「显示高度 3 倍」的大图。这条断言来自真实事故：守护兽曾以
+    // 1116px 高度随包发布（显示仅 116dp，白占 9 倍分辨率），陪伴兽 2026-10 又混进 950px 大图。
+    Future<void> assertAssetFamily(List<String> dirs, int displayHeightPx) async {
+      final targetHeightPx = displayHeightPx * 3;
+      final pngs = [for (final dir in dirs) ...pngsIn(dir)];
+      expect(pngs, isNotEmpty, reason: '素材族为空：$dirs');
+      final heights = <int>{};
+      for (final file in pngs) {
+        final image = await decode(file);
+        expect(
+          image.height,
+          lessThanOrEqualTo(targetHeightPx),
+          reason: '${file.path} 高 ${image.height}px，超过显示高度 3 倍（$targetHeightPx）；'
+              '应执行 tools/pet_assets/quantize_assets.py 重新压缩',
+        );
+        heights.add(image.height);
+      }
+      expect(heights.length, 1, reason: '$dirs 下的图必须整族等高，否则叠层会错位');
     }
-    expect(heights.length, 1, reason: '所有图必须等高，否则叠层会错位');
+
+    await assertAssetFamily(['$assetDir/moods', '$assetDir/layers'], displayHeight);
+    await assertAssetFamily(['$assetDir/companion'], companionDisplayHeight);
   });
 
   test('每张图都保留透明区域（防止压缩把透明压成实色）', () async {

@@ -163,13 +163,18 @@ class LearningService {
       final int minNewWordsPerDay = StudyConfig.fromCurrentUser().minNewWordsPerDay;
       int todayNewCount = planWords.where((w) => w.isTodayNewWord).length;
 
-      // 最少新词被下调（包括改成「不限制」即 0）时，今日计划里多出来的新词必须退回候选池。
+      // 最少新词被下调时，今日计划里多出来的新词必须退回候选池。
       // 下面这套补词逻辑只有「不足就补」，没有「多了就退」：genTodayWords 里也只在
       // newDeficit > 0 时补新词。于是用户把 30 改成 20 后，今天那 10 个多出来的新词
-      // 会一直挂在计划里，表现就是「改成 20 也没用」；改成「不限制」时同理不会回到
-      // 「复习词优先、不足才补新词」的自然分配。
+      // 会一直挂在计划里，表现就是「改成 20 也没用」。
       // 只处理「今日尚未开始学习」：已开始学习时新词已分好组，不能动。
-      if (!user.todayStudyStarted && todayNewCount > minNewWordsPerDay) {
+      //
+      // 只在配置了「最少新词」这个下限（> 0）时才有「超出下限」可言。
+      // 「不限制」= 0 表示不设下限（genTodayWords 里 newQuota 也是「0 表示不启用配额」，
+      // 该补的时候照常补新词把今日计划填满），它不意味着「今日一个计划新词都不许留」；
+      // 若把 0 也当成目标值，就会在每次 prepareTodayStudy 时把当天所有未学新词清回候选池再重生成，
+      // 计划被反复打散、学习顺序乱掉。所以 0 一律直接跳过。
+      if (!user.todayStudyStarted && minNewWordsPerDay > 0 && todayNewCount > minNewWordsPerDay) {
         final int excess = todayNewCount - minNewWordsPerDay;
         final removable = planWords
             .where((w) => w.isTodayNewWord && w.todayLearnedTimes == 0)

@@ -185,12 +185,17 @@ void main() {
     );
     await tester.pump();
     await tester.pump(Duration.zero);
-    for (int i = 0; i < 200 && find.text('今日目标').evaluate().isEmpty; i++) {
+    for (int i = 0; i < 200 && find.byKey(const Key('today_plan_new_count_number')).evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
   }
 
-  /// 取中心岛/任务卡的玻璃底色与实际字色（全部从渲染出来的组件里读，避免测试和实现各写一份调色板）。
+  /// 取中段玻璃卡与实际字色（全部从渲染出来的组件里读，避免测试和实现各写一份调色板）。
+  ///
+  /// 重构后「中心岛 + 底部任务卡」已被「轨道图 + 底部唯一按钮」取代（见 today_plan.dart 的
+  /// _buildTrackFlow）：中段的主玻璃卡变成「新词数卡」（大数字=主字档），旁边的「旧词数卡」用
+  /// 同一套玻璃；次字档改由卡片间的「学习轨道」开关承担。断言只守「玻璃值」与「字色档位」，
+  /// 与它挂在哪个控件上无关。
   ({
     Color islandGlass,
     Color cardGlass,
@@ -207,16 +212,18 @@ void main() {
       return (container.decoration! as BoxDecoration).color!;
     }
 
-    final today = AppClock.today();
-    // 日期串的单一来源：跟页面共用同一个格式化函数，杜绝"实现改了测试没跟上"
-    final dateLabel = planIslandDateLabel(today);
+    Color inkColor(Finder finder) => tester.widget<Text>(finder).style!.color!;
+
     return (
-      islandGlass: decorationColor(find.text('今日目标')),
-      cardGlass: decorationColor(find.text('新词')),
-      islandInk: tester.widget<Text>(find.text('今日目标')).style!.color!,
-      islandMutedInk: tester.widget<Text>(find.text(dateLabel)).style!.color!,
-      cardInk: tester.widget<Text>(find.text('新词')).style!.color!,
-      actionInk: tester.widget<Text>(find.text('开始学习')).style!.color!,
+      // 主玻璃卡 = 「新词」数卡（原中心岛位置）
+      islandGlass: decorationColor(find.text('新词')),
+      islandInk: inkColor(find.byKey(const Key('today_plan_new_count_number'))),
+      // 与主玻璃卡同一套玻璃的次卡 = 「旧词」数卡
+      cardGlass: decorationColor(find.text('旧词')),
+      // 次字档：卡片间的「学习轨道」开关
+      islandMutedInk: inkColor(find.text('学习轨道')),
+      cardInk: inkColor(find.text('学习轨道')),
+      actionInk: inkColor(find.text('开始学习')),
       headerInk: tester.widget<Icon>(find.byIcon(Icons.tune_rounded)).color!,
     );
   }
@@ -308,13 +315,13 @@ void main() {
         final expectedGlass = wallpaper.isDark
             ? (darkTheme ? const Color(0x6018202F) : Colors.black.withValues(alpha: 0.28))
             : Colors.white.withValues(alpha: 0.32);
-        expect(palette.islandGlass, expectedGlass, reason: '中心岛玻璃底色自适应壁纸');
-        expect(palette.cardGlass, expectedGlass, reason: '任务卡玻璃底色自适应壁纸');
+        expect(palette.islandGlass, expectedGlass, reason: '新风词数卡玻璃底色自适应壁纸');
+        expect(palette.cardGlass, expectedGlass, reason: '旧词数卡玻璃底色自适应壁纸');
         // 字色根据壁纸明暗档自适应
         expect(palette.islandInk, wallpaper.isDark ? Colors.white : const Color(0xFF0F172A),
-            reason: '中心岛浮在照片中段，字色跟照片明暗档');
+            reason: '数卡大数字浮在照片中段，字色跟照片明暗档');
         expect(palette.cardInk, wallpaper.isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF334155),
-            reason: '底部任务卡字色跟照片明暗档');
+            reason: '次字档（学习轨道开关）字色跟照片明暗档');
 
         await tester.pump(const Duration(seconds: 60));
       });
@@ -334,10 +341,10 @@ void main() {
     await pumpTodayPlan(tester, wallpaper: darkWallpaper.path, darkTheme: false);
     final darkPalette = renderedPalette(tester);
     final islandRect = tester.getRect(
-      find.ancestor(of: find.text('今日目标'), matching: find.byType(Container)).first,
+      find.ancestor(of: find.text('新词'), matching: find.byType(Container)).first,
     );
     final cardRect = tester.getRect(
-      find.ancestor(of: find.text('新词'), matching: find.byType(Container)).first,
+      find.ancestor(of: find.text('旧词'), matching: find.byType(Container)).first,
     );
     final buttonRect = tester.getRect(find.text('开始学习'));
     final headerRect = tester.getRect(find.byIcon(Icons.tune_rounded));
@@ -350,12 +357,12 @@ void main() {
     for (final wallpaper in planWallpapers.where((w) => w.path != 'none' && w.path != 'random')) {
       final palette = wallpaper.isDark ? darkPalette : lightPalette;
 
-      // 两块玻璃卡：中心岛（浮在照片中段）与底部任务卡（压在暗角光幕上）
+      // 两块玻璃卡：新词数卡（主字档）与旧词数卡（次字档），都浮在照片中段。
       // 玻璃保持原来的通透度，可读性由「选对字色 + 字上一圈淡光晕」兜住，
       // 所以这里守的是这套组合的底线，而不是 4.5 那种不透明卡才有的高线。
       for (final (rect, glass, primaryInk, mutedInk, floor1, floor2, label) in [
-        (islandRect, palette.islandGlass, palette.islandInk, palette.islandMutedInk, 2.0, 1.7, '中心岛'),
-        (cardRect, palette.cardGlass, palette.cardInk, palette.cardInk, 2.8, 2.5, '任务卡'),
+        (islandRect, palette.islandGlass, palette.islandInk, palette.islandMutedInk, 2.0, 1.7, '新词数卡'),
+        (cardRect, palette.cardGlass, palette.cardInk, palette.cardInk, 2.8, 2.5, '旧词数卡'),
       ]) {
         // 解码与取像素是真实引擎异步，必须走 runAsync（testWidgets 的假时钟不会推进它们）
         final photo = (await tester.runAsync(() async {

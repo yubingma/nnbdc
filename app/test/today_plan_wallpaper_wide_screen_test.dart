@@ -18,6 +18,16 @@ void main() {
   late MyDatabase db;
   final now = AppClock.now();
 
+  // 只匹配壁纸照片（assets/images/wallpaper/*）的那张 Image。
+  // 页面里还有宠物陪伴等其它插图，用 find.byType(Image) 会把它们一并算进来，断言就失真了。
+  final wallpaperImageFinder = find.byWidgetPredicate(
+    (widget) =>
+        widget is Image &&
+        widget.image is AssetImage &&
+        (widget.image as AssetImage).assetName.startsWith('assets/images/wallpaper/'),
+    description: '壁纸照片 Image',
+  );
+
   setUpAll(() {
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(
@@ -174,7 +184,8 @@ void main() {
 
     // 1. 验证背景：即使 Prefs 里存的是 amber.jpg，宽屏下有效壁纸仍强制为 none，渲染 AppThemeBackground
     expect(find.byType(AppThemeBackground), findsOneWidget);
-    expect(find.byType(Image), findsNothing);
+    // 只看壁纸照片这一张（页面里还有宠物陪伴等其它插图，不该被算进壁纸断言）
+    expect(wallpaperImageFinder, findsNothing);
 
     // 2. 打开高级学习设置弹窗
     expect(find.byIcon(Icons.tune_rounded), findsWidgets);
@@ -205,8 +216,8 @@ void main() {
     await pumpPage(tester, width: 390, height: 844);
     tester.takeException();
 
-    // 1. 验证背景：手机窄屏下壁纸生效，渲染 Image
-    expect(find.byType(Image), findsOneWidget);
+    // 1. 验证背景：手机窄屏下壁纸生效，渲染壁纸照片
+    expect(wallpaperImageFinder, findsOneWidget);
 
     // 2. 打开高级学习设置弹窗
     expect(find.byIcon(Icons.tune_rounded), findsWidgets);

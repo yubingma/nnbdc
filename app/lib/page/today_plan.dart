@@ -1763,7 +1763,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 为什么这一格接不住这个环节（null = 能接）。
   String? _trackStepBlockReason(_TrackDragPayload d, String scope, String group, int index) {
-    if (group == 'check') return '测评环节不可调整';
+    if (group == 'check') return '测评不可调整';
     final List<String> target = List.of(_trackStepsOf(scope, group));
     // 同组内移动时，先把"自己"从目标里摘掉再判断，否则会被自己挡住
     if (!d.fromTray && d.scope == scope && d.group == group && d.index >= 0 && d.index < target.length) {
@@ -1870,9 +1870,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             ),
             child: Text(
               rejectReason,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 9, height: 1.1, color: Color(0xFFEF4444)),
+              // 字号压到 8、允许两行：这一条本来就只有一百多像素宽，
+              // 9 号字单行一定被截成省略号，用户根本读不出「已有哪个环节」。
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 8, height: 1.15, color: Color(0xFFEF4444)),
             ),
           );
         }
@@ -1974,28 +1976,35 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   style: TextStyle(fontSize: 10, color: active ? const Color(0xFFEF4444) : ink.faint),
                 ),
                 const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    for (final step in steps)
-                      Builder(builder: (context) {
-                        final payload = _TrackDragPayload(scope: '', step: step);
-                        return Draggable<_TrackDragPayload>(
-                          data: payload,
-                          dragAnchorStrategy: pointerDragAnchorStrategy,
-                          onDragStarted: () => setState(() => _draggingPayload = payload),
-                          onDragEnd: (_) => setState(() => _draggingPayload = null),
-                          onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
-                          feedback: Material(
-                            color: Colors.transparent,
-                            child: chip(step),
-                          ),
-                          childWhenDragging: chip(step, dragging: true),
-                          child: chip(step),
-                        );
-                      }),
-                  ],
+                // 2 列网格：4 个环节排成两行两列，比一行一个紧凑得多、也更省纵向空间。
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: steps.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 3.8,
+                  ),
+                  itemBuilder: (context, i) {
+                    final step = steps[i];
+                    final payload = _TrackDragPayload(scope: '', step: step);
+                    return Draggable<_TrackDragPayload>(
+                      data: payload,
+                      dragAnchorStrategy: pointerDragAnchorStrategy,
+                      onDragStarted: () => setState(() => _draggingPayload = payload),
+                      onDragEnd: (_) => setState(() => _draggingPayload = null),
+                      onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
+                      feedback: Material(
+                        color: Colors.transparent,
+                        child: chip(step),
+                      ),
+                      childWhenDragging: chip(step, dragging: true),
+                      // 节点内部已有 FittedBox 兜底，这里直接放满格子即可
+                      child: chip(step),
+                    );
+                  },
                 ),
               ],
             ),
