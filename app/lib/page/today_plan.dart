@@ -2245,35 +2245,46 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 点一下它会说一句解释自己逻辑的话（背篓里的智慧果 = 今日进度）。
   Widget _buildPetCompanion() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    const double petHeight = 132;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      // 气泡用「浮层」画在宠物上方，不参与布局：
+      // 否则它一冒出来，spaceBetween 就会被压缩、把上方的新词/旧词卡片顶上去。
+      // 现在它只是盖在上方内容上（2.6 秒后自己消失），布局纹丝不动。
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.bottomCenter,
         children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
-            transitionBuilder: (child, anim) => FadeTransition(
-              opacity: anim,
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 0.92, end: 1).animate(anim),
-                alignment: Alignment.bottomCenter,
-                child: child,
-              ),
-            ),
-            child: _petSpeech == null
-                ? const SizedBox.shrink()
-                : _buildPetSpeechBubble(_petSpeech!, isDarkMode: isDarkMode),
-          ),
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _onPetTap,
             child: Image.asset(
               _petAssetPath,
-              height: 132,
+              height: petHeight,
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,
             ),
           ),
+          if (_petSpeech != null)
+            Positioned(
+              left: -40,
+              right: -40,
+              bottom: petHeight + 4,
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  transitionBuilder: (child, anim) => FadeTransition(
+                    opacity: anim,
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 0.92, end: 1).animate(anim),
+                      alignment: Alignment.bottomCenter,
+                      child: child,
+                    ),
+                  ),
+                  child: _buildPetSpeechBubble(_petSpeech!, isDarkMode: isDarkMode),
+                ),
+              ),
+            ),
         ],
       ),
     );
