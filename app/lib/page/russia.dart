@@ -279,7 +279,8 @@ class RussiaPageState extends State<RussiaPage>
       confirmLabel: '结束练习',
     );
   }
-  bool _showOpponentJoinedBanner = true;
+
+  bool _dismissedOpponentBanner = false;
 
   // 开局开场动画：双人对战播「开始对战」、单人练习播「练习开始」。
   // 字幕播完才向服务端要第一包单词，避免开场画面和第一题抢用户的注意力
@@ -607,11 +608,6 @@ class RussiaPageState extends State<RussiaPage>
     socket.on('enterReady', (data) {
       if (!mounted) return;
       if (isPlaying) {
-        if (isExercise && opponentUserId.isNotEmpty) {
-          setState(() {
-            _showOpponentJoinedBanner = true;
-          });
-        }
         return;
       }
       setState(() {
@@ -643,14 +639,14 @@ class RussiaPageState extends State<RussiaPage>
 
       if (incomingUserId != null && incomingUserId != myUserId) {
         setState(() {
+          if (opponentUserId != incomingUserId) {
+            _dismissedOpponentBanner = false;
+          }
           opponentUserId = incomingUserId!;
           opponentNickName = (incomingNickName != null && incomingNickName.isNotEmpty)
               ? incomingNickName
               : '对手';
           opponentStarted = false;
-          if (isExercise && isPlaying) {
-            _showOpponentJoinedBanner = true;
-          }
         });
       }
     });
@@ -672,6 +668,9 @@ class RussiaPageState extends State<RussiaPage>
           });
         } else {
           setState(() {
+            if (opponentUserId != info.userId) {
+              _dismissedOpponentBanner = false;
+            }
             opponentUserId = info.userId;
             if (info.nickName.isNotEmpty) {
               opponentNickName = info.nickName;
@@ -705,7 +704,7 @@ class RussiaPageState extends State<RussiaPage>
           opponentNickName = '等待对手加入...';
           opponentStarted = false;
           opponentScore = 0;
-          _showOpponentJoinedBanner = false;
+          _dismissedOpponentBanner = false;
           if (gameState == 'ready') {
             gameState = 'waiting';
           }
@@ -991,7 +990,7 @@ class RussiaPageState extends State<RussiaPage>
       setState(() {
         myStarted = true;
         isExercise = true;
-        _showOpponentJoinedBanner = true;
+        _dismissedOpponentBanner = false;
       });
       sendUserCmd('START_EXERCISE', []);
     }
@@ -1003,7 +1002,7 @@ class RussiaPageState extends State<RussiaPage>
     setState(() {
       isExercise = false;
       myStarted = true;
-      _showOpponentJoinedBanner = false;
+      _dismissedOpponentBanner = false;
       // 清空单人练习的下落气泡和动画
       bubbles.clear();
       projectiles.clear();
@@ -1155,7 +1154,9 @@ class RussiaPageState extends State<RussiaPage>
 
   void _onGameBegin() {
     setState(() {
-      _showOpponentJoinedBanner = false;
+      if (!isExercise) {
+        _dismissedOpponentBanner = false;
+      }
       currWord = null;
       distractorWords.clear();
       hasMistakeInCurrentWord = false;
@@ -2081,7 +2082,7 @@ class RussiaPageState extends State<RussiaPage>
             ),
 
             // 3.1 练习模式下新对手加入浮动提示横幅
-            if (isExercise && isPlaying && opponentUserId.isNotEmpty && _showOpponentJoinedBanner)
+            if (isExercise && isPlaying && opponentUserId.isNotEmpty && !_dismissedOpponentBanner)
               Positioned(
                 top: topPadding + 130,
                 left: 16,
@@ -2764,7 +2765,7 @@ class RussiaPageState extends State<RussiaPage>
           GestureDetector(
             onTap: () {
               setState(() {
-                _showOpponentJoinedBanner = false;
+                _dismissedOpponentBanner = true;
               });
             },
             child: Container(

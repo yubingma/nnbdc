@@ -178,6 +178,8 @@ flutter:
     # 判断资源有没有进包，只能看构建产物（flutter build bundle 后查
     # build/flutter_assets/），不能只看源码里文件是否存在。
     - assets/images/pet/moods/
+    # 用户宠物四态（背篓樱桃兽）：happy / sleepy / excited / sad
+    - assets/images/pet/companion/
     - assets/images/pet/layers/
     - assets/privacy.html
     - assets/privacy_android.html

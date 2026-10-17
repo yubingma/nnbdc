@@ -934,32 +934,38 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           constraints: BoxConstraints(
                             minHeight: (constraints.maxHeight - 8 - bottomInset).clamp(0.0, double.infinity),
                           ),
+
+                          // 纵向三段式：顶部栏固定 → 一块弹性空白 → 底部组（轨道 / 宠物 / 按钮）贴底。
+                          // 收起时这块空白很大，把轨道压在偏下的位置；展开时轨道变高，
+                          // 空白被自动吃掉，轨道就往上顶，底部按钮与宠物始终有位置、不会被挤出屏幕。
+                          // 三组 spaceBetween：顶部栏贴顶 / 轨道卡片居中 / 底部组（宠物 + 按钮）贴底。
+                          //   收起态：剩余空白被两组间距平分，卡片自然落在屏幕中部 —— 就是原来的位置；
+                          //   展开态：卡片变高，把间距先吃光，卡片自己往上顶，底部组跟着往下走、需要时整页滚动。
+                          // 不用 Spacer/Expanded：滚动容器给子级的高度是无界的，flex 会抛 unbounded height，
+                          // IntrinsicHeight 配 Spacer 同样会炸（都实测过）。
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
+                              _buildTopFloatingHeader(themeConfig, hasWallpaper, onDark),
+                              _buildTrackFlow(
+                                hasWallpaper: hasWallpaper,
+                                isDarkMode: isDarkMode,
+                                onDark: onDark,
+                                pageWidth: constraints.maxWidth,
+                              ),
                               Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  _buildTopFloatingHeader(themeConfig, hasWallpaper, onDark),
-                                  // 中心岛同步下移：让「岛下沿 → 卡上沿」的空隙与它一致（实测 0.372H = 282dp）
-                                  SizedBox(height: (constraints.maxHeight * 0.168).clamp(60.0, 150.0)),
-                                  _buildTrackFlow(
+                                  _buildPetCompanion(),
+                                  _buildBottomTaskIsland(
+                                    themeConfig: themeConfig,
                                     hasWallpaper: hasWallpaper,
                                     isDarkMode: isDarkMode,
                                     onDark: onDark,
                                     pageWidth: constraints.maxWidth,
                                   ),
-                                  // 放不下而滚动时的最小间距，避免中心岛与任务岛贴在一起
-                                  const SizedBox(height: 16),
                                 ],
-                              ),
-                              _buildBottomTaskIsland(
-                                themeConfig: themeConfig,
-                                hasWallpaper: hasWallpaper,
-                                isDarkMode: isDarkMode,
-                                onDark: onDark,
-                                pageWidth: constraints.maxWidth,
                               ),
                             ],
                           ),
@@ -1832,6 +1838,37 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 底部「双任务岛与主操作」：
   /// 左卡片并排新词 / 旧词两项任务量（各自点进对应词表），右卡片装主操作按钮。
+  /// 今日宠物表情：已完成 → 兴奋；学习中 → 开心；断更 → 委屈（空篓菜叶）；还没开始 → 打瞌睡。
+  ///
+  /// 背篓里的樱桃就是今日进度：进来时一颗、开始学习两颗、学完嘴边还有一颗；
+  /// 断更时背篓空着只剩拣来的菜叶。所以这里只需要按「今天走到哪一步」选一张。
+  String get _petAssetPath {
+    final u = user;
+    if (u == null) return 'assets/images/pet/companion/pet_berry_sleepy.png';
+    final bool planFinished = _totalStepCount > 0 && _completedStepCount >= _totalStepCount;
+    if (hasDakaToday && planFinished) return 'assets/images/pet/companion/pet_berry_excited.png';
+    if (u.todayStudyStarted == true) return 'assets/images/pet/companion/pet_berry_happy.png';
+    final DateTime? last = u.lastLearningDate;
+    if (last != null) {
+      final int days = DateUtils.dateOnly(AppClock.today()).difference(DateUtils.dateOnly(last)).inDays;
+      if (days > 1) return 'assets/images/pet/companion/pet_berry_sad.png';
+    }
+    return 'assets/images/pet/companion/pet_berry_sleepy.png';
+  }
+
+  /// 首页底部的小宠物：只占一条固定的高度，不参与轨道图的排版。
+  Widget _buildPetCompanion() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Image.asset(
+        _petAssetPath,
+        height: 132,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+      ),
+    );
+  }
+
   Widget _buildBottomTaskIsland({
     required AppThemeConfig themeConfig,
     required bool hasWallpaper,
