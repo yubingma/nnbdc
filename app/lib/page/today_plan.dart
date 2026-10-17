@@ -1002,13 +1002,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     },
                   ),
                 )
-              // 底栏是透明的，但内容不能画进它的区域（会跟按钮图标叠在一起）。
-              // 这里把内容区整体收到「底栏上沿」并做硬裁剪：滚到底时多出来的部分
-              // 直接看不见，而不是透到导航按钮底下。
-              : ClipRect(
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: widget.bottomNavReserve),
-                    child: SafeArea(
+              // 底栏是透明的，内容不能画进它的区域（会跟按钮图标叠在一起）。
+              // 用 Padding 把内容区整体收到「底栏上沿」即可：滚动到这里就到底了，
+              // 不会再画进导航栏。
+              // 不能用 ClipRect —— 它默认硬裁剪，会把命中测试一起裁掉，
+              // 落在边界外的按钮（编辑态的「完成」、托盘）就会「看得见、点不到」。
+              : Padding(
+                  padding: EdgeInsets.only(bottom: widget.bottomNavReserve),
+                  child: SafeArea(
                   bottom: false,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -1078,7 +1079,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       );
                     },
                   ),
-                    ),
                   ),
                 ),
         ],
@@ -1749,6 +1749,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // 编辑 / 完成按钮放在卡片顶部：卡片展开后很高，放在底部会掉出视口，
+                // 用户得先滚动才能点到（iPad 上尤其明显，表现成「点了没反应」）。
+                _buildTrackEditBar(ink: ink),
                   Stack(
               alignment: Alignment.topCenter,
               children: [
@@ -1769,7 +1772,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       const SizedBox(height: 12),
                       _buildDakaStatusLine(ink: ink, onDark: onDark),
                     ],
-                    _buildTrackEditBar(ink: ink),
                     if (_trackEditing)
                       _buildTrackTray(ink: ink, nodeBg: nodeBg, nodeBorder: nodeBorder, shadows: shadows),
                   ],

@@ -189,15 +189,15 @@ void main() {
     }
 
     expect(find.text('今日 10 词'), findsOneWidget, reason: '修改后应立即生效并显示今日 10 词');
+    expect(find.textContaining('已调整为每日'), findsNothing, reason: '设置词数后不应弹出 Toast 提示');
 
     final updatedUser = await db.usersDao.getUserById(userId);
     expect(updatedUser?.wordsPerDay, 10, reason: '数据库中用户的 wordsPerDay 应更新为 10');
 
-    // 消费 Toast autoClose 定时器
-    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('今日已开始学习时，点击修改每日单词数，今日计划保持不变，提示明日生效', (tester) async {
+  testWidgets('今日已开始学习时，点击修改每日单词数，今日计划保持不变且不弹 Toast（明日生效）', (tester) async {
     await seedData(todayStudyStarted: true, initialWords: 5);
 
     await tester.pumpWidget(
@@ -226,11 +226,11 @@ void main() {
 
     // 今日已开始学习，今日词数保持为 5 词
     expect(find.text('今日 5 词'), findsOneWidget, reason: '已开始学习时今日词数当天不应改变');
+    expect(find.textContaining('今日已开始学习'), findsNothing, reason: '设置词数后不应弹出 Toast 提示');
 
     final updatedUser = await db.usersDao.getUserById(userId);
     expect(updatedUser?.wordsPerDay, 10, reason: '用户设置的 wordsPerDay 仍应被保存为 10（明日生效）');
 
-    // 消费 Toast autoClose 定时器
-    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(seconds: 1));
   });
 }
