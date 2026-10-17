@@ -102,7 +102,7 @@ void main() {
         .toSet();
     referenced.add('$assetDir/bg_bridge.jpg');   // 背景也是动画的一部分
     final onDisk = assetsIn(assetDir)
-        .map((f) => f.path)
+        .map((f) => f.path.replaceAll(r'\', '/'))
         .where((p) => !p.endsWith('.DS_Store'))
         .toSet();
     expect(onDisk, referenced,

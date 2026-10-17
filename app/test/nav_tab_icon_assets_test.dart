@@ -49,7 +49,7 @@ void main() {
     final onDisk = Directory(assetDir)
         .listSync()
         .whereType<File>()
-        .map((f) => f.path)
+        .map((f) => f.path.replaceAll(r'\', '/'))
         .where((p) => p.endsWith('.svg'))
         .toSet();
     expect(onDisk, declared, reason: 'nav 目录的文件必须与代码引用一一对应');
