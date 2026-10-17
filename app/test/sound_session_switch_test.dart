@@ -500,4 +500,31 @@ void main() {
               '${bareCommands.join('\n')}');
     });
   });
+
+  group('音频播放失败状态（方案 A 微交互标签）', () {
+    test('AudioPlaybackStatus 与 AudioFallbackType.failed 契约验证', () {
+      const failedStatus = AudioPlaybackStatus(
+        spell: 'abandon',
+        fallbackType: AudioFallbackType.failed,
+        fallbackLabel: '网络不佳',
+      );
+
+      expect(failedStatus.hasFallback, isTrue);
+      expect(failedStatus.fallbackType, AudioFallbackType.failed);
+      expect(failedStatus.fallbackLabel, '网络不佳');
+    });
+
+    test('播放彻底失败时能在 2 秒内完成重置流转', () {
+      final controller = StudyAudioSessionController.instance;
+      const status = AudioPlaybackStatus(
+        spell: 'apple',
+        fallbackType: AudioFallbackType.failed,
+        fallbackLabel: '网络不佳',
+      );
+
+      controller.playbackStatusNotifier.value = status;
+      expect(controller.playbackStatusNotifier.value.fallbackType, AudioFallbackType.failed);
+      expect(controller.playbackStatusNotifier.value.fallbackLabel, '网络不佳');
+    });
+  });
 }

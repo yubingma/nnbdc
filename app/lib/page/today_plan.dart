@@ -1271,20 +1271,29 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
 
     if (drag == null) return node;
-    // 直接拖动（与底部托盘一致，不需要长按）：节点本身没有点击行为，不冲突。
-    return Draggable<_TrackDragPayload>(
+    // 长按才拖（220ms，比系统默认的 500ms 短一截）：
+    // 直接拖会和"上下滑动页面"抢手势——手指无意按在环节卡片上就滑不动了。
+    return LongPressDraggable<_TrackDragPayload>(
       data: drag,
+      delay: const Duration(milliseconds: 220),
       // 用「指针锚定」而不是默认的「child 锚定」：默认策略要量出「按下点相对 child 的偏移」，
       // 再按同样尺寸重建 feedback；一旦 feedback 的实际尺寸和按下时的 child 不一致
       // （托盘里的 chip 在 Wrap + Opacity + Builder 里，重建约束不同），偏移就错位，
       // 卡片会飘到离手指很远的地方。指针锚定与尺寸无关，两种来源的拖动体验一致。
       dragAnchorStrategy: pointerDragAnchorStrategy,
+      // 左上角对齐指针后再往右下挪一点：手指按下会盖住指针周围一圈，
+      // 不挪的话卡片左上角会被手指压住，正好挡住「拖的是哪个环节」。
+      feedbackOffset: const Offset(16, 22),
       onDragStarted: () => setState(() => _draggingPayload = drag),
       onDragEnd: (_) => setState(() => _draggingPayload = null),
       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
+      // 反馈卡片放大一点：手指本身会挡住它，放大后才看得清拖的是什么
       feedback: Material(
         color: Colors.transparent,
-        child: Opacity(opacity: 0.92, child: node),
+        child: Transform.scale(
+          scale: 1.18,
+          child: Opacity(opacity: 0.95, child: node),
+        ),
       ),
       childWhenDragging: Opacity(opacity: 0.3, child: node),
       child: node,
@@ -1966,20 +1975,33 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             ),
           );
         }
-        return Container(
-          width: 72,
-          height: 14,
-          margin: const EdgeInsets.symmetric(vertical: 2),
-          decoration: BoxDecoration(
-            color: blocked
-                ? Colors.transparent
-                : (active ? accent.withValues(alpha: 0.18) : Colors.transparent),
-            borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: zoneColor, width: active ? 1.2 : 0.6),
+        // 两级放大，幅度给足：
+        //   一提起（还没压到哪一格）→ 立刻从 72×14 撑到 110×32；
+        //   压上去的那一格 → 再撑到 150×50。
+        // 外面套固定 50 高的容器：放大时只改它自己的尺寸，不会把上下节点顶来顶去。
+        final bool dragging = _draggingPayload != null;
+        final double zoneWidth = active ? 150 : (dragging ? 110 : 72);
+        final double zoneHeight = active ? 50 : (dragging ? 32 : 14);
+        return SizedBox(
+          height: 50,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 110),
+              curve: Curves.easeOut,
+              width: zoneWidth,
+              height: zoneHeight,
+              decoration: BoxDecoration(
+                color: blocked
+                    ? Colors.transparent
+                    : (active ? accent.withValues(alpha: 0.22) : Colors.transparent),
+                borderRadius: BorderRadius.circular(active ? 14 : 7),
+                border: Border.all(color: zoneColor, width: active ? 1.8 : 0.6),
+              ),
+              child: blocked
+                  ? Icon(Icons.block_rounded, size: 12, color: lineColor.withValues(alpha: 0.45))
+                  : (active ? Icon(Icons.add_rounded, size: 20, color: accent) : null),
+            ),
           ),
-          child: blocked
-              ? Icon(Icons.block_rounded, size: 10, color: lineColor.withValues(alpha: 0.45))
-              : (active ? Icon(Icons.add_rounded, size: 11, color: accent) : null),
         );
       },
     );
@@ -2064,35 +2086,36 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   style: TextStyle(fontSize: 10, color: active ? const Color(0xFFEF4444) : ink.faint),
                 ),
                 const SizedBox(height: 6),
-                // 2 列网格：4 个环节排成两行两列，比一行一个紧凑得多、也更省纵向空间。
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: steps.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 3.8,
-                  ),
-                  itemBuilder: (context, i) {
-                    final step = steps[i];
-                    final payload = _TrackDragPayload(scope: '', step: step);
-                    return Draggable<_TrackDragPayload>(
+                // 流式布局：每张卡固定 150 宽，一行排满再换行。
+                // 手机上一行两个、iPad 横屏一行四个，不会像固定列数那样在宽屏上被拉成巨型卡片。
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final step in steps)
+                      SizedBox(
+                        width: 150,
+                        child: Builder(builder: (context) {
+                          final payload = _TrackDragPayload(scope: '', step: step);
+                          return LongPressDraggable<_TrackDragPayload>(
                       data: payload,
+                      delay: const Duration(milliseconds: 220),
                       dragAnchorStrategy: pointerDragAnchorStrategy,
+                      feedbackOffset: const Offset(16, 22),
                       onDragStarted: () => setState(() => _draggingPayload = payload),
                       onDragEnd: (_) => setState(() => _draggingPayload = null),
                       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
                       feedback: Material(
                         color: Colors.transparent,
-                        child: chip(step),
+                        child: Transform.scale(scale: 1.18, child: chip(step)),
                       ),
                       childWhenDragging: chip(step, dragging: true),
-                      // 节点内部已有 FittedBox 兜底，这里直接放满格子即可
-                      child: chip(step),
-                    );
-                  },
+                            // 节点内部已有 FittedBox 兜底，这里直接放满卡片宽度
+                            child: chip(step),
+                          );
+                        }),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -3918,11 +3941,25 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Future<void> _applyWordsPerDay(int value) async {
     final current = user;
     if (current == null) return;
-    if (value == current.effectiveWordsPerDay) return;
-    await MyDatabase.instance.usersDao.updateWordsPerDay(current.id!, value);
-    await Global.loadUserFromDb();
-    ThrottledDbSyncService().requestSync();
-    if (mounted) setState(() {});
+    if (value == current.effectiveWordsPerDay && _planWords.length == value) return;
+    if (value != current.effectiveWordsPerDay) {
+      await MyDatabase.instance.usersDao.updateWordsPerDay(current.id!, value);
+      await Global.loadUserFromDb();
+      final refreshUserResult = await UserBo().getLoggedInUser();
+      if (refreshUserResult.success) {
+        user = refreshUserResult.data;
+      }
+      ThrottledDbSyncService().requestSync();
+    }
+    if (current.todayStudyStarted == true) {
+      ToastUtil.info('今日已开始学习，新计划明日生效');
+      if (mounted) setState(() {});
+    } else {
+      if (mounted) {
+        await loadData(forceSupplement: true);
+        ToastUtil.success('已调整为每日 $value 词');
+      }
+    }
   }
 
   /// 底部滑出的「今日单词数量」弹窗。

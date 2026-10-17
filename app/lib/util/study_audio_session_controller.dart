@@ -23,6 +23,7 @@ enum AudioFallbackType {
   none,
   accentFallback, // 口音缺失降级（例如英音缺失播美音）
   ttsFallback,    // 音频加载失败降级（系统 TTS 朗读）
+  failed,         // 彻底播放失败（网络加载失败且兜底未成功）
 }
 
 /// 发音状态信息，用于 UI 局部微交互展示（零侵入、无 Toast 打扰）
@@ -93,7 +94,10 @@ class StudyAudioSessionController {
     playbackStatusNotifier.value = status;
     _statusResetTimer?.cancel();
     if (status.hasFallback) {
-      _statusResetTimer = Timer(const Duration(milliseconds: 2500), () {
+      final resetDuration = status.fallbackType == AudioFallbackType.failed
+          ? const Duration(milliseconds: 2000)
+          : const Duration(milliseconds: 2500);
+      _statusResetTimer = Timer(resetDuration, () {
         if (playbackStatusNotifier.value == status) {
           playbackStatusNotifier.value = AudioPlaybackStatus.idle;
         }
@@ -1004,6 +1008,7 @@ class StudyAudioSessionController {
     if (PlatformUtils.isTesting) return;
     final totalSw = Stopwatch()..start();
     debugPrint('🕵️ [AudioDiag] playSoundByUrl.enter | url=$soundUrl fallbackText=$fallbackText');
+    bool loaded = false;
     try {
       if (!_audioSessionConfigured) await configureSession();
       if (PlatformUtils.isWeb) await _ensureWebAudioUnlocked();
@@ -1061,7 +1066,7 @@ class StudyAudioSessionController {
       } catch (_) {}
 
       final loadSw = Stopwatch()..start();
-      bool loaded = false;
+      loaded = false;
       final cacheManager = PlatformUtils.isWeb ? null : DefaultCacheManager();
 
       // 1. 尝试从本地缓存加载（带坏缓存自愈：0 字节/损坏文件自动清除）
@@ -1196,6 +1201,11 @@ class StudyAudioSessionController {
             Global.logger.e('TTS 兜底朗读失败: $ttsErr');
           }
         }
+        _updatePlaybackStatus(AudioPlaybackStatus(
+          spell: fallbackText?.trim() ?? '',
+          fallbackType: AudioFallbackType.failed,
+          fallbackLabel: '网络不佳',
+        ));
         throw Exception('Failed to load audio source.');
       }
       
@@ -1226,12 +1236,31 @@ class StudyAudioSessionController {
         Global.logger.e('播放异常: $soundUrl', error: e, stackTrace: st);
         // 用户侧表现是"点了喇叭没声音"：进统一异常处理，才会到达服务端告警（本机日志客户看不到）
         ErrorHandler.handleAudioError(e, st, audioType: '单词/例句发音');
-        // 播放过程异常且非主动中止时，尝试 TTS 容灾兜底
-        if (fallbackText != null && fallbackText.trim().isNotEmpty) {
+        // 播放过程异常且非主动中止时，若此前成功加载过音频但在播放时出错，尝试 TTS 容灾兜底
+        if (loaded && fallbackText != null && fallbackText.trim().isNotEmpty) {
           try {
             debugPrint('🎙️ [AudioHealing] 播放异常触发 TTS 容灾兜底: "$fallbackText"');
             await _tts.speak(fallbackText.trim());
-          } catch (_) {}
+            _updatePlaybackStatus(AudioPlaybackStatus(
+              spell: fallbackText.trim(),
+              fallbackType: AudioFallbackType.ttsFallback,
+              fallbackLabel: 'TTS',
+            ));
+          } catch (_) {
+            _updatePlaybackStatus(AudioPlaybackStatus(
+              spell: fallbackText.trim(),
+              fallbackType: AudioFallbackType.failed,
+              fallbackLabel: '网络不佳',
+            ));
+          }
+        } else if (!loaded) {
+          // 上方 !loaded 分支已更新过 failed 状态
+        } else {
+          _updatePlaybackStatus(AudioPlaybackStatus(
+            spell: '',
+            fallbackType: AudioFallbackType.failed,
+            fallbackLabel: '网络不佳',
+          ));
         }
       }
     } finally {

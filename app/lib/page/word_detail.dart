@@ -1291,8 +1291,26 @@ class WordDetailPageState extends State<WordDetailPage>
                                             StudyAudioSessionController.instance
                                                 .playbackStatusNotifier,
                                         builder: (context, status, child) {
+                                          final matchesWord = status.spell.isEmpty ||
+                                              status.spell.toLowerCase() ==
+                                                  args.word.spell.toLowerCase();
                                           if (status.hasFallback &&
-                                              status.spell == args.word.spell) {
+                                              matchesWord) {
+                                            final isFailed =
+                                                status.fallbackType ==
+                                                    AudioFallbackType.failed;
+                                            final badgeColor = isFailed
+                                                ? Colors.redAccent
+                                                : Colors.amber;
+                                            final label = isFailed
+                                                ? (status.fallbackLabel.isNotEmpty
+                                                    ? status.fallbackLabel
+                                                    : '网络不佳')
+                                                : (status.fallbackType ==
+                                                        AudioFallbackType
+                                                            .ttsFallback
+                                                    ? '系统朗读'
+                                                    : '备用发音');
                                             return Container(
                                               margin: const EdgeInsets.only(
                                                   left: 6),
@@ -1301,25 +1319,21 @@ class WordDetailPageState extends State<WordDetailPage>
                                                       horizontal: 5,
                                                       vertical: 1),
                                               decoration: BoxDecoration(
-                                                color: Colors.amber
+                                                color: badgeColor
                                                     .withValues(alpha: 0.15),
                                                 borderRadius:
                                                     BorderRadius.circular(4),
                                                 border: Border.all(
-                                                    color: Colors.amber
+                                                    color: badgeColor
                                                         .withValues(
                                                             alpha: 0.35),
                                                     width: 0.5),
                                               ),
                                               child: Text(
-                                                status.fallbackType ==
-                                                        AudioFallbackType
-                                                            .ttsFallback
-                                                    ? '系统朗读'
-                                                    : '备用发音',
-                                                style: const TextStyle(
+                                                label,
+                                                style: TextStyle(
                                                     fontSize: 10,
-                                                    color: Colors.amber,
+                                                    color: badgeColor,
                                                     fontWeight:
                                                         FontWeight.bold),
                                               ),
