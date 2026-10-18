@@ -68,7 +68,7 @@ void main() {
       expect(service.getUnlockedIds(), contains(todayChallenge.id));
     });
 
-    test('已解锁题目再次作答：属于温故知新，不再重复发放智慧果', () async {
+    test('已解锁题目再次作答：不限制每道题只能答一次，每次答对均发放智慧果', () async {
       final service = FeatureChallengeService();
       final todayChallenge = service.getTodayChallenge();
 
@@ -85,8 +85,7 @@ void main() {
       );
 
       expect(res2.isCorrect, true);
-      expect(res2.isFirstUnlock, false);
-      expect(res2.fruitEarned, 0);
+      expect(res2.fruitEarned, 3);
     });
   });
 }

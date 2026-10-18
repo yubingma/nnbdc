@@ -79,12 +79,8 @@ class _DailyTipChallengeCardState extends State<DailyTipChallengeCard> {
       _result = res;
     });
 
-    if (res.fruitEarned > 0) {
-      ToastUtil.success('回答正确！获得 ${res.fruitEarned} 颗智慧果 🍒');
-      widget.onFruitAwarded?.call();
-    } else {
-      ToastUtil.success('回答正确！温故而知新 🌟');
-    }
+    ToastUtil.success('回答正确！获得 ${res.fruitEarned} 颗智慧果 🍒');
+    widget.onFruitAwarded?.call();
   }
 
   @override
