@@ -15,6 +15,7 @@ import '../theme/app_theme_background.dart';
 import '../widget/frosted_glass_card.dart';
 import '../widget/page_back_button.dart';
 import '../util/error_handler.dart';
+import '../util/toast_util.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -34,34 +35,57 @@ class _GamePageState extends State<GamePage> {
 
   String get _targetGameRoute => _selectedGame == 'brick' ? '/brick' : '/russia';
 
-  /// 用户当前正在学习的主词书名称（用于针对性练习专属场）
-  String? _currentLearningDictName;
+  /// 用户当前选中的对战特训词书
+  Dict? _selectedTrainingDict;
+
+  /// 用户正在学习的全部词书列表
+  List<Dict> _userLearningDicts = [];
+
+  /// 用户自定义/自建词书列表
+  List<Dict> _userCustomDicts = [];
 
   @override
   void initState() {
     super.initState();
     loadData();
-    _loadCurrentLearningDict();
+    _loadUserTrainingDicts();
   }
 
-  Future<void> _loadCurrentLearningDict() async {
+  Future<void> _loadUserTrainingDicts() async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
     try {
       final db = MyDatabase.instance;
-      final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user.id);
-      if (learningDicts.isNotEmpty) {
-        final dict = await (db.select(db.dicts)
-              ..where((d) => d.id.equals(learningDicts.first.dictId)))
-            .getSingleOrNull();
-        if (dict != null && mounted) {
-          setState(() {
-            _currentLearningDictName = dict.name;
-          });
-        }
+      final learningRecords = await db.learningDictsDao.getLearningDictsOfUser(user.id);
+      final dictIds = learningRecords.map((e) => e.dictId).toSet();
+
+      final allDicts = await db.select(db.dicts).get();
+      final dictMap = {for (final d in allDicts) d.id: d};
+      final loadedLearningDicts = <Dict>[];
+      for (final id in dictIds) {
+        final d = dictMap[id];
+        if (d != null) loadedLearningDicts.add(d);
+      }
+
+      final customRecords = allDicts
+          .where((d) => d.ownerId == user.id || d.editable == true)
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          _userLearningDicts = loadedLearningDicts;
+          _userCustomDicts = customRecords.where((d) => !dictIds.contains(d.id)).toList();
+          if (_selectedTrainingDict == null) {
+            if (_userLearningDicts.isNotEmpty) {
+              _selectedTrainingDict = _userLearningDicts.first;
+            } else if (_userCustomDicts.isNotEmpty) {
+              _selectedTrainingDict = _userCustomDicts.first;
+            }
+          }
+        });
       }
     } catch (e) {
-      // 仅用于专属场推荐展示，静默容错
+      Global.logger.w('加载特训词书失败: $e');
     }
   }
 
@@ -451,8 +475,8 @@ class _GamePageState extends State<GamePage> {
                     child: _buildMonsterShowcase(themeConfig),
                   ),
 
-                // 1.7 针对性强化的「我的当前词书专属场」（当选中对战类游戏且有当前学习词书时展示）
-                if (_selectedGame != 'monster' && _currentLearningDictName != null)
+                // 1.7 针对性强化的「自选词书专属特训场」（支持自定义与正在学习的词书精准对战）
+                if (_selectedGame != 'monster')
                   SliverToBoxAdapter(
                     child: _buildCurrentDictSection(themeConfig),
                   ),
@@ -786,111 +810,544 @@ class _GamePageState extends State<GamePage> {
   }
 
   /// 我的当前词书专属定制场（针对性练习，解决词量太大太泛的痛点）
+  GameHallVo? _findBestHallForDict(Dict? dict) {
+    if (gameHallDataResult == null || gameHallDataResult!.hallGroups.isEmpty) {
+      return null;
+    }
+    if (dict == null) {
+      for (final group in gameHallDataResult!.hallGroups) {
+        if (group.gameHalls.isNotEmpty) return group.gameHalls.first;
+      }
+      return null;
+    }
+
+    final dictName = dict.name.toLowerCase();
+    for (final group in gameHallDataResult!.hallGroups) {
+      final groupName = group.groupName.toLowerCase();
+      if (dictName.contains(groupName) || groupName.contains(dictName)) {
+        if (group.gameHalls.isNotEmpty) return group.gameHalls.first;
+      }
+      for (final hall in group.gameHalls) {
+        final hallName = hall.hallName.toLowerCase();
+        if (dictName.contains(hallName) || hallName.contains(dictName)) {
+          return hall;
+        }
+      }
+    }
+
+    final keywords = ['考研', '四级', '六级', '专四', '专八', '雅思', '托福', '高考', '高中', '初中', '小学'];
+    for (final kw in keywords) {
+      if (dictName.contains(kw)) {
+        for (final group in gameHallDataResult!.hallGroups) {
+          if (group.groupName.contains(kw) && group.gameHalls.isNotEmpty) {
+            return group.gameHalls.first;
+          }
+          for (final hall in group.gameHalls) {
+            if (hall.hallName.contains(kw)) return hall;
+          }
+        }
+      }
+    }
+
+    for (final group in gameHallDataResult!.hallGroups) {
+      if (group.gameHalls.isNotEmpty) return group.gameHalls.first;
+    }
+    return null;
+  }
+
+  void _startTrainingBattle() {
+    if (_selectedTrainingDict == null) {
+      final themeState = context.read<DarkMode>();
+      final themeConfig = AppThemeConfig.of(themeState.themeStyle);
+      _showDictSelectorSheet(context, themeConfig);
+      return;
+    }
+
+    final hall = _findBestHallForDict(_selectedTrainingDict);
+    if (hall == null) {
+      ToastUtil.error('暂无可用的游戏对战场次');
+      return;
+    }
+
+    context.push(_targetGameRoute, extra: [
+      hall,
+      null,
+      {
+        'gameMode': _selectedGame,
+        'dictId': _selectedTrainingDict!.id,
+        'dictName': _selectedTrainingDict!.name,
+      }
+    ]);
+  }
+
   Widget _buildCurrentDictSection(AppThemeConfig themeConfig) {
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
     final isDarkMode = themeConfig.isDark;
 
+    final hasDict = _selectedTrainingDict != null;
+    final dictName = _selectedTrainingDict?.name ?? '点击选择特训词书';
+    final dictInfo = hasDict
+        ? '已选定 · 共 ${_selectedTrainingDict!.wordCount} 词 · 点击可切换'
+        : '挑选正在学习或自定义的词书进行对战';
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: FrostedGlassCard(
         borderRadius: 20,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF9800).withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showDictSelectorSheet(context, themeConfig),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF9800), Color(0xFFF59E0B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(13),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.auto_stories_rounded, size: 22, color: Colors.white),
                 ),
-                child: const Icon(Icons.local_fire_department_rounded, size: 20, color: Color(0xFFFF9800)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          '当前词书专属特训',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.2,
-                            color: textMain,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF9800).withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: const Text(
-                            '针对巩固',
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '自选词书针对特训',
                             style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFFFF9800),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
+                              color: textMain,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '《$_currentLearningDictName》',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: textSub,
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF9800).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: const Text(
+                              '精准PK',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFFF9800),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: 3),
+                      Text(
+                        '《$dictName》',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: hasDict ? (isDarkMode ? const Color(0xFF38BDF8) : accentColor) : textSub,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        dictInfo,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: textSub,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 切换词书按钮
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => _showDictSelectorSheet(context, themeConfig),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDarkMode ? Colors.white12 : Colors.black12,
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.swap_horiz_rounded, size: 14, color: textSub),
+                            const SizedBox(width: 3),
+                            Text(
+                              hasDict ? '换词书' : '选词书',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: textSub,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // 开始特训按钮
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: _startTrainingBattle,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: accentColor,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accentColor.withValues(alpha: 0.28),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.bolt_rounded,
+                              size: 15,
+                              color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '开始对战',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDictSelectorSheet(BuildContext context, AppThemeConfig themeConfig) {
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final isDarkMode = themeConfig.isDark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
+          ),
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 顶部拖拽指示条与标题
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 12, 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.menu_book_rounded, color: accentColor, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '选择对战特训词书',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: textMain,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '挑选自定义词书或正在学习的词书进行针对性对战',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: textSub,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close_rounded, color: textSub, size: 20),
+                      onPressed: () => Navigator.of(sheetContext).pop(),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
-              // 如果有可用大厅，借用第一个大厅作为载体以当前词书进入匹配/练习
-              if (gameHallDataResult != null &&
-                  gameHallDataResult!.hallGroups.isNotEmpty &&
-                  gameHallDataResult!.hallGroups.first.gameHalls.isNotEmpty)
-                InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    final hall = gameHallDataResult!.hallGroups.first.gameHalls.first;
-                    context.push(_targetGameRoute, extra: [
-                      hall,
-                      null,
-                      {'gameMode': _selectedGame}
-                    ]);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: accentColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '特训对战',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+              const Divider(height: 1, thickness: 0.8),
+
+              // 列表滚动内容
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  children: [
+                    // 分组 1：正在学习的词书
+                    if (_userLearningDicts.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        child: Row(
+                          children: [
+                            Icon(Icons.school_rounded, size: 14, color: accentColor),
+                            const SizedBox(width: 6),
+                            Text(
+                              '我正在学习的词书 (${_userLearningDicts.length})',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: textMain,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ..._userLearningDicts.map((d) => _buildDictItem(d, sheetContext, themeConfig)),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // 分组 2：自定义词单 / 导入词单
+                    if (_userCustomDicts.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.folder_special_rounded, size: 14, color: Color(0xFFFF9800)),
+                            const SizedBox(width: 6),
+                            Text(
+                              '我的自定义词单 / 导入词书 (${_userCustomDicts.length})',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: textMain,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ..._userCustomDicts.map((d) => _buildDictItem(d, sheetContext, themeConfig, isCustom: true)),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // 若既无在学词书也无自定义词单
+                    if (_userLearningDicts.isEmpty && _userCustomDicts.isEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 28),
+                        child: Column(
+                          children: [
+                            Icon(Icons.library_books_outlined, size: 44, color: textSub.withValues(alpha: 0.4)),
+                            const SizedBox(height: 10),
+                            Text(
+                              '书桌上暂无在学词书，快去词库挑选一本吧',
+                              style: TextStyle(fontSize: 13, color: textSub),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    // 扩展通道：去词库挑选更多词书
+                    InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () async {
+                        Navigator.of(sheetContext).pop();
+                        await context.push('/select_book');
+                        if (mounted) {
+                          _loadUserTrainingDicts();
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDarkMode ? Colors.white12 : Colors.black12,
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_rounded, size: 18, color: accentColor),
+                            const SizedBox(width: 6),
+                            Text(
+                              '从完整词库挑选更多词书...',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: accentColor,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
+              ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDictItem(Dict dict, BuildContext sheetContext, AppThemeConfig themeConfig, {bool isCustom = false}) {
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final isDarkMode = themeConfig.isDark;
+
+    final isSelected = _selectedTrainingDict?.id == dict.id;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? accentColor.withValues(alpha: isDarkMode ? 0.16 : 0.08)
+            : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.02)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isSelected ? accentColor.withValues(alpha: 0.6) : Colors.transparent,
+          width: 1.2,
         ),
+      ),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: isCustom
+                ? const Color(0xFFFF9800).withValues(alpha: 0.15)
+                : accentColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            isCustom ? Icons.bookmark_added_rounded : Icons.menu_book_rounded,
+            color: isCustom ? const Color(0xFFFF9800) : accentColor,
+            size: 19,
+          ),
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                dict.name,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected ? (isDarkMode ? const Color(0xFF38BDF8) : accentColor) : textMain,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (isCustom) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9800).withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  '自建',
+                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFFFF9800)),
+                ),
+              ),
+            ],
+          ],
+        ),
+        subtitle: Text(
+          '共 ${dict.wordCount} 个单词',
+          style: TextStyle(fontSize: 11, color: textSub),
+        ),
+        trailing: isSelected
+            ? Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+              )
+            : const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.white24),
+        onTap: () {
+          setState(() {
+            _selectedTrainingDict = dict;
+          });
+          Navigator.of(sheetContext).pop();
+          ToastUtil.success('已选定特训词书:《${dict.name}》');
+        },
       ),
     );
   }
