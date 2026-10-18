@@ -273,20 +273,6 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  void _showGameRuleDialog(BuildContext context) {
-    final themeStyle = context.read<DarkMode>().themeStyle;
-    final themeConfig = AppThemeConfig.of(themeStyle);
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.55),
-      builder: (ctx) => GameRulesDialog(
-        themeStyle: themeStyle,
-        themeConfig: themeConfig,
-      ),
-    );
-  }
-
-
   @override
   Widget build(BuildContext context) {
     final darkModeState = context.watch<DarkMode>();
@@ -431,34 +417,6 @@ class _GamePageState extends State<GamePage> {
                             ),
                           ],
                         ),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => _showGameRuleDialog(context),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: themeConfig.subtleBg,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.help_outline_rounded,
-                                    size: 14, color: textSubColor),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '游戏玩法',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w500,
-                                    color: textSubColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -469,11 +427,10 @@ class _GamePageState extends State<GamePage> {
                   child: _buildGameShowcase(themeConfig),
                 ),
 
-                // 1.6 打哭小馋怪专属展示与挑战大卡片（单人守桥）
-                if (_selectedGame == 'monster')
-                  SliverToBoxAdapter(
-                    child: _buildMonsterShowcase(themeConfig),
-                  ),
+                // 1.6 选中游戏的专属玩法说明大卡片（三款游戏保持完全对称统一）
+                SliverToBoxAdapter(
+                  child: _buildSelectedGameShowcase(themeConfig),
+                ),
 
                 // 1.7 针对性强化的「自选词书专属特训场」（支持自定义与正在学习的词书精准对战）
                 if (_selectedGame != 'monster')
@@ -706,15 +663,41 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  /// 打哭小馋怪专属沉浸展示大卡片
-  Widget _buildMonsterShowcase(AppThemeConfig themeConfig) {
+  /// 选中游戏的专属玩法说明大卡片（三款游戏保持完全对称统一的卡片规格与结构）
+  Widget _buildSelectedGameShowcase(AppThemeConfig themeConfig) {
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
     final isDarkMode = themeConfig.isDark;
 
+    final IconData icon;
+    final String title;
+    final String subtitle;
+    final String description;
+    final bool isMonster = _selectedGame == 'monster';
+
+    if (isMonster) {
+      icon = Icons.pets_rounded;
+      title = '打哭小馋怪 · 守桥保卫战';
+      subtitle = '左右二选一答词 · 投掷水果击退馋怪';
+      description =
+          '贪吃的小馋怪正迈着六亲不认的步伐走过长桥，企图抢走对岸的水果！看准单词释义快速左右选择，答对投掷水果痛击小馋怪，答错水果就会被顺走哦。';
+    } else if (_selectedGame == 'brick') {
+      icon = Icons.dashboard_rounded;
+      title = '削砖块 · 1v1 经典消除竞技';
+      subtitle = '下落砖块拼词 · 连击障碍干扰';
+      description =
+          '根据中文释义在下落方块堆叠中快速认词消除，手速越快连击能量越高！连对可向对手场地砸下障碍砖块阻碍堆叠，双方各有 10 格生命，生命耗尽或方块堆满触顶即判负。';
+    } else {
+      icon = Icons.bubble_chart_rounded;
+      title = '戳泡泡 · 1v1 海底对决';
+      subtitle = '单词泡泡升腾 · 抢点正确拼写';
+      description =
+          '底部显示中文释义，英文单词泡泡从海底升腾；在泡泡冒过顶部警戒线之前，点中拼写正确的那一个。每连续答对 3 题可获道具：水雷轰击对手，海星回复生命，双方各有 10 格生命，先被扣光判负。';
+    }
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+      padding: EdgeInsets.fromLTRB(16, 4, 16, isMonster ? 20 : 12),
       child: FrostedGlassCard(
         borderRadius: 22,
         child: Padding(
@@ -731,7 +714,7 @@ class _GamePageState extends State<GamePage> {
                       color: accentColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(Icons.pets_rounded, size: 24, color: accentColor),
+                    child: Icon(icon, size: 24, color: accentColor),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -739,7 +722,7 @@ class _GamePageState extends State<GamePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '打哭小馋怪 · 守桥保卫战',
+                          title,
                           style: TextStyle(
                             fontSize: 16.5,
                             fontWeight: FontWeight.w700,
@@ -749,7 +732,7 @@ class _GamePageState extends State<GamePage> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '左右二选一答词 · 投掷水果击退馋怪',
+                          subtitle,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
@@ -763,17 +746,20 @@ class _GamePageState extends State<GamePage> {
               ),
               const SizedBox(height: 16),
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: themeConfig.subtleBg,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.04),
                     width: 0.5,
                   ),
                 ),
                 child: Text(
-                  '贪吃的小馋怪正迈着六亲不认的步伐走过长桥，企图抢走对岸的水果！看准单词释义快速左右选择，答对投掷水果痛击小馋怪，答错水果就会被顺走哦。',
+                  description,
                   style: TextStyle(
                     fontSize: 12.5,
                     height: 1.45,
@@ -781,27 +767,32 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => context.push('/monster'),
-                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
-                  label: const Text(
-                    '进入守桥挑战',
-                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: accentColor,
-                    foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
-                    elevation: 1,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+              if (isMonster) ...[
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.push('/monster'),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                    label: const Text(
+                      '进入守桥挑战',
+                      style: TextStyle(
+                          fontSize: 14.5, fontWeight: FontWeight.w700),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: accentColor,
+                      foregroundColor: isDarkMode
+                          ? const Color(0xFF0B1714)
+                          : Colors.white,
+                      elevation: 1,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -896,170 +887,178 @@ class _GamePageState extends State<GamePage> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: FrostedGlassCard(
         borderRadius: 20,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => _showDictSelectorSheet(context, themeConfig),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF9800), Color(0xFFF59E0B)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(13),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF9800).withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. 顶层信息行：功能标识 + 切换入口
+              Row(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF9800), Color(0xFFF59E0B)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    ],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.auto_stories_rounded, size: 15, color: Colors.white),
                   ),
-                  child: const Icon(Icons.auto_stories_rounded, size: 22, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
                             '自选词书针对特训',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w700,
                               letterSpacing: -0.2,
                               color: textMain,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF9800).withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(5),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF9800).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            '精准PK',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFFF9800),
                             ),
-                            child: const Text(
-                              '精准PK',
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFFFF9800),
-                              ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () => _showDictSelectorSheet(context, themeConfig),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDarkMode ? Colors.white12 : Colors.black12,
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.swap_horiz_rounded, size: 13, color: textSub),
+                          const SizedBox(width: 3),
+                          Text(
+                            hasDict ? '换词书' : '选词书',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: textSub,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '《$dictName》',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: hasDict ? (isDarkMode ? const Color(0xFF38BDF8) : accentColor) : textSub,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        dictInfo,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: textSub,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 切换词书按钮
-                    InkWell(
-                      borderRadius: BorderRadius.circular(12),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // 2. 底层信息行：词书大字展示 + 开始对战主按钮
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
                       onTap: () => _showDictSelectorSheet(context, themeConfig),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isDarkMode ? Colors.white12 : Colors.black12,
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.swap_horiz_rounded, size: 14, color: textSub),
-                            const SizedBox(width: 3),
-                            Text(
-                              hasDict ? '换词书' : '选词书',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: textSub,
-                              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '《$dictName》',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: hasDict
+                                  ? (isDarkMode ? const Color(0xFF38BDF8) : accentColor)
+                                  : textSub,
                             ),
-                          ],
-                        ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            dictInfo,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: textSub,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    // 开始特训按钮
-                    InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: _startTrainingBattle,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: accentColor,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: accentColor.withValues(alpha: 0.28),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.bolt_rounded,
-                              size: 15,
+                  ),
+                  const SizedBox(width: 10),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: _startTrainingBattle,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7.5),
+                      decoration: BoxDecoration(
+                        color: accentColor,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accentColor.withValues(alpha: 0.28),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.bolt_rounded,
+                            size: 15,
+                            color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '开始对战',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
                               color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
                             ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '开始对战',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
