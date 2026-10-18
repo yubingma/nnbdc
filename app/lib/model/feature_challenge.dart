@@ -205,16 +205,16 @@ class FeatureChallengeRepository {
     ),
     FeatureChallenge(
       id: 'tip_accent_switch',
-      category: '常用设置',
+      category: '功能技巧',
       title: '切换英音与美音',
-      question: '想把全局默认发音切换为英音或美音，入口在哪里？',
+      question: '学习单词或查看词条时，想要切换英音（UK）与美音（US），支持哪些快捷方式？',
       options: [
-        '在「我」-「设置与工具」中点击「发音口音」',
-        '修改手机系统的默认语言',
-        '长按音量减小键',
+        '直接点击背词页或详情页音标旁的「英/美」角标，也可在「我」页面中修改',
+        '只能在打卡完成后重置发音偏好',
+        '必须通过修改手机系统的系统语言来切换',
       ],
       correctIndex: 0,
-      explanation: '在「我」页面的「发音口音」设置中，可一键在英音（UK）与美音（US）之间切换。',
+      explanation: '发音支持多处便捷切换：在背词页面或单词详情页，轻点音标旁边的「英/美」小角标即可直接就地切换；也可以在「我」-「设置与工具」的「发音口音」或背词设置菜单中统一切换。',
     ),
     FeatureChallenge(
       id: 'tip_import_words',
