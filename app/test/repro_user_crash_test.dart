@@ -11,7 +11,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:flutter/services.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/prefs.dart';
+import 'package:nnbdc/api/vo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -44,6 +46,10 @@ void main() {
     StudyCacheManager().clear();
 
     final userId = '6db975f9c8bc4e159d9381cac3067486';
+    AppClock.setClock(FakeClock(DateTime(2026, 10, 18, 22, 57, 10)));
+    addTearDown(() {
+      AppClock.reset();
+    });
     final now = AppClock.now();
     testUser = User(
       id: userId,
@@ -93,13 +99,14 @@ void main() {
     await db.into(db.userStudySteps).insert(UserStudyStep(
       userId: userId, scope: 'review', group: 'wrong', studyStep: 'Ch2En', seq: 0, state: 'Active', createTime: now, updateTime: now));
 
-    // 读取 json 数据
-    final jsonStr = await File('/Volumes/ssd/ppdc/tmp/user_data.json').readAsString();
+    // 读取完整 json 数据
+    final jsonStr = await File('/Volumes/ssd/ppdc/tmp/user_data_full.json').readAsString();
     final data = jsonDecode(jsonStr);
-    final batch1 = (data['batch1'] as List);
-    final masteredWordIds = (data['masteredWordIds'] as List).map((e) => e.toString()).toSet()
-      ..remove('6544'); // 用户掌握前的状态：band 尚未掌握
+    final lws = (data['lws'] as List);
+    final masteredWordIds = (data['mastered'] as List).map((e) => e.toString()).toSet();
     final words = (data['words'] as List);
+    final meaningItems = (data['meaning_items'] as List);
+    final logs = (data['logs'] as List);
 
     // 插入已掌握词书
     final masteredDictId = '943801f94edf4fb0b6980b5564787e71';
@@ -126,22 +133,25 @@ void main() {
       final spell = parts.length > 1 ? parts[1] : '';
       final pronounce = parts.length > 2 ? parts[2] : '';
       final shortDesc = parts.length > 3 ? parts[3] : '';
+      final americaPronounce = parts.length > 4 ? parts[4] : '';
+      final britishPronounce = parts.length > 5 ? parts[5] : '';
       await db.into(db.words).insert(Word(
-        id: wid, spell: spell, pronounce: pronounce, shortDesc: shortDesc, popularity: 0, createTime: now, updateTime: now));
+        id: wid, spell: spell, pronounce: pronounce, shortDesc: shortDesc, americaPronounce: americaPronounce, britishPronounce: britishPronounce, popularity: 0, createTime: now, updateTime: now));
     }
 
-    // 插入 batch1 的 100 个 learning_word
-    for (final w in batch1) {
+    // 插入 learning_word（过滤出今天真正的 100 个词）
+    final staleIds = {'2020','25731','1271','35722','40442','18093','25735','2906','1310','5169','3163'};
+    for (final w in lws) {
       final wid = w['wordId'];
-      final todayLearnedTimes = wid == '6544' ? 0 : (w['todayLearnedTimes'] ?? 0);
+      final isStale = staleIds.contains(wid);
       await db.into(db.learningWords).insert(LearningWord(
         userId: userId,
         wordId: wid,
         addDay: w['addDay'] ?? 0,
         addTime: DateTime.fromMillisecondsSinceEpoch(w['addTime']),
         lastLearningDate: w['lastLearningDate'] != null ? DateTime.fromMillisecondsSinceEpoch(w['lastLearningDate']) : null,
-        learningOrder: w['learningOrder'],
-        batchId: w['batchId'],
+        learningOrder: isStale ? 0 : w['learningOrder'],
+        batchId: isStale ? 0 : w['batchId'],
         isExtra: w['isExtra'] ?? false,
         stability: w['stability']?.toDouble(),
         difficulty: w['difficulty']?.toDouble(),
@@ -152,14 +162,13 @@ void main() {
         state: w['state'] ?? 0,
         isTodayNewWord: w['isTodayNewWord'] ?? false,
         learnedTimes: w['learnedTimes'] ?? 0,
-        todayLearnedTimes: todayLearnedTimes,
+        todayLearnedTimes: isStale ? 0 : (w['todayLearnedTimes'] ?? 0),
         createTime: DateTime.fromMillisecondsSinceEpoch(w['createTime']),
         updateTime: DateTime.fromMillisecondsSinceEpoch(w['updateTime']),
       ));
     }
 
     // 插入 meaning_items
-    final meaningItems = data['meaning_items'] as List<dynamic>? ?? [];
     for (final mStr in meaningItems) {
       final parts = (mStr as String).split('\t');
       final mid = parts[0];
@@ -180,25 +189,42 @@ void main() {
       ));
     }
 
-    print('准备完毕，调用 notifier.loadData(FakeBuildContext())...');
-    final container = ProviderContainer();
-    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
-    addTearDown(() {
-      keepAlive.close();
-      container.dispose();
-    });
+    // 插入 learning_logs
+    for (final lg in logs) {
+      await db.into(db.learningLogs).insert(LearningLog(
+        id: Util.uuid(),
+        userId: userId,
+        wordId: lg['wordId'],
+        stability: 1.0,
+        difficulty: 5.0,
+        rating: lg['rating'],
+        elapsedDays: lg['elapsedDays'],
+        scheduledDays: lg['scheduledDays'],
+        createTime: DateTime.fromMillisecondsSinceEpoch(lg['createTime']),
+        updateTime: DateTime.fromMillisecondsSinceEpoch(lg['createTime']),
+      ));
+    }
 
-    final notifier = container.read(bdcNotifierProvider.notifier);
-    await notifier.loadData(FakeBuildContext());
-    final state = container.read(bdcNotifierProvider);
-    print('loadData 完成: word=${state.word?.spell}, step=${state.studyStep}, words=${state.words?.map((w)=>w.spell).toList()}, otherWords=${state.currentGetWordResult?.otherWords?.map((w)=>w.spell).toList()}, error=${state.loadError}, cause=${state.loadErrorCause}');
+    print('👉 步骤1：直接测试 StudyBo().getWord(true, true, currentWordId: "6544")...');
+    try {
+      final res = await studyBo.getWord(true, true, currentWordId: '6544');
+      final lw = res.data?.learningWord;
+      print('getWord 成功: wordId=${lw?.word.id}, stepIndex=${res.data?.stepIndex}');
+      print('otherWords=${res.data?.otherWords?.map((w)=>"${w.id}:${w.spell}").toList()}');
 
-    print('模拟掌握当前词并流转下一个词...');
-    notifier.updateHasFinishedAnswering(true);
-    notifier.updateIsWordMastered(true);
-    final nextSuccess = await notifier.getNextWord(true);
-    final stateAfter = container.read(bdcNotifierProvider);
-    print('getNextWord(true) 结果: nextSuccess=$nextSuccess, word=${stateAfter.word?.spell}, step=${stateAfter.studyStep}, words=${stateAfter.words?.map((w)=>w.spell).toList()}, otherWords=${stateAfter.currentGetWordResult?.otherWords?.map((w)=>w.spell).toList()}, error=${stateAfter.loadError}, cause=${stateAfter.loadErrorCause}');
+      // 模拟 handleWord 中的完整逻辑
+      print('👉 步骤2：模拟 handleWord...');
+      WordVo word = res.data!.learningWord!.word;
+      if (word.spell.isEmpty) {
+        final local = await db.wordsDao.getWordById(word.id!);
+        print('local word: ${local?.spell}');
+        if (local != null) {
+          word.spell = local.spell;
+        }
+      }
+    } catch (e, st) {
+      print('🔥 捕获到异常: $e\n$st');
+    }
   });
 }
 

@@ -9,10 +9,11 @@ import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/tts.dart';
 import '../api/vo.dart';
 import '../global.dart';
+import '../util/study_audio_session_controller.dart';
 import '../util/prefs.dart';
 import '../util/word_pack_queue.dart';
 
-/// 削砖块 · 下落方块实体
+/// 削砖块 · 下落英文单词大方块
 class BrickItem {
   final int id;
   final String word;
@@ -20,7 +21,8 @@ class BrickItem {
   double x;
   double y;
   final double baseX;
-  final double radius;
+  final double width;
+  final double height;
   final double speed;
   final double swingAmplitude;
   final double swingFreq;
@@ -38,12 +40,28 @@ class BrickItem {
     required this.x,
     required this.y,
     required this.baseX,
-    required this.radius,
+    required this.width,
+    required this.height,
     required this.speed,
     required this.swingAmplitude,
     required this.swingFreq,
     required this.phase,
     required this.baseColor,
+  });
+}
+
+/// 底部中文释义选项实体
+class BrickOption {
+  final String label;
+  final String text;
+  final bool isCorrect;
+  bool isSelected = false;
+  bool isWrong = false;
+
+  BrickOption({
+    required this.label,
+    required this.text,
+    required this.isCorrect,
   });
 }
 
@@ -106,7 +124,7 @@ class BrickAmbientParticle {
   });
 }
 
-/// 削砖块 · 经典下落方块对战独立页面
+/// 削砖块 · 经典下落消除独立对战页面（英选中还原版）
 class BrickPage extends StatefulWidget {
   const BrickPage({super.key});
 
@@ -151,6 +169,7 @@ class BrickPageState extends State<BrickPage>
   bool hasMistakeInCurrentWord = false;
 
   final List<BrickItem> bricks = [];
+  final List<BrickOption> currentOptions = [];
   final List<BrickParticle> particles = [];
   final List<BrickFloatingText> _floatingTexts = [];
   final List<BrickAmbientParticle> _ambientParticles = [];
@@ -177,8 +196,8 @@ class BrickPageState extends State<BrickPage>
   final WordPackQueue _wordPack = WordPackQueue();
   final List<Map<String, dynamic>> _pendingUserCmds = [];
   final Tts _tts = Tts();
-
   late final _BrickSocketStatusListener _socketStatusListener;
+
   bool isIntroPlaying = false;
   double introProgress = 0.0;
   final Duration introDuration = const Duration(milliseconds: 1400);
@@ -446,6 +465,7 @@ class BrickPageState extends State<BrickPage>
       isIntroPlaying = true;
       introProgress = 0.0;
       bricks.clear();
+      currentOptions.clear();
       particles.clear();
       _floatingTexts.clear();
     });
@@ -490,26 +510,16 @@ class BrickPageState extends State<BrickPage>
         for (final item in list) {
           distractorWords.add(item.toString());
         }
-      } else {
-        final fallbacks = ['ocean', 'sunshine', 'courage', 'miracle', 'journey'];
-        for (final w in fallbacks) {
-          if (w != wordVo.spell && distractorWords.length < 3) {
-            distractorWords.add(w);
-          }
-        }
       }
 
       final mediaQuery = MediaQuery.maybeOf(context);
       final size = mediaQuery?.size ?? const Size(390, 844);
-      _spawnBricksForRound(size);
+      _spawnBricksForRound(size, data);
 
+      // 发音朗读下落中的英文单词
       Future.delayed(const Duration(milliseconds: 60), () {
         if (mounted && isPlaying && currWord != null) {
-          final meaning = currWord!.meaningStr ?? currWord!.getMeaningStr();
-          if (meaning.isNotEmpty) {
-            final firstPart = meaning.split(RegExp(r'[;；,\n]')).first.trim();
-            _tts.speak(firstPart);
-          }
+          _tts.speak(currWord!.spell);
         }
       });
     } catch (e) {
@@ -526,39 +536,139 @@ class BrickPageState extends State<BrickPage>
     _playNextWordFromPack();
   }
 
-  void _spawnBricksForRound(Size size) {
+  void _spawnBricksForRound(Size size, dynamic wireWordData) {
     bricks.clear();
+    currentOptions.clear();
     hasMistakeInCurrentWord = false;
     if (currWord == null) return;
 
     final mediaQuery = MediaQuery.maybeOf(context);
     final topPadding = max(mediaQuery?.padding.top ?? 44.0, 16.0);
-    final double barrierY = topPadding + 130.0;
+    final double startY = topPadding + 62.0;
 
-    final roundOptions = [currWord!.spell, ...distractorWords.take(2)]..shuffle(rand);
-    final slotXOffsets = [0.26, 0.50, 0.74]..shuffle(rand);
-    final speeds = [40.0, 50.0, 60.0]..shuffle(rand);
+    // 1. 生成自上而下缓缓掉落的单一目标英文单词大方块
+    const double brickW = 230.0;
+    const double brickH = 58.0;
+    final Color color = brickColors[myWordIndex % brickColors.length];
 
-    for (int i = 0; i < roundOptions.length && i < 3; i++) {
-      const double radius = 48.0;
-      final double baseX = size.width * slotXOffsets[i] + (rand.nextDouble() - 0.5) * 6.0;
-      final double startY = barrierY + 28.0 + (rand.nextDouble() - 0.5) * 6.0;
-      final Color color = brickColors[i % brickColors.length];
+    bricks.add(BrickItem(
+      id: nextBrickId++,
+      word: currWord!.spell,
+      isTarget: true,
+      x: size.width / 2,
+      y: startY,
+      baseX: size.width / 2,
+      width: brickW,
+      height: brickH,
+      speed: 38.0,
+      swingAmplitude: 3.5,
+      swingFreq: 1.2,
+      phase: 0.0,
+      baseColor: color,
+    ));
 
-      bricks.add(BrickItem(
-        id: nextBrickId++,
-        word: roundOptions[i],
-        isTarget: roundOptions[i] == currWord!.spell,
-        x: baseX,
-        y: startY,
-        baseX: baseX,
-        radius: radius,
-        speed: speeds[i],
-        swingAmplitude: 3.0 + rand.nextDouble() * 3.0,
-        swingFreq: 1.0 + rand.nextDouble() * 0.5,
-        phase: rand.nextDouble() * 2 * pi,
-        baseColor: color,
+    // 2. 提取 3 个中文释义选项（1 正确 + 2 干扰）
+    String correctMeaning = (currWord!.meaningStr ?? currWord!.getMeaningStr()).trim();
+    if (correctMeaning.isEmpty) correctMeaning = '该词核心释义';
+
+    final List<String> distractorMeanings = [];
+    if (wireWordData is List && wireWordData.length > 1 && wireWordData[1] is List) {
+      final list = wireWordData[1] as List;
+      for (final m in list) {
+        final s = m?.toString().trim() ?? '';
+        if (s.isNotEmpty && s != correctMeaning && !distractorMeanings.contains(s)) {
+          distractorMeanings.add(s);
+        }
+      }
+    }
+
+    final fallbackMeanings = [
+      'n. 机会；良机；时机',
+      'adj. 卓越的；显著的',
+      'v. 探索；探寻；钻研',
+      'n. 旅程；长途旅行',
+      'adj. 勇敢的；无畏的',
+      'v. 维持；保持；保养',
+      'n. 挑战；质疑；考验',
+      'adj. 积极的；正向的',
+      'v. 创造；创作；引起',
+      'n. 目标；目的；靶子',
+    ];
+    for (final fm in fallbackMeanings) {
+      if (distractorMeanings.length >= 2) break;
+      if (fm != correctMeaning && !distractorMeanings.contains(fm)) {
+        distractorMeanings.add(fm);
+      }
+    }
+
+    final rawOptions = <({String text, bool isCorrect})>[
+      (text: _formatMeaning(correctMeaning), isCorrect: true),
+      (text: _formatMeaning(distractorMeanings[0]), isCorrect: false),
+      (text: _formatMeaning(distractorMeanings[1]), isCorrect: false),
+    ]..shuffle(rand);
+
+    const labels = ['A', 'B', 'C'];
+    for (int i = 0; i < rawOptions.length; i++) {
+      currentOptions.add(BrickOption(
+        label: labels[i],
+        text: rawOptions[i].text,
+        isCorrect: rawOptions[i].isCorrect,
       ));
+    }
+
+    setState(() {});
+  }
+
+  String _formatMeaning(String m) {
+    final cleaned = m.replaceAll('\r', '').replaceAll('\n', ' ').trim();
+    if (cleaned.length > 32) {
+      return '${cleaned.substring(0, 30)}...';
+    }
+    return cleaned;
+  }
+
+  void _onOptionTapped(BrickOption opt) {
+    if (!isPlaying || bricks.isEmpty || isIntroPlaying) return;
+    final b = bricks.first;
+    if (b.isPopping) return;
+
+    if (opt.isCorrect) {
+      setState(() {
+        opt.isSelected = true;
+      });
+      b.isPopping = true;
+      _spawnBrickExplosion(b.x, b.y, b.baseColor);
+      StudyAudioSessionController.instance.playSoundEffect('correct.mp3', volume: 0.7);
+      HapticFeedback.mediumImpact();
+
+      if (!hasMistakeInCurrentWord) {
+        myCombo++;
+        if (myCombo % 3 == 0) {
+          final isStarfish = rand.nextBool();
+          if (isStarfish) {
+            propsStarfish++;
+            _floatingTexts.add(BrickFloatingText(x: b.x, y: b.y - 30, text: '⭐ 获得防线修复!', color: const Color(0xFF10B981)));
+          } else {
+            propsMine++;
+            _floatingTexts.add(BrickFloatingText(x: b.x, y: b.y - 30, text: '💣 获得导弹!', color: const Color(0xFFEF4444)));
+          }
+        }
+        _floatingTexts.add(BrickFloatingText(x: b.x, y: b.y, text: '连击 +$myCombo', color: const Color(0xFF38BDF8)));
+      }
+
+      Future.delayed(const Duration(milliseconds: 220), () {
+        if (!mounted || !isPlaying) return;
+        _reportAnswer('CORRECT');
+      });
+    } else {
+      setState(() {
+        opt.isWrong = true;
+        b.isWrongJiggle = true;
+        b.jiggleProgress = 0.0;
+        hasMistakeInCurrentWord = true;
+      });
+      HapticFeedback.heavyImpact();
+      _applyDamage(1, reason: '选错 -1 HP!');
     }
   }
 
@@ -571,8 +681,7 @@ class BrickPageState extends State<BrickPage>
 
     final mediaQuery = MediaQuery.maybeOf(context);
     final size = mediaQuery?.size ?? const Size(390, 844);
-    final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
-    final double bottomBarTopY = size.height - (max(bottomPadding, 10.0) + 54.0);
+    final double barrierBottomY = size.height * 0.44;
 
     wavePhase += dt * 2.2;
     for (final ap in _ambientParticles) {
@@ -599,104 +708,76 @@ class BrickPageState extends State<BrickPage>
         isIntroPlaying = false;
         _playNextWordFromPack();
       }
+      if (mounted) setState(() {});
+      return;
     }
 
-    // 砖块重力下落与触底判定
-    bool targetBrickExpired = false;
-    for (int i = bricks.length - 1; i >= 0; i--) {
-      final b = bricks[i];
+    if (bricks.isNotEmpty) {
+      final b = bricks.first;
       if (b.isPopping) {
-        b.popProgress += dt * 5.0;
-        if (b.popProgress >= 1.0) bricks.removeAt(i);
-        continue;
-      }
-      if (b.isWrongJiggle) {
-        b.jiggleProgress += dt * 8.0;
-        if (b.jiggleProgress >= 1.0) {
-          b.isWrongJiggle = false;
-          b.jiggleProgress = 0.0;
+        b.popProgress += dt * 3.5;
+        if (b.popProgress >= 1.0) {
+          bricks.clear();
+        }
+      } else {
+        if (b.isWrongJiggle) {
+          b.jiggleProgress += dt * 5.0;
+          if (b.jiggleProgress >= 1.0) {
+            b.isWrongJiggle = false;
+            b.jiggleProgress = 0.0;
+          }
+        }
+        b.y += b.speed * dt;
+        b.x = b.baseX + sin(wavePhase * b.swingFreq) * b.swingAmplitude;
+
+        if (b.y + b.height / 2 >= barrierBottomY) {
+          b.isPopping = true;
+          _spawnBrickExplosion(b.x, barrierBottomY, const Color(0xFFEF4444));
+          HapticFeedback.heavyImpact();
+          _applyDamage(1, reason: '方块触底 -1 HP!');
+          _reportAnswer('TIMEOUT');
         }
       }
-
-      b.y += b.speed * dt;
-      b.x = b.baseX + sin(b.phase + wavePhase * b.swingFreq) * b.swingAmplitude;
-
-      // 触及底部警戒线
-      if (b.y + b.radius * 0.7 >= bottomBarTopY) {
-        if (b.isTarget) targetBrickExpired = true;
-        bricks.removeAt(i);
-      }
     }
 
-    if (targetBrickExpired && currWord != null) {
-      _applyDamage(1, reason: '方块触底 -1 HP!');
-      _reportAnswer('WRONG');
-    }
-
-    // 碎砖微粒
     for (int i = particles.length - 1; i >= 0; i--) {
       final p = particles[i];
       p.life -= dt;
       if (p.life <= 0) {
         particles.removeAt(i);
-        continue;
+      } else {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 120.0 * dt;
       }
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
     }
 
-    // 飘字动效
     for (int i = _floatingTexts.length - 1; i >= 0; i--) {
       final ft = _floatingTexts[i];
-      ft.life -= dt * 1.5;
-      ft.y -= 35.0 * dt;
-      if (ft.life <= 0) _floatingTexts.removeAt(i);
-    }
-
-    if (mounted) setState(() {});
-  }
-
-  void _onCorrectBrickTapped(BrickItem brick) {
-    if (!isPlaying || brick.isPopping) return;
-    brick.isPopping = true;
-    _spawnBrickExplosion(brick.x, brick.y, brick.baseColor);
-
-    myCombo++;
-    if (myCombo % 3 == 0) {
-      if (rand.nextBool()) {
-        propsMine++;
-        _floatingTexts.add(BrickFloatingText(x: brick.x, y: brick.y, text: '💣 获得导弹!', color: const Color(0xFFEF4444)));
-      } else {
-        propsStarfish++;
-        _floatingTexts.add(BrickFloatingText(x: brick.x, y: brick.y, text: '⭐ 获得神星!', color: const Color(0xFF10B981)));
+      ft.life -= dt * 1.2;
+      ft.y -= 28.0 * dt;
+      if (ft.life <= 0) {
+        _floatingTexts.removeAt(i);
       }
-    } else {
-      _floatingTexts.add(BrickFloatingText(x: brick.x, y: brick.y, text: '连击 +$myCombo', color: const Color(0xFF38BDF8)));
     }
 
-    _reportAnswer(hasMistakeInCurrentWord ? 'WRONG' : 'CORRECT');
-  }
-
-  void _onWrongBrickTapped(BrickItem brick) {
-    if (!isPlaying) return;
-    hasMistakeInCurrentWord = true;
-    brick.isWrongJiggle = true;
-    brick.jiggleProgress = 0.0;
-    _applyDamage(1, reason: '选错方块 -1 HP!');
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _spawnBrickExplosion(double x, double y, Color baseColor) {
-    for (int i = 0; i < 16; i++) {
-      final double angle = rand.nextDouble() * 2 * pi;
-      final double speed = 60.0 + rand.nextDouble() * 140.0;
+    for (int i = 0; i < 28; i++) {
+      final angle = rand.nextDouble() * 2 * pi;
+      final speed = 40.0 + rand.nextDouble() * 160.0;
       particles.add(BrickParticle(
-        x: x,
-        y: y,
+        x: x + (rand.nextDouble() - 0.5) * 80.0,
+        y: y + (rand.nextDouble() - 0.5) * 20.0,
         vx: cos(angle) * speed,
-        vy: sin(angle) * speed,
-        radius: 2.0 + rand.nextDouble() * 3.5,
+        vy: sin(angle) * speed - 20.0,
+        radius: 2.5 + rand.nextDouble() * 3.5,
         color: baseColor,
-        life: 0.35 + rand.nextDouble() * 0.3,
+        life: 0.35 + rand.nextDouble() * 0.35,
       ));
     }
   }
@@ -763,7 +844,7 @@ class BrickPageState extends State<BrickPage>
           textAlign: TextAlign.center,
         ),
         content: Text(
-          isWin ? '恭喜你成功击垮对方防线，赢得本局胜利！' : '方块堆叠超限，再接再厉削退方块！',
+          isWin ? '恭喜你成功击垮对方防线，赢得本局胜利！' : '方块触底防线失守，再接再厉削退方块！',
           style: const TextStyle(color: Colors.white70, fontSize: 14),
           textAlign: TextAlign.center,
         ),
@@ -812,31 +893,18 @@ class BrickPageState extends State<BrickPage>
     final mediaQuery = MediaQuery.of(context);
     final topPadding = max(mediaQuery.padding.top, 16.0);
     final bottomPadding = max(mediaQuery.padding.bottom, 10.0);
+    final double barrierBottomY = mediaQuery.size.height * 0.44;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. 独立专属方块竞技场绘制
+          // 1. 上半部下落竞技场绘制
           GestureDetector(
-            onTapDown: (details) {
-              final pos = details.localPosition;
-              for (final b in bricks) {
-                if (b.isPopping) continue;
-                final rect = Rect.fromCenter(
-                  center: Offset(b.x, b.y),
-                  width: b.radius * 2.1,
-                  height: b.radius * 1.35,
-                );
-                if (rect.contains(pos)) {
-                  if (b.isTarget) {
-                    _onCorrectBrickTapped(b);
-                  } else {
-                    _onWrongBrickTapped(b);
-                  }
-                  break;
-                }
+            onTap: () {
+              if (currWord != null) {
+                _tts.speak(currWord!.spell);
               }
             },
             child: CustomPaint(
@@ -845,7 +913,7 @@ class BrickPageState extends State<BrickPage>
                 particles: particles,
                 floatingTexts: _floatingTexts,
                 ambientParticles: _ambientParticles,
-                bottomBarTopY: mediaQuery.size.height - bottomPadding - 54.0,
+                barrierBottomY: barrierBottomY,
               ),
             ),
           ),
@@ -896,7 +964,7 @@ class BrickPageState extends State<BrickPage>
             ),
           ),
 
-          // 3. 双方血量槽（10格方块堆叠展示）
+          // 3. 双方血量槽（10格方块防线）
           Positioned(
             top: topPadding + 52,
             left: 20,
@@ -910,34 +978,41 @@ class BrickPageState extends State<BrickPage>
             ),
           ),
 
-          // 4. 当前释义卡片
-          if (isPlaying && currWord != null)
+          // 4. 下半部：中文释义三选一答题卡片区
+          if (isPlaying)
             Positioned(
-              top: topPadding + 98,
-              left: 24,
-              right: 24,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.4), width: 1.2),
-                  boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 10, offset: Offset(0, 4))],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('选择对应的英文方块消除', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-                    const SizedBox(height: 3),
-                    Text(
-                      currWord!.meaningStr ?? currWord!.getMeaningStr(),
-                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              top: barrierBottomY + 12,
+              left: 18,
+              right: 18,
+              bottom: bottomPadding + 62,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.touch_app_rounded, size: 13, color: Colors.white.withValues(alpha: 0.5)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '看准上方单词，在方块触底前选出正确释义：',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: currentOptions.map((opt) {
+                        return _buildOptionCard(opt);
+                      }).toList(),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
 
@@ -967,6 +1042,82 @@ class BrickPageState extends State<BrickPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOptionCard(BrickOption opt) {
+    Color bgColor = const Color(0xFF1E293B).withValues(alpha: 0.88);
+    Color borderColor = Colors.white.withValues(alpha: 0.12);
+    Color textColor = Colors.white;
+
+    if (opt.isSelected) {
+      bgColor = const Color(0xFF10B981).withValues(alpha: 0.35);
+      borderColor = const Color(0xFF10B981);
+      textColor = const Color(0xFF34D399);
+    } else if (opt.isWrong) {
+      bgColor = const Color(0xFFEF4444).withValues(alpha: 0.35);
+      borderColor = const Color(0xFFEF4444);
+      textColor = const Color(0xFFF87171);
+    }
+
+    return InkWell(
+      onTap: () => _onOptionTapped(opt),
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: opt.isSelected || opt.isWrong ? 1.5 : 0.8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: opt.isSelected
+                    ? const Color(0xFF10B981)
+                    : (opt.isWrong ? const Color(0xFFEF4444) : Colors.white.withValues(alpha: 0.12)),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  opt.label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                opt.text,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                  letterSpacing: -0.2,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1047,19 +1198,19 @@ class _BrickScenePainter extends CustomPainter {
   final List<BrickParticle> particles;
   final List<BrickFloatingText> floatingTexts;
   final List<BrickAmbientParticle> ambientParticles;
-  final double bottomBarTopY;
+  final double barrierBottomY;
 
   _BrickScenePainter({
     required this.bricks,
     required this.particles,
     required this.floatingTexts,
     required this.ambientParticles,
-    required this.bottomBarTopY,
+    required this.barrierBottomY,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. 深邃的方块竞技场科技背景渐变
+    // 1. 深邃的方块竞技场背景
     final Rect fullRect = Offset.zero & size;
     final bgPaint = Paint()
       ..shader = const LinearGradient(
@@ -1089,19 +1240,19 @@ class _BrickScenePainter extends CustomPainter {
       canvas.drawCircle(Offset(ap.x, ap.y), ap.radius, pPaint);
     }
 
-    // 4. 底部警戒防线基座（方块触底警戒线）
+    // 4. 下落大方块触底警戒线
     final barrierPaint = Paint()
       ..shader = LinearGradient(
         colors: [
-          const Color(0xFFEF4444).withValues(alpha: 0.1),
-          const Color(0xFFEF4444).withValues(alpha: 0.8),
-          const Color(0xFFEF4444).withValues(alpha: 0.1),
+          const Color(0xFFEF4444).withValues(alpha: 0.15),
+          const Color(0xFFEF4444).withValues(alpha: 0.9),
+          const Color(0xFFEF4444).withValues(alpha: 0.15),
         ],
-      ).createShader(Rect.fromLTWH(0, bottomBarTopY, size.width, 2))
+      ).createShader(Rect.fromLTWH(0, barrierBottomY, size.width, 2))
       ..strokeWidth = 2.0;
-    canvas.drawLine(Offset(0, bottomBarTopY), Offset(size.width, bottomBarTopY), barrierPaint);
+    canvas.drawLine(Offset(0, barrierBottomY), Offset(size.width, barrierBottomY), barrierPaint);
 
-    // 5. 下落方块绘制
+    // 5. 下落单一目标英文单词大方块绘制
     for (final b in bricks) {
       _drawBrick(canvas, b);
     }
@@ -1144,65 +1295,55 @@ class _BrickScenePainter extends CustomPainter {
         RRect.fromRectAndRadius(
           Rect.fromCenter(
             center: Offset(b.x, b.y),
-            width: b.radius * 2.1 * scale,
-            height: b.radius * 1.35 * scale,
+            width: b.width * scale,
+            height: b.height * scale,
           ),
-          const Radius.circular(12),
+          const Radius.circular(16),
         ),
         popPaint,
       );
       return;
     }
 
-    double scaleX = 1.0;
-    double scaleY = 1.0;
-    if (b.isWrongJiggle) {
-      final phase = b.jiggleProgress * pi * 4;
-      final delta = sin(phase) * 0.16 * (1.0 - b.jiggleProgress);
-      scaleX = 1.0 + delta;
-      scaleY = 1.0 - delta;
-    }
+    final double jiggleX = b.isWrongJiggle ? sin(b.jiggleProgress * pi * 4) * 6.0 : 0.0;
+    final center = Offset(b.x + jiggleX, b.y);
 
     canvas.save();
-    canvas.translate(b.x, b.y);
-    canvas.scale(scaleX, scaleY);
+    canvas.translate(center.dx, center.dy);
 
-    final double brickW = b.radius * 2.1;
-    final double brickH = b.radius * 1.35;
-    final rrect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset.zero, width: brickW, height: brickH),
-      const Radius.circular(14),
-    );
+    final rect = Rect.fromCenter(center: Offset.zero, width: b.width, height: b.height);
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(16));
 
-    // 阴影
+    // 方块外发光阴影
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.35)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawRRect(rrect.shift(const Offset(0, 3)), shadowPaint);
+      ..color = b.baseColor.withValues(alpha: 0.32)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+    canvas.drawRRect(rrect, shadowPaint);
 
-    // 本体渐变
-    final fillPaint = Paint()
+    // 基础渐变
+    final basePaint = Paint()
       ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
         colors: [
-          b.baseColor.withValues(alpha: 0.95),
-          Color.lerp(b.baseColor, Colors.black, 0.25)!,
+          b.baseColor,
+          b.baseColor.withValues(alpha: 0.78),
         ],
-      ).createShader(rrect.outerRect);
-    canvas.drawRRect(rrect, fillPaint);
+      ).createShader(rect);
+    canvas.drawRRect(rrect, basePaint);
 
-    // 高光横条
-    final hlRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(-brickW / 2 + 2, -brickH / 2 + 2, brickW - 4, brickH * 0.38),
-      const Radius.circular(11),
+    // 顶部高光
+    final hlRect = RRect.fromRectAndCorners(
+      Rect.fromLTWH(-b.width / 2 + 1, -b.height / 2 + 1, b.width - 2, b.height * 0.42),
+      topLeft: const Radius.circular(15),
+      topRight: const Radius.circular(15),
     );
     final hlPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Colors.white.withValues(alpha: 0.42),
+          Colors.white.withValues(alpha: 0.38),
           Colors.white.withValues(alpha: 0.05),
         ],
       ).createShader(hlRect.outerRect);
@@ -1210,9 +1351,9 @@ class _BrickScenePainter extends CustomPainter {
 
     // 微边框
     final borderPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6)
+      ..color = Colors.white.withValues(alpha: 0.65)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+      ..strokeWidth = 1.4;
     canvas.drawRRect(rrect, borderPaint);
 
     // 英文单词
@@ -1221,17 +1362,17 @@ class _BrickScenePainter extends CustomPainter {
         text: b.word,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 16.5,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
           shadows: [
-            Shadow(color: Color(0x99000000), blurRadius: 3, offset: Offset(0, 1.2)),
+            Shadow(color: Color(0x99000000), blurRadius: 4, offset: Offset(0, 1.5)),
           ],
         ),
       ),
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
-    )..layout(maxWidth: brickW - 12);
+    )..layout(maxWidth: b.width - 16);
 
     textPainter.paint(canvas, Offset(-textPainter.width / 2, -textPainter.height / 2));
     canvas.restore();

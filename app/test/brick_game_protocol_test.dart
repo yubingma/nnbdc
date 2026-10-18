@@ -29,5 +29,11 @@ void main() {
     // 5. 必须在 didChangeDependencies 中调用数据加载
     final didChangeBlock = source.substring(didChangeIdx, source.indexOf('Future<void> _loadData()'));
     expect(didChangeBlock, contains('_loadData()'), reason: '必须在 didChangeDependencies 中加载参数与数据');
+
+    // 6. 还原为经典英选中玩法：下落英文单词大方块 + 底部 3 个中文释义卡片
+    expect(source, contains('class BrickOption'), reason: '必须声明中文选项实体 BrickOption');
+    expect(source, contains('final List<BrickOption> currentOptions'), reason: '必须维护当前中文释义选项列表');
+    expect(source, contains('_onOptionTapped'), reason: '必须提供中文释义点击事件');
+    expect(source, contains("'TIMEOUT'"), reason: '方块触底需判定超时并扣除防线生命');
   });
 }

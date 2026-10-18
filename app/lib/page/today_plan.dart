@@ -2481,14 +2481,16 @@ class TodayPlanPageState extends State<TodayPlanPage>
     required double pageWidth,
   }) {
     // 词书单词量不足：主操作让位给补救操作（选择词书 / 就这样吧）
+    final bool isStarted = user?.todayStudyStarted == true;
     final bool bookShortage = prepareResult?.code == "NNBDC-0012" ||
-        (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0));
+        (!isStarted && _hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0));
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 任务量未满提示条（如有）
-        if (prepareResult != null &&
+        // 任务量未满提示条（如有，仅在未开始学习且未尝试补词时展示）
+        if (!isStarted &&
+            prepareResult != null &&
             prepareResult!.success &&
             (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
             !_hasTriedSupplement) ...[
@@ -3997,11 +3999,13 @@ class TodayPlanPageState extends State<TodayPlanPage>
     required bool hasWallpaper,
     required bool onDark,
   }) {
+    final bool isStarted = user?.todayStudyStarted == true;
     final int total = _planWords.length;
     final int expected = user?.effectiveWordsPerDay ?? total;
-    // 计划词数没凑满期望值时，用「实际 / 期望」把缺额也讲出来；
-    // 满了就只报一个数，避免多余的斜杠。
-    final String totalLabel = total < expected ? '今日 $total / $expected 词' : '今日 $total 词';
+    // 学习已开始时直接展示今日计划词数并锁定；未开始时若未凑满则展示缺额
+    final String totalLabel = isStarted
+        ? '今日 $total 词'
+        : (total < expected ? '今日 $total / $expected 词' : '今日 $total 词');
     // 这行字直接压在壁纸上（没有卡片底），浅色照片上会糊掉。
     // 用「与字色相反的柔光投影」把它从背景里托出来：亮底配白投影、暗底配黑投影。
     final shadows = <Shadow>[
@@ -4012,7 +4016,13 @@ class TodayPlanPageState extends State<TodayPlanPage>
     ];
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: _showWordsPerDaySheet,
+      onTap: () {
+        if (isStarted) {
+          ToastUtil.info('今日学习已开始，设置已锁定');
+          return;
+        }
+        _showWordsPerDaySheet();
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
         child: Row(
@@ -4029,18 +4039,25 @@ class TodayPlanPageState extends State<TodayPlanPage>
               ),
             ),
             const SizedBox(width: 3),
-            Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: ink.muted),
+            Icon(
+              isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
+              size: isStarted ? 12 : 14,
+              color: ink.muted,
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// 应用新的「今日单词数」。已开始学习时只保存、当天不生效
-  /// （prepareTodayStudy 在 todayStudyStarted 时不再按配置补词/削减）。
+  /// 应用新的「今日单词数」（仅在今日尚未开始学习时可调用）。
   Future<void> _applyWordsPerDay(int value) async {
     final current = user;
     if (current == null) return;
+    if (current.todayStudyStarted == true) {
+      ToastUtil.info('今日学习已开始，设置已锁定');
+      return;
+    }
     if (value == current.effectiveWordsPerDay && _planWords.length == value) return;
     if (value != current.effectiveWordsPerDay) {
       await MyDatabase.instance.usersDao.updateWordsPerDay(current.id!, value);
@@ -4051,12 +4068,8 @@ class TodayPlanPageState extends State<TodayPlanPage>
       }
       ThrottledDbSyncService().requestSync();
     }
-    if (current.todayStudyStarted == true) {
-      if (mounted) setState(() {});
-    } else {
-      if (mounted) {
-        await loadData(forceSupplement: true);
-      }
+    if (mounted) {
+      await loadData(forceSupplement: true);
     }
   }
 
@@ -4065,12 +4078,15 @@ class TodayPlanPageState extends State<TodayPlanPage>
   /// 顶部拖拽把手、4 列规整网格、点击即选中保存（不需要额外确认按钮）。
   void _showWordsPerDaySheet() {
     _dismissPetSpeech();
+    if (user?.todayStudyStarted == true) {
+      ToastUtil.info('今日学习已开始，设置已锁定');
+      return;
+    }
     final darkMode = context.read<DarkMode>();
     final isDarkMode = darkMode.isDarkMode;
     final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
     final primaryColor = themeConfig.primaryColor;
     final currentValue = user?.effectiveWordsPerDay ?? 20;
-    final bool started = user?.todayStudyStarted == true;
     const wordOptions = <int>[2, 3, 5, 10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500, 800, 1000];
 
     showModalBottomSheet(
@@ -4146,7 +4162,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                started ? '今日已开始学习，改动从明天起生效' : '根据每天的时间节奏定制专注目标',
+                                '根据每天的时间节奏定制专注目标',
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
@@ -4400,8 +4416,19 @@ class TodayPlanPageState extends State<TodayPlanPage>
                             // 1. 每日计划与词量设置（二级设置入口）
                             _buildAdvancedMenuNavigationItem(
                               title: '每日计划与词量设置',
-                              subtitle: planSummary,
+                              subtitle: (user?.todayStudyStarted == true) ? '今日学习已开始，设置已锁定' : planSummary,
+                              trailing: (user?.todayStudyStarted == true)
+                                  ? Icon(
+                                      Icons.lock_outline_rounded,
+                                      size: 14,
+                                      color: isDarkMode ? Colors.white38 : Colors.black38,
+                                    )
+                                  : null,
                               onTap: () {
+                                if (user?.todayStudyStarted == true) {
+                                  ToastUtil.info('今日学习已开始，设置已锁定');
+                                  return;
+                                }
                                 Navigator.pop(ctx);
                                 context.push('/study_plan_settings').then((_) {
                                   if (mounted) loadData(forceSupplement: true);
@@ -4587,6 +4614,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
     String? subtitle,
     required VoidCallback onTap,
     required bool isDarkMode,
+    Widget? trailing,
   }) {
     return Material(
       color: Colors.transparent,
@@ -4626,11 +4654,12 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 13,
-                color: isDarkMode ? Colors.white30 : Colors.black26,
-              ),
+              trailing ??
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 13,
+                    color: isDarkMode ? Colors.white30 : Colors.black26,
+                  ),
             ],
           ),
         ),

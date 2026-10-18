@@ -136,7 +136,7 @@ public final class GetNextWordProcessor {
         Map<String, Object> leanWord = new HashMap<>();
         leanWord.put("spell", word.getSpell());
         leanWord.put("meaningStr", word.getMeaningStr());
-        return new Object[]{leanWord, null, null, wordObj[3]};
+        return new Object[]{leanWord, wordObj[1], null, wordObj[3]};
     }
 
     /**
