@@ -152,6 +152,19 @@ class FeatureChallengeRepository {
       explanation: '随身听内置了雨声、虫鸣等自然环境音，支持熄屏后台播放，可边听环境音边磨耳朵。',
     ),
     FeatureChallenge(
+      id: 'tip_walkman_pure_whitenoise',
+      category: '随身听',
+      title: '纯净助眠白噪音',
+      question: '如果想把随身听当作纯粹的助眠白噪音工具（只听雨声或虫鸣，不读单词），该如何设置？',
+      options: [
+        '开启自然场景并将「发音」栏中的各项（英文、释义等）全部取消勾选',
+        '把手机系统的媒体音量调至静音',
+        '在手机系统设置中关闭后台刷新权限',
+      ],
+      correctIndex: 0,
+      explanation: '随身听的环境音与单词发音是独立通道。在设置中选好自然场景（如闲时听雨、夏夜虫鸣）后，把发音栏的各项全部取消勾选，就能得到纯净的助眠白噪音，且支持熄屏后台持续播放。',
+    ),
+    FeatureChallenge(
       id: 'tip_meaning_limit',
       category: '常用设置',
       title: '限制释义显示条数',
