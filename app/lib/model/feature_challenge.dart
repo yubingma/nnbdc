@@ -24,15 +24,15 @@ class FeatureChallengeRepository {
     FeatureChallenge(
       id: 'tip_ai_assistant',
       category: '功能技巧',
-      title: '单词详情页 AI 提问',
-      question: '在单词详情页，遇到不理解的词义或想看更多例句，可以在哪里向 AI 提问？',
+      title: '单词详情页 AI 助教',
+      question: '在单词详情页，想要向 AI 提问单词的生僻用法、辨析或例句造句，需要怎么做？',
       options: [
-        '在页面底部的 AI 输入框直接输入提问',
-        '长按单词标题',
-        '点击右上角分享按钮',
+        '切换到顶部的「AI 助教」Tab 即可提问',
+        '在「详情」Tab 底部长按屏幕',
+        '切换到「形近」Tab 提问',
       ],
       correctIndex: 0,
-      explanation: '单词详情页底部内置了 AI 对话框，输入疑问即可获得针对该词的详细解析和造句。',
+      explanation: '单词详情页顶部包含详情、意象、形近等多个 Tab，切换到「AI 助教」Tab 即可与 AI 助手对话探讨该词。',
     ),
     FeatureChallenge(
       id: 'tip_voice_asr',
@@ -45,7 +45,7 @@ class FeatureChallengeRepository {
         '连击两次屏幕空白处',
       ],
       correctIndex: 1,
-      explanation: '背单词时直接开口说出答案，语音识别核验正确后会自动切到下一题，无需手动点按。',
+      explanation: '背单词时直接开口说出答案，无需手动点按。',
     ),
     FeatureChallenge(
       id: 'tip_pet_progress',
