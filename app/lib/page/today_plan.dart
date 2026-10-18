@@ -144,15 +144,12 @@ class TodayPlanPageState extends State<TodayPlanPage>
   /// 是否处于「拖拽编排轨道」的编辑态。编辑态下环节可直接拖动、底部出现环节托盘。
   bool _trackEditing = false;
 
-  /// 宠物头顶气泡的 Overlay 条目：挂在页面之外，绝不参与首页布局。
-  OverlayEntry? _petSpeechOverlay;
+  /// 宠物头顶气泡台词文本（null 为不显示），作用域完全在页面内部。
+  String? _petSpeechText;
   Timer? _petSpeechTimer;
   Timer? _autoSpeechTimer;
   int? _lastPetSpeechIndex;
   bool _petFirstMet = false;
-
-  /// 宠物形象所在的锚点，用来把它头顶的气泡定位到正确高度。
-  final GlobalKey _petAnchorKey = GlobalKey();
 
   /// 拖动时最近一次悬停在「接不住」的格子上记下的原因。
   /// 松手时若 wasAccepted 为 false 且它非空，就弹 Toast 把原因讲清楚。
@@ -183,16 +180,13 @@ class TodayPlanPageState extends State<TodayPlanPage>
     // 悬挂的定时器会让测试报「A Timer is still pending」。
     _autoSpeechTimer?.cancel();
     _autoSpeechTimer = Timer(const Duration(milliseconds: 520), () {
-      if (!mounted || _petSpeechOverlay != null) return;
+      if (!mounted || _petSpeechText != null) return;
       _showPetSpeech();
     });
   }
 
   void _showPetSpeech() {
     if (!mounted) return;
-    // 页面不是当前路由（被学习页/词表页等盖住）时不许冒泡：
-    // 气泡挂在根 Overlay 上，会跨页面显示——这正是"本组小结里看到它说话"的原因。
-    if (ModalRoute.of(context)?.isCurrent != true) return;
     final bool first = !_petFirstMet;
     final picked = first
         ? (text: PetSpeech.firstMeet, index: 0)
@@ -200,31 +194,15 @@ class TodayPlanPageState extends State<TodayPlanPage>
     _lastPetSpeechIndex = picked.index;
     _petFirstMet = true;
 
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final anchor = _petAnchorKey.currentContext?.findRenderObject() as RenderBox?;
-    if (anchor == null || !anchor.hasSize) return;
-    final double petTop = anchor.localToGlobal(Offset.zero).dy;
-
-    _petSpeechOverlay?.remove();
     _petSpeechTimer?.cancel();
-    _petSpeechOverlay = OverlayEntry(
-      builder: (ctx) => Positioned(
-        left: 24,
-        right: 24,
-        // 气泡底边贴着宠物头顶（+8 留给小尖角）
-        top: (petTop - 96).clamp(72.0, double.infinity),
-        child: IgnorePointer(
-          child: Material(
-            color: Colors.transparent,
-            child: Center(child: _buildPetSpeechBubble(picked.text, isDarkMode: isDarkMode)),
-          ),
-        ),
-      ),
-    );
-    Overlay.of(context).insert(_petSpeechOverlay!);
+    setState(() {
+      _petSpeechText = picked.text;
+    });
     _petSpeechTimer = Timer(const Duration(milliseconds: 2600), () {
-      _petSpeechOverlay?.remove();
-      _petSpeechOverlay = null;
+      if (!mounted) return;
+      setState(() {
+        _petSpeechText = null;
+      });
     });
   }
 
@@ -472,13 +450,14 @@ class TodayPlanPageState extends State<TodayPlanPage>
   @override
   void didPushNext() => _dismissPetSpeech();
 
-  /// 收起宠物气泡（打开弹窗、离开页面时都要先收）。
-  /// 气泡挂在根 Overlay 上，是所有页面内容里最高的一层——
-  /// 不主动收掉的话，它会盖在「高级学习设置」这类弹窗上面。
+  /// 收起宠物气泡。
   void _dismissPetSpeech() {
     _petSpeechTimer?.cancel();
-    _petSpeechOverlay?.remove();
-    _petSpeechOverlay = null;
+    if (_petSpeechText != null && mounted) {
+      setState(() {
+        _petSpeechText = null;
+      });
+    }
   }
 
   @override
@@ -486,8 +465,6 @@ class TodayPlanPageState extends State<TodayPlanPage>
     planRouteObserver.unsubscribe(this);
     _autoSpeechTimer?.cancel();
     _petSpeechTimer?.cancel();
-    _petSpeechOverlay?.remove();
-    _petSpeechOverlay = null;
     WidgetsBinding.instance.removeObserver(this);
     _dakaSubscription?.cancel();
     _wordDeletedSubscription?.cancel();
@@ -1091,7 +1068,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                                 Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    _buildPetCompanion(),
+                                    _buildPetCompanion(isDarkMode: isDarkMode),
                                     _buildBottomTaskIsland(
                                       themeConfig: themeConfig,
                                       hasWallpaper: hasWallpaper,
@@ -2426,23 +2403,34 @@ class TodayPlanPageState extends State<TodayPlanPage>
     }
   }
 
-  /// 首页底部的小宠物：只占一条固定的高度，不参与轨道图的排版。
-  /// 点一下它会说一句解释自己逻辑的话（背篓里的智慧果 = 今日进度）。
-  Widget _buildPetCompanion() {
+  /// 首页底部的小宠物：高度固定为 132，不挤占轨道图排版。
+  /// 头顶气泡使用 Stack + Positioned 悬浮，不增加外层 Column 布局高度，
+  /// 且作用域完全在页面内部，页面切走或弹窗打开时自然遮挡/隐藏，不跨页面穿透。
+  Widget _buildPetCompanion({required bool isDarkMode}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      // 气泡走 Overlay（见 _showPetSpeech），这里只留宠物本身：
-      // 否则气泡一出现就会把 spaceBetween 的空白压掉、把上方卡片顶上去。
-      child: GestureDetector(
-        key: _petAnchorKey,
-        behavior: HitTestBehavior.opaque,
-        onTap: _onPetTap,
-        child: Image.asset(
-          _petAssetPath,
-          height: 132,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
-        ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.bottomCenter,
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _onPetTap,
+            child: Image.asset(
+              _petAssetPath,
+              height: 132,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+          if (_petSpeechText != null)
+            Positioned(
+              bottom: 136,
+              child: IgnorePointer(
+                child: _buildPetSpeechBubble(_petSpeechText!, isDarkMode: isDarkMode),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -4649,6 +4637,15 @@ class TodayPlanPageState extends State<TodayPlanPage>
       ),
     );
   }
+
+  @visibleForTesting
+  void onPetTapForTest() => _onPetTap();
+
+  @visibleForTesting
+  void dismissPetSpeechForTest() => _dismissPetSpeech();
+
+  @visibleForTesting
+  String? get petSpeechTextForTest => _petSpeechText;
 }
 
 
