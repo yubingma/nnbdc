@@ -28,6 +28,7 @@ import '../services/user_privilege_manager.dart';
 import '../widget/daka_poster.dart';
 import '../widget/daka_poster_dialog.dart';
 import '../widget/daka_stamp_badge.dart';
+import '../widget/daily_tip_challenge_card.dart';
 import '../widget/guardian_pet.dart';
 import 'index.dart';
 import 'bdc/models/bdc_page_args.dart';
@@ -90,13 +91,13 @@ class FinishPageState extends State<FinishPage> {
     });
   }
 
-  /// 投喂一次守护兽：消耗 1 个魔法泡泡，累计投喂次数 +1，达到阈值时升阶。
+  /// 投喂一次守护兽：消耗 1 颗智慧果，累计投喂次数 +1，达到阈值时升阶。
   Future<void> _feedPet() async {
     if (petFeeding) return;
     final user = Global.getLoggedInUser();
     if (user == null) return;
     if (user.cowDung < PetGameBo.feedCost) {
-      ToastUtil.info('魔法泡泡不够了，明天打卡再来喂它');
+      ToastUtil.info('智慧果不够了，明天打卡再来喂它');
       return;
     }
 
@@ -105,7 +106,7 @@ class FinishPageState extends State<FinishPage> {
       final result = await PetGameBo().feed();
       if (!mounted) return;
       if (result == null) {
-        ToastUtil.info('魔法泡泡不够了，明天打卡再来喂它');
+        ToastUtil.info('智慧果不够了，明天打卡再来喂它');
         return;
       }
       setState(() {
@@ -116,7 +117,7 @@ class FinishPageState extends State<FinishPage> {
       if (result.leveledUp) {
         ToastUtil.success('守护兽进化成了「${stage.name}」');
       } else {
-        ToastUtil.success('已投喂 1 个魔法泡泡');
+        ToastUtil.success('已投喂 1 颗智慧果');
       }
       _cheerPet();
     } catch (e, stackTrace) {
@@ -307,6 +308,15 @@ class FinishPageState extends State<FinishPage> {
             _buildMetricsCard(themeConfig),
             const SizedBox(height: 14),
           ],
+          DailyTipChallengeCard(
+            onFruitAwarded: () {
+              final user = Global.getLoggedInUser();
+              if (user != null && mounted) {
+                setState(() => cowDung = user.cowDung);
+              }
+            },
+          ),
+          const SizedBox(height: 14),
           if (isAdmin) ...[
             _buildPetCard(themeConfig),
             const SizedBox(height: 14),
@@ -428,7 +438,7 @@ class FinishPageState extends State<FinishPage> {
           const SizedBox(height: 18),
           Row(
             children: [
-              _buildMetric(themeConfig, label: '魔法泡泡', value: '$cowDung'),
+              _buildMetric(themeConfig, label: '智慧果', value: '$cowDung'),
               _buildMetricDivider(themeConfig),
               _buildMetric(themeConfig, label: '今日积分', value: '+$todayDakaScore'),
               _buildMetricDivider(themeConfig),

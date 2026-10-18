@@ -17,6 +17,7 @@ import 'package:nnbdc/page/monster.dart';
 import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/page/privacy.dart';
 import 'package:nnbdc/page/protocol.dart';
+import 'package:nnbdc/page/brick.dart';
 import 'package:nnbdc/page/russia.dart';
 import 'package:nnbdc/page/search.dart';
 import 'package:nnbdc/page/select_book.dart';
@@ -32,6 +33,7 @@ import 'package:nnbdc/page/admin/page_viewer.dart';
 import 'package:nnbdc/page/reminder_settings.dart';
 import 'package:nnbdc/page/study_date_rules.dart';
 import 'package:nnbdc/page/study_plan_settings.dart';
+import 'package:nnbdc/page/feature_handbook_page.dart';
 import 'package:nnbdc/page/study_stats.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/test.dart';
@@ -65,6 +67,7 @@ final goRouter = GoRouter(
     GoRoute(path: '/game', builder: (context, state) => const GamePage()),
     GoRoute(path: '/monster', builder: (context, state) => const MonsterPage()),
     GoRoute(path: '/russia', builder: (context, state) => const RussiaPage()),
+    GoRoute(path: '/brick', builder: (context, state) => const BrickPage()),
     GoRoute(path: '/word_detail', builder: (context, state) => const WordDetailPage()),
     GoRoute(path: '/word_list', builder: (context, state) => const WordListPage()),
     GoRoute(path: '/import_from_book', builder: (context, state) => ImportFromBookPage(wordModifier: state.extra as WordModifier)),
@@ -86,5 +89,6 @@ final goRouter = GoRouter(
     GoRoute(path: '/page_viewer', builder: (context, state) => const PageViewerPage()),
     GoRoute(path: '/study_date_rules', builder: (context, state) => const StudyDateRulesPage()),
     GoRoute(path: '/study_plan_settings', builder: (context, state) => const StudyPlanSettingsPage()),
+    GoRoute(path: '/feature_handbook', builder: (context, state) => const FeatureHandbookPage()),
   ],
 );

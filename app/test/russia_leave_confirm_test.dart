@@ -30,9 +30,9 @@ void main() {
             expect(text.title, isNot(contains('判负')));
             expect(text.body, isNot(contains('判负')));
             expect(text.confirmLabel, isNot(contains('判负')));
-            // 每一条练习文案都要明确"不计分、不扣魔法泡泡"
+            // 每一条练习文案都要明确"不计分、不扣智慧果"
             expect(text.body, contains('不计分'));
-            expect(text.body, contains('魔法泡泡'));
+            expect(text.body, contains('智慧果'));
           }
         }
       }

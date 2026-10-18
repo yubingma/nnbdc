@@ -1974,6 +1974,13 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             },
                           ),
                           _buildMenuTile(
+                            icon: Icons.lightbulb_outline_rounded,
+                            iconColor: const Color(0xFFF59E0B),
+                            title: '玩转技巧与常见问题',
+                            trailingText: '秘籍',
+                            onTap: () => context.push('/feature_handbook'),
+                          ),
+                          _buildMenuTile(
                             icon: Icons.chat_bubble_outline_rounded,
                             iconColor: const Color(0xFF10B981),
                             title: '意见建议 / 客服',

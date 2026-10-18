@@ -32,7 +32,7 @@ void main() {
     expect(find.text(level.name), findsOneWidget);
     expect(find.text('LV.${level.level}'), findsOneWidget);
     expect(find.text(level.icon), findsOneWidget);
-    expect(find.text('晋升奖励 +90 魔法泡泡'), findsOneWidget);
+    expect(find.text('晋升奖励 +90 智慧果'), findsOneWidget);
     expect(find.text('开心收下'), findsOneWidget);
     expect(find.text('成长之路'), findsOneWidget);
 

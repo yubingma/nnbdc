@@ -255,27 +255,27 @@ class RussiaPageState extends State<RussiaPage>
     if (isBattle) {
       return (
         title: quitBattle ? '离开这一局' : '换一个房间',
-        body: '本局还没分出胜负，离开会判为战败：按战败扣除积分和魔法泡泡，对手判胜。',
+        body: '本局还没分出胜负，离开会判为战败：按战败扣除积分和智慧果，对手判胜。',
         confirmLabel: '判负离开',
       );
     }
     if (inPrivateRoom && !opponentPresent) {
       return (
         title: quitBattle ? '离开会解散房间' : '换房间会解散房间',
-        body: '练习不计分、也不扣魔法泡泡。房里只剩你一个人，你这一走房间就散了，房号作废。',
+        body: '练习不计分、也不扣智慧果。房里只剩你一个人，你这一走房间就散了，房号作废。',
         confirmLabel: '解散并离开',
       );
     }
     if (inPrivateRoom) {
       return (
         title: quitBattle ? '退出这个房间' : '换一个房间',
-        body: '练习不计分、也不扣魔法泡泡。离开只是你自己退出去，房间和房号都还在，对方可以继续留在这里。',
+        body: '练习不计分、也不扣智慧果。离开只是你自己退出去，房间和房号都还在，对方可以继续留在这里。',
         confirmLabel: '退出房间',
       );
     }
     return (
       title: quitBattle ? '结束这次练习' : '换一个房间',
-      body: '练习不计分、也不扣魔法泡泡。离开后就退出匹配了，想再练可以从大厅重新开始。',
+      body: '练习不计分、也不扣智慧果。离开后就退出匹配了，想再练可以从大厅重新开始。',
       confirmLabel: '结束练习',
     );
   }
@@ -948,7 +948,7 @@ class RussiaPageState extends State<RussiaPage>
 
     socket.off('noEnoughCowDung');
     socket.on('noEnoughCowDung', (cowDungPerGame) {
-      ToastUtil.error('魔法泡泡不足，无法开始游戏！\n至少需要: ${cowDungPerGame ?? 10}');
+      ToastUtil.error('智慧果不足，无法开始游戏！\n至少需要: ${cowDungPerGame ?? 10}');
     });
 
     // 按房号进房失败（房号打错、房间已满、房主已经散了）：
@@ -1449,8 +1449,6 @@ class RussiaPageState extends State<RussiaPage>
     if (currWord == null) return;
 
     final mediaQuery = MediaQuery.maybeOf(context);
-    final topPadding = max(mediaQuery?.padding.top ?? 44.0, 16.0);
-    final double barrierY = topPadding + 130.0;
     final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
     final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
     final double bottomBarTopY = size.height - bottomBarHeight;
@@ -1624,9 +1622,6 @@ class RussiaPageState extends State<RussiaPage>
     final size = mediaQuery?.size ?? const Size(390, 844);
     final topPadding = max(mediaQuery?.padding.top ?? 44.0, 16.0);
     final double barrierY = topPadding + 130.0;
-    final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
-    final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
-    final double bottomBarTopY = size.height - bottomBarHeight;
 
     // 水波相位与氛围微泡漂浮（全局活跃）
     wavePhase += dt * 2.2;
@@ -3926,11 +3921,11 @@ class RussiaPageState extends State<RussiaPage>
                             Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
                             const SizedBox(height: 8),
 
-                            // 魔法泡泡资产与变动
+                            // 智慧果资产与变动
                             _buildStatRow(
-                              icon: Icons.bubble_chart_rounded,
-                              iconColor: const Color(0xFF38BDF8),
-                              label: '魔法泡泡',
+                              icon: Icons.eco_rounded,
+                              iconColor: const Color(0xFF10B981),
+                              label: '智慧果',
                               valueText: '$displayCowDung',
                               deltaText: displayCowDungAdjust >= 0 ? '+$displayCowDungAdjust' : '$displayCowDungAdjust',
                               isPositive: displayCowDungAdjust >= 0,

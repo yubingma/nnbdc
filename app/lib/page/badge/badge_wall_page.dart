@@ -408,9 +408,9 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '魔法泡泡 +${badge?.rewardBubbles ?? 0}',
+                      '智慧果 +${badge?.rewardBubbles ?? 0}',
                       style: const TextStyle(
-                        color: Color(0xFF0284C7),
+                        color: Color(0xFFD97706),
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         fontFamily: 'Roboto',

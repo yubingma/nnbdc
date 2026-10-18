@@ -218,26 +218,26 @@ class BadgeAwardDialog extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // 奖励魔法泡泡
+              // 奖励智慧果
               if (rewardBubbles > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF38BDF8).withValues(alpha: 0.12),
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFF38BDF8).withValues(alpha: 0.3),
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('🫧', style: TextStyle(fontSize: 14)),
+                      const Text('🍒', style: TextStyle(fontSize: 14)),
                       const SizedBox(width: 6),
                       Text(
-                        '获得奖励: 魔法泡泡 +$rewardBubbles',
+                        '获得奖励: 智慧果 +$rewardBubbles',
                         style: const TextStyle(
-                          color: Color(0xFF38BDF8),
+                          color: Color(0xFFF59E0B),
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),

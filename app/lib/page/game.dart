@@ -32,6 +32,8 @@ class _GamePageState extends State<GamePage> {
   /// 当前选中的游戏类型：'bubble'（戳泡泡）、'brick'（削砖块）、'monster'（打哭小馋怪）
   String _selectedGame = 'bubble';
 
+  String get _targetGameRoute => _selectedGame == 'brick' ? '/brick' : '/russia';
+
   /// 用户当前正在学习的主词书名称（用于针对性练习专属场）
   String? _currentLearningDictName;
 
@@ -864,7 +866,7 @@ class _GamePageState extends State<GamePage> {
                   borderRadius: BorderRadius.circular(12),
                   onTap: () {
                     final hall = gameHallDataResult!.hallGroups.first.gameHalls.first;
-                    context.push('/russia', extra: [
+                    context.push(_targetGameRoute, extra: [
                       hall,
                       null,
                       {'gameMode': _selectedGame}
@@ -1033,7 +1035,7 @@ class _GamePageState extends State<GamePage> {
                 onTap: () async {
                   final int? roomId = await _promptRoomId(context);
                   if (roomId != null && mounted) {
-                    context.push('/russia', extra: [
+                    context.push(_targetGameRoute, extra: [
                       hall,
                       null,
                       {
@@ -1057,7 +1059,7 @@ class _GamePageState extends State<GamePage> {
                 ),
               ),
               InkWell(
-                onTap: () => context.push('/russia', extra: [
+                onTap: () => context.push(_targetGameRoute, extra: [
                   hall,
                   null,
                   {
@@ -1081,7 +1083,7 @@ class _GamePageState extends State<GamePage> {
               const SizedBox(width: 8),
               InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () => context.push('/russia', extra: [
+                onTap: () => context.push(_targetGameRoute, extra: [
                   hall,
                   null,
                   {'gameMode': _selectedGame}

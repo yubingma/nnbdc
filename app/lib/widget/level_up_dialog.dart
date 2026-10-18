@@ -164,10 +164,10 @@ class LevelUpDialog extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('🫧', style: TextStyle(fontSize: 13)),
+                        const Text('🍒', style: TextStyle(fontSize: 13)),
                         const SizedBox(width: 6),
                         Text(
-                          '晋升奖励 +$rewardBubbles 魔法泡泡',
+                          '晋升奖励 +$rewardBubbles 智慧果',
                           style: TextStyle(fontSize: 12.5, color: subTextColor),
                         ),
                       ],
