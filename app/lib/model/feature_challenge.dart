@@ -257,16 +257,16 @@ class FeatureChallengeRepository {
     ),
     FeatureChallenge(
       id: 'tip_feed_pet',
-      category: '功能技巧',
+      category: '陪伴宠物',
       title: '智慧果的作用',
       question: '学习和答题获得的智慧果，主要用于什么？',
       options: [
-        '在打卡完成后投喂守护兽，或在游戏大厅参与对战',
+        '在打卡完成后投喂小宠物，或在游戏大厅参与对战',
         '兑换手机话费',
         '抵扣软件会员费用',
       ],
       correctIndex: 0,
-      explanation: '智慧果可以在打卡页投喂守护兽（累计投喂会升级变身），也可以在游戏大厅用于排位对战。',
+      explanation: '智慧果可以在打卡页投喂小宠物（累计投喂会升级变身），也可以在游戏大厅用于排位对战。',
     ),
     FeatureChallenge(
       id: 'tip_daka_rate',

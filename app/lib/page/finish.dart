@@ -115,7 +115,7 @@ class FinishPageState extends State<FinishPage> {
       });
       final stage = PetGameBo.stages[result.state.stageIndex];
       if (result.leveledUp) {
-        ToastUtil.success('守护兽进化成了「${stage.name}」');
+        ToastUtil.success('小宠物进化成了「${stage.name}」');
       } else {
         ToastUtil.success('已投喂 1 颗智慧果');
       }
@@ -548,7 +548,7 @@ class FinishPageState extends State<FinishPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '记忆守护兽 · ${stage.name}',
+                          '小宠物 · ${stage.name}',
                           style: TextStyle(
                             color: themeConfig.textSecondary,
                             fontSize: 12,
