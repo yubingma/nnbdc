@@ -191,14 +191,14 @@ void main() {
     final notifier = container.read(bdcNotifierProvider.notifier);
     await notifier.loadData(FakeBuildContext());
     final state = container.read(bdcNotifierProvider);
-    print('loadData 完成: word=${state.word?.spell}, error=${state.loadError}, cause=${state.loadErrorCause}');
+    print('loadData 完成: word=${state.word?.spell}, step=${state.studyStep}, words=${state.words?.map((w)=>w.spell).toList()}, otherWords=${state.currentGetWordResult?.otherWords?.map((w)=>w.spell).toList()}, error=${state.loadError}, cause=${state.loadErrorCause}');
 
     print('模拟掌握当前词并流转下一个词...');
     notifier.updateHasFinishedAnswering(true);
     notifier.updateIsWordMastered(true);
     final nextSuccess = await notifier.getNextWord(true);
     final stateAfter = container.read(bdcNotifierProvider);
-    print('getNextWord(true) 结果: nextSuccess=$nextSuccess, word=${stateAfter.word?.spell}, error=${stateAfter.loadError}, cause=${stateAfter.loadErrorCause}');
+    print('getNextWord(true) 结果: nextSuccess=$nextSuccess, word=${stateAfter.word?.spell}, step=${stateAfter.studyStep}, words=${stateAfter.words?.map((w)=>w.spell).toList()}, otherWords=${stateAfter.currentGetWordResult?.otherWords?.map((w)=>w.spell).toList()}, error=${stateAfter.loadError}, cause=${stateAfter.loadErrorCause}');
   });
 }
 

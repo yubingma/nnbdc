@@ -18,7 +18,14 @@ import '../widget/page_back_button.dart';
 /// 答案箱和桥两侧的余地；竖屏下桥只能占中间窄窄一条，两侧全是空白。
 /// 因此这里像随身听页一样自管屏幕方向，离开时恢复竖屏。
 class MonsterPage extends StatefulWidget {
-  const MonsterPage({super.key});
+  const MonsterPage({
+    super.key,
+    this.dictId,
+    this.dictName,
+  });
+
+  final String? dictId;
+  final String? dictName;
 
   @override
   State<MonsterPage> createState() => _MonsterPageState();
@@ -73,7 +80,9 @@ class _MonsterPageState extends State<MonsterPage> {
               child: Padding(
                 padding: const EdgeInsets.only(right: 20, bottom: 14),
                 child: Text(
-                  '小馋怪正朝你走来',
+                  widget.dictName != null
+                      ? '《${widget.dictName}》特训 · 小馋怪正朝你走来'
+                      : '小馋怪正朝你走来',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,

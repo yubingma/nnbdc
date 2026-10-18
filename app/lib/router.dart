@@ -65,7 +65,16 @@ final goRouter = GoRouter(
     ),
     GoRoute(path: '/walkman', builder: (context, state) => const WalkmanPage()),
     GoRoute(path: '/game', builder: (context, state) => const GamePage()),
-    GoRoute(path: '/monster', builder: (context, state) => const MonsterPage()),
+    GoRoute(
+      path: '/monster',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return MonsterPage(
+          dictId: extra?['dictId'] as String?,
+          dictName: extra?['dictName'] as String?,
+        );
+      },
+    ),
     GoRoute(path: '/russia', builder: (context, state) => const RussiaPage()),
     GoRoute(path: '/brick', builder: (context, state) => const BrickPage()),
     GoRoute(path: '/word_detail', builder: (context, state) => const WordDetailPage()),

@@ -9,6 +9,7 @@ import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/tts.dart';
 import '../api/vo.dart';
 import '../global.dart';
+import '../util/prefs.dart';
 import '../util/word_pack_queue.dart';
 
 /// 削砖块 · 下落方块实体
@@ -177,6 +178,7 @@ class BrickPageState extends State<BrickPage>
   final List<Map<String, dynamic>> _pendingUserCmds = [];
   final Tts _tts = Tts();
 
+  late final _BrickSocketStatusListener _socketStatusListener;
   bool isIntroPlaying = false;
   double introProgress = 0.0;
   final Duration introDuration = const Duration(milliseconds: 1400);
@@ -200,11 +202,22 @@ class BrickPageState extends State<BrickPage>
       ));
     }
 
+    SocketIoClient.instance.connect();
+    SocketIoClient.instance.setInRussiaGame(true);
+    _socketStatusListener = _BrickSocketStatusListener(this);
+    SocketIoClient.instance.registerSocketStatusListener(_socketStatusListener);
+
     _ticker = createTicker(_onTick)..start();
-    _initGameConnection();
   }
 
-  Future<void> _initGameConnection() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (dataLoaded) return;
     final routeArgs = GoRouterState.of(context).extra;
     if (routeArgs == null || routeArgs is! List || routeArgs.isEmpty) {
       ToastUtil.error('进入房间参数错误');
@@ -222,15 +235,14 @@ class BrickPageState extends State<BrickPage>
     myUserId = user?.id ?? '';
     myNickName = user?.nickName ?? '我';
 
-    SocketIoClient.instance.connect();
-    SocketIoClient.instance.setInRussiaGame(true);
-
-    setState(() {
-      dataLoaded = true;
-    });
-
     _setupSocketListeners();
     _enterHallAndRoom();
+
+    if (mounted) {
+      setState(() {
+        dataLoaded = true;
+      });
+    }
   }
 
   void _setupSocketListeners() {
@@ -388,16 +400,39 @@ class BrickPageState extends State<BrickPage>
   }
 
   void sendUserCmd(String cmd, List<dynamic> args) {
-    final user = Global.getLoggedInUser();
-    if (user == null) return;
-    final payload = [user.id, 'russia', cmd, ...args];
     final socket = SocketIoClient.instance.socket;
+    final payload = {
+      'system': 'russia',
+      'cmd': cmd,
+      'args': args,
+    };
     if (!socket.connected) {
-      _pendingUserCmds.add({'cmd': cmd, 'payload': payload});
+      _pendingUserCmds.add(payload);
+      Global.logger.w('SocketIoClient: 连接已断开，指令[$cmd]排队等待重连补发');
       return;
     }
     socket.emit('userCmd', payload);
   }
+
+  void _flushPendingUserCmds() {
+    if (_pendingUserCmds.isEmpty) return;
+    final socket = SocketIoClient.instance.socket;
+    if (!socket.connected) return;
+
+    final queue = List<Map<String, dynamic>>.from(_pendingUserCmds);
+    _pendingUserCmds.clear();
+    Global.logger.d('SocketIoClient: 重连后补发 ${queue.length} 条排队指令');
+    for (final payload in queue) {
+      socket.emit('userCmd', payload);
+    }
+  }
+
+  void _onSocketReconnected() {
+    if (!mounted) return;
+    _flushPendingUserCmds();
+  }
+
+  void _onSocketDisconnected() {}
 
   void _onGameStart() {
     setState(() {
@@ -681,20 +716,26 @@ class BrickPageState extends State<BrickPage>
       text: reason,
       color: const Color(0xFFEF4444),
     ));
+
+    sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
+    if (myHp <= 0) {
+      sendUserCmd('GAME_OVER', ['A']);
+    }
   }
 
   void _useProps(int propsIdx) {
     if (!isPlaying) return;
     if (propsIdx == 0 && propsMine > 0) {
       propsMine--;
-      sendUserCmd('PROPS', [propsIdx]);
+      sendUserCmd('USE_PROPS', [propsIdx]);
       _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '🚀 导弹发射!', color: const Color(0xFFEF4444)));
       setState(() => opponentHp = max(0, opponentHp - 1));
     } else if (propsIdx == 1 && propsStarfish > 0) {
       propsStarfish--;
-      sendUserCmd('PROPS', [propsIdx]);
+      sendUserCmd('USE_PROPS', [propsIdx]);
       _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '✨ 防线修复 +1!', color: const Color(0xFF10B981)));
       setState(() => myHp = min(maxHp, myHp + 1));
+      sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
     }
   }
 
@@ -748,9 +789,14 @@ class BrickPageState extends State<BrickPage>
   @override
   void dispose() {
     _ticker.dispose();
-    _cleanupSocketListeners();
+    _tts.stop();
     SocketIoClient.instance.setInRussiaGame(false);
-    sendUserCmd('EXIT_GAME_HALL', []);
+    SocketIoClient.instance.removeSocketStatusListener(_socketStatusListener);
+    _cleanupSocketListeners();
+    sendUserCmd('LEAVE_HALL', []);
+    SocketIoClient.instance.disconnect();
+    LoadingUtils.enableApiLoading();
+    Prefs.applyFullScreenMode();
     super.dispose();
   }
 
@@ -1193,4 +1239,16 @@ class _BrickScenePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _BrickScenePainter oldDelegate) => true;
+}
+
+class _BrickSocketStatusListener implements SocketStatusListener {
+  _BrickSocketStatusListener(this.page);
+
+  final BrickPageState page;
+
+  @override
+  void onConnected() => page._onSocketReconnected();
+
+  @override
+  void onDisconnected() => page._onSocketDisconnected();
 }

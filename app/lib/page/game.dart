@@ -448,15 +448,15 @@ class _GamePageState extends State<GamePage> {
                   child: _buildSelectedGameShowcase(themeConfig),
                 ),
 
-                // 1.7 针对性强化的「自选词书专属特训场」（支持自定义与正在学习的词书精准对战）
+                // 1.7 针对性强化的「自选词书专属特训场」（三款游戏均支持自定义与在学词书精准特训/对战）
+                SliverToBoxAdapter(
+                  child: _buildCurrentDictSection(themeConfig),
+                ),
+
+                // 2. 主内容区域（多人房间列表仅在戳泡泡和削砖块模式展示）
                 if (_selectedGame != 'monster')
                   SliverToBoxAdapter(
-                    child: _buildCurrentDictSection(themeConfig),
-                  ),
-
-                // 2. 主内容区域
-                SliverToBoxAdapter(
-                  child: errorMessage != null
+                    child: errorMessage != null
                       ? Container(
                           height: 360,
                           alignment: Alignment.center,
@@ -713,7 +713,7 @@ class _GamePageState extends State<GamePage> {
     }
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 4, 16, isMonster ? 20 : 12),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: FrostedGlassCard(
         borderRadius: 22,
         child: Padding(
@@ -788,7 +788,10 @@ class _GamePageState extends State<GamePage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => context.push('/monster'),
+                    onPressed: () => context.push('/monster', extra: {
+                      'dictId': _selectedTrainingDict?.id,
+                      'dictName': _selectedTrainingDict?.name,
+                    }),
                     icon: const Icon(Icons.play_arrow_rounded, size: 20),
                     label: const Text(
                       '进入守桥挑战',
@@ -870,6 +873,14 @@ class _GamePageState extends State<GamePage> {
       return;
     }
 
+    if (_selectedGame == 'monster') {
+      context.push('/monster', extra: {
+        'dictId': _selectedTrainingDict!.id,
+        'dictName': _selectedTrainingDict!.name,
+      });
+      return;
+    }
+
     final hall = _findBestHallForDict(_selectedTrainingDict);
     if (hall == null) {
       ToastUtil.error('暂无可用的游戏对战场次');
@@ -897,7 +908,9 @@ class _GamePageState extends State<GamePage> {
     final dictName = _selectedTrainingDict?.name ?? '点击选择特训词书';
     final dictInfo = hasDict
         ? '已选定 · 共 ${_selectedTrainingDict!.wordCount} 词 · 点击可切换'
-        : '挑选正在学习或自定义的词书进行对战';
+        : (_selectedGame == 'monster'
+            ? '挑选正在学习或自定义的词书进行守桥特训'
+            : '挑选正在学习或自定义的词书进行对战');
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -948,9 +961,9 @@ class _GamePageState extends State<GamePage> {
                             color: const Color(0xFFFF9800).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
-                            '精准PK',
-                            style: TextStyle(
+                          child: Text(
+                            _selectedGame == 'monster' ? '守桥特训' : '精准PK',
+                            style: const TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFFFF9800),
@@ -1055,13 +1068,13 @@ class _GamePageState extends State<GamePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.bolt_rounded,
+                            _selectedGame == 'monster' ? Icons.play_arrow_rounded : Icons.bolt_rounded,
                             size: 15,
                             color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            '开始对战',
+                            _selectedGame == 'monster' ? '开始守桥' : '开始对战',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
