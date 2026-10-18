@@ -3448,6 +3448,13 @@ extension BdcPageStateUIComponents on BdcPageState {
     final meaningColor = state.isLatestAnswerWrongToday
         ? const Color(0xFFE53935)
         : context.textPrimary;
+    final meaningStyle = TextStyle(
+      fontSize: meaningFontSize,
+      fontWeight: FontWeight.w600,
+      color: meaningColor,
+      height: 1.4,
+      letterSpacing: 0.0,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -3502,20 +3509,16 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 EdgeInsets.symmetric(vertical: itemVerticalGap),
                             child: Text.rich(
                               TextSpan(
+                                style: meaningStyle,
                                 children: MeaningRenderUtil.buildMeaningSpans(
                                   item: item,
-                                  meaningStyle: TextStyle(
-                                    fontSize: meaningFontSize,
-                                    fontWeight: FontWeight.w600,
-                                    color: meaningColor,
-                                    height: 1.4,
-                                    letterSpacing: 0.0,
-                                  ),
+                                  meaningStyle: meaningStyle,
                                   dotColor: meaningColor,
                                   showDots: MeaningRenderUtil.hasMultipleMeanings(displayItems),
                                   textTransformer: notifier.hideParenthesesContent,
                                 ),
                               ),
+                              style: meaningStyle,
                               textAlign: TextAlign.start,
                             ),
                           ),

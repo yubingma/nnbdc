@@ -160,4 +160,11 @@ For multi-step tasks, state a brief plan:
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]
 
+## 功能演进与 FAQ 互动题库同步铁律
+- **联动维护原则**：打卡页的「每日一题」与「功能秘籍」题库（`app/lib/model/feature_challenge.dart`）是用户探索 App 核心机制、隐藏技巧与消除疑虑的第一窗口。
+- **改动即同步**：今后在**新增业务功能**、**调整交互入口**、或**修改既有功能底层逻辑**时，必须同步检查并维护该题库：
+  1. **过时题目修正**：若修改了既有功能的规则（如设置入口、排程算法、移出逻辑等），必须优先检索题库，及时订正受影响题目的题干、选项与解析，严禁代码已改但题库仍教用户旧操作。
+  2. **新功能题目沉淀**：若上线了容易被忽略的亮点功能或专项机制，主动在 `feature_challenge.dart` 中追加 1~2 道客观真实、幽默生动的互动选择题（首项为正确答案 `correctIndex: 0`）。
+  3. **测试闭环**：题库增改后，必须运行 `flutter test test/feature_challenge_service_test.dart`，确保数量契约与测试全绿。
+
 
