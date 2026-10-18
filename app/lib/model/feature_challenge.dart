@@ -178,6 +178,19 @@ class FeatureChallengeRepository {
       explanation: '在「我」页面的「释义展示」设置中，可选择只看最常用的 1 条、3 条或 5 条释义，减少冗余信息。',
     ),
     FeatureChallenge(
+      id: 'tip_meaning_frequency_dot',
+      category: '功能技巧',
+      title: '释义末尾圆圈的作用',
+      question: '多义词的每个释义末尾带有大小不同的小圆圈，这代表什么？',
+      options: [
+        '代表该释义在真实语料中的常用度/出现频次，圆圈越大表示越常用',
+        '代表用户自己对该释义的掌握熟练度',
+        '点击小圆圈可以隐藏或删除该释义',
+      ],
+      correctIndex: 0,
+      explanation: '小圆圈代表该释义的常用度。圆圈越大越明显，表示在真实语境中使用频率越高；圆圈越小则表示越次要或生僻，方便背词时优先抓住核心高频义项。',
+    ),
+    FeatureChallenge(
       id: 'tip_learning_pipeline',
       category: '学习规划',
       title: '调整学习环节流水线',
