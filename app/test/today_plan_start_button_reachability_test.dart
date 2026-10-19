@@ -265,10 +265,11 @@ void main() {
     // 内容比屏幕高时（小屏/横屏/大字号）用户能滚动到底，按钮必须仍然可点
     final scrollable = find.byType(Scrollable);
     if (scrollable.evaluate().isNotEmpty) {
-      await tester.drag(scrollable.first, const Offset(0, -800));
-      await tester.pumpAndSettle();
-      await tester.drag(scrollable.first, const Offset(0, -800));
-      await tester.pumpAndSettle();
+      final scrollableState = tester.state<ScrollableState>(scrollable.first);
+      if (scrollableState.position.maxScrollExtent > 0) {
+        scrollableState.position.jumpTo(scrollableState.position.maxScrollExtent);
+        await tester.pumpAndSettle();
+      }
     }
 
     expect(tester.takeException(), isNull, reason: '任何分辨率下都不允许溢出报错');

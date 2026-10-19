@@ -16,7 +16,9 @@
 #
 # 凭证：
 #   服务器密码   取环境变量 nnbdc_server_pwd（~/.zprofile 里已有）
-#   阿里云 AK/SK 复用服务器上已有的 /etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh
+#   阿里云 AK/SK 复用服务器上已有的 /root/.aliyun_dns_creds
+#   （2026-10-13 证书续期从 certbot 迁到 acme.sh 后，凭证从
+#     /etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh 搬到了这里）
 #   本仓库不保存、也不在命令行上传递任何密钥。
 # ==============================================================================
 set -e
@@ -30,7 +32,7 @@ SERVER_USER="root"
 WEB_ROOT="/var/www/html"
 SITE_HOST="www.nnbdc.com"
 CDN_REGION="cn-hangzhou"
-CDN_CRED_FILE="/etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh"
+CDN_CRED_FILE="/root/.aliyun_dns_creds"
 
 VERIFY_RETRIES=12     # 公网校验重试次数
 VERIFY_WAIT=5         # 每次间隔（秒）
