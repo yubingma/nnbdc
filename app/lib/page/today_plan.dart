@@ -4034,17 +4034,39 @@ class TodayPlanPageState extends State<TodayPlanPage>
 
         dot(),
 
-        // 2. 每组单词数
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(
-            '每组 $batchSize 词',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: ink.muted,
-              letterSpacing: 0.3,
-              shadows: shadows,
+        // 2. 每组单词数（未开始时点它从底部滑出每组词量设置，已开始时提示已锁定）
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            if (isStarted) {
+              ToastUtil.info('今日学习已开始，设置已锁定');
+              return;
+            }
+            _showBatchSizeSheet();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '每组 $batchSize 词',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: ink.muted,
+                    letterSpacing: 0.3,
+                    shadows: shadows,
+                  ),
+                ),
+                const SizedBox(width: 3),
+                Icon(
+                  isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
+                  size: isStarted ? 11.5 : 13.5,
+                  color: ink.muted,
+                  shadows: shadows,
+                ),
+              ],
             ),
           ),
         ),
@@ -4387,6 +4409,237 @@ class TodayPlanPageState extends State<TodayPlanPage>
     );
   }
 
+  /// 应用新的「每组词数」（仅在今日尚未开始学习时可调用）。
+  Future<void> _applyBatchSize(int value) async {
+    final current = user;
+    if (current == null) return;
+    if (current.todayStudyStarted == true) {
+      ToastUtil.info('今日学习已开始，设置已锁定');
+      return;
+    }
+    final config = StudyConfig.fromCurrentUser();
+    if (value == config.batchSize) return;
+
+    config.batchSize = value;
+    await config.saveToCurrentUser();
+    ThrottledDbSyncService().requestSync();
+
+    if (mounted) {
+      setState(() {});
+      await loadData(forceSupplement: false);
+    }
+  }
+
+  /// 底部滑出的「每组单词数量」弹窗。
+  /// 视觉与交互完全对齐「每日单词数量」弹窗：上圆角 28、磨砂 7、顶部渐变 + 上浮阴影、
+  /// 顶部拖拽把手、4 列规整网格、点击即选中保存（不需要额外确认按钮）。
+  void _showBatchSizeSheet() {
+    _dismissPetSpeech();
+    if (user?.todayStudyStarted == true) {
+      ToastUtil.info('今日学习已开始，设置已锁定');
+      return;
+    }
+    final darkMode = context.read<DarkMode>();
+    final isDarkMode = darkMode.isDarkMode;
+    final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
+    final primaryColor = themeConfig.primaryColor;
+    final config = StudyConfig.fromCurrentUser();
+    final currentValue = config.effectiveBatchSize(user?.effectiveWordsPerDay ?? 0);
+    const defaultBatchOptions = <int>[3, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100, 150, 200, 300];
+    final batchOptions = List<int>.from(defaultBatchOptions);
+    if (!batchOptions.contains(currentValue) && currentValue > 0) {
+      batchOptions.add(currentValue);
+      batchOptions.sort();
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.15),
+      isScrollControlled: true,
+      builder: (ctx) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDarkMode
+                      ? [const Color(0xB8161B26), const Color(0x9910141D)]
+                      : [const Color(0x66FFFFFF), const Color(0x4DFFFFFF)],
+                ),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                    width: 1.2,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, -6),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 顶部居中拖拽把手
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      // 标题栏（主副标题 + 轻圆关闭按钮）
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '选择每组学习词数',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '每组学完即刻循环巩固，组越小回温越快',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
+                                ),
+                              ),
+                            ],
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.08)
+                                    : Colors.black.withValues(alpha: 0.04),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 16,
+                                color: isDarkMode ? Colors.white60 : Colors.black54,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // 4 列规整网格
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: batchOptions.length,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 9,
+                          crossAxisSpacing: 9,
+                          childAspectRatio: 1.9,
+                        ),
+                        itemBuilder: (context, index) {
+                          final v = batchOptions[index];
+                          final isSelected = v == currentValue;
+
+                          return GestureDetector(
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              await _applyBatchSize(v);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? primaryColor
+                                    : (isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.05)
+                                        : Colors.white.withValues(alpha: 0.35)),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.transparent
+                                      : (isDarkMode ? const Color(0x20FFFFFF) : const Color(0x80FFFFFF)),
+                                  width: 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: primaryColor.withValues(alpha: 0.32),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '$v',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
+                                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                                      fontSize: 15,
+                                      fontFamily: 'Roboto',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '词',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white.withValues(alpha: 0.88)
+                                          : (isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 6),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   void _showAdvancedSettingsDialog() async {
     _dismissPetSpeech();

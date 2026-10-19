@@ -12,6 +12,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:toastification/toastification.dart';
 
 /// 今日计划页"已打卡"印章的回归测试。
 ///
@@ -60,6 +61,7 @@ void main() {
     required bool dakaed,
     int extraWords = 0,
     int extraDone = 0,
+    bool studyStarted = true,
   }) async {
     const String userId = 'test_user_id';
     final user = User(
@@ -83,7 +85,7 @@ void main() {
       masteredWordsCount: 0,
       maxContinuousDakaDayCount: 1,
       continuousDakaDayCount: 1,
-      todayStudyStarted: true,
+      todayStudyStarted: studyStarted,
       lastLearningDate: now,
       totalLearningSeconds: 0,
       todayLearningSeconds: 0,
@@ -161,7 +163,7 @@ void main() {
             isTodayNewWord: true,
             learnedTimes: learnedTimes,
             todayLearnedTimes: learnedTimes,
-            lastLearningDate: now,
+            lastLearningDate: learnedTimes > 0 ? now : null,
             learningOrder: 0,
             createTime: now,
             updateTime: now,
@@ -171,7 +173,7 @@ void main() {
 
     // 计划词今日已走完各自轨道（学到远超轨道的次数即视为今日已完成）
     for (int i = 1; i <= 5; i++) {
-      await addLearningWord('word_$i', 1, false, 99);
+      await addLearningWord('word_$i', 1, false, studyStarted ? 99 : 0);
     }
     // 加量的前 extraDone 个词已学完，其余还等着继续学
     for (int i = 1; i <= extraWords; i++) {
@@ -183,14 +185,16 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<DarkMode>.value(
         value: DarkMode(),
-        child: MaterialApp(
-          // 真机（荣耀 KKG-AN00）系统字号是 1.15 倍：加量态的数字行正是在这个档位溢出过，
-          // 所以溢出回归必须能在放大字号下复现，否则等于没守。
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
-            child: child!,
+        child: ToastificationWrapper(
+          child: MaterialApp(
+            // 真机（荣耀 KKG-AN00）系统字号是 1.15 倍：加量态的数字行正是在这个档位溢出过，
+            // 所以溢出回归必须能在放大字号下复现，否则等于没守。
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+              child: child!,
+            ),
+            home: const TodayPlanPage(),
           ),
-          home: const TodayPlanPage(),
         ),
       ),
     );
@@ -356,6 +360,36 @@ void main() {
     expect(find.text('完成'), findsNothing, reason: '收起轨道后应自动退出编辑态');
     expect(find.text('继续学习'), findsOneWidget, reason: '底部主操作按钮不能消失');
     expect(find.byType(Image), findsWidgets, reason: '小宠物组件不能消失');
+
+    await tester.pump(const Duration(seconds: 60));
+  });
+
+  testWidgets('首页顶部点击「每组 xx 词」：从底部滑出选择每组词数弹窗，选择后即时生效', (tester) async {
+    await seedTodayPlan(dakaed: false, studyStarted: false);
+    await pumpTodayPlan(tester);
+    await pumpUntil(tester, find.textContaining('每组'));
+
+    // 1. 初始状态下顶部流水线展示每组词数
+    final batchTextFinder = find.textContaining('每组');
+    expect(batchTextFinder, findsOneWidget);
+
+    // 2. 点击「每组 xx 词」触发底部弹窗
+    await tester.tap(batchTextFinder);
+    await tester.pumpAndSettle();
+
+    // 3. 断言滑出了「选择每组学习词数」弹窗
+    expect(find.text('选择每组学习词数'), findsOneWidget, reason: '成功滑出每组词数设置弹窗');
+    expect(find.text('每组学完即刻循环巩固，组越小回温越快'), findsOneWidget);
+
+    // 4. 点击选择 20 词
+    final option20 = find.widgetWithText(GestureDetector, '20');
+    expect(option20, findsWidgets);
+    await tester.tap(option20.first);
+    await tester.pumpAndSettle();
+
+    // 5. 弹窗已关闭，顶部流水线更新为「每组 20 词」
+    expect(find.text('选择每组学习词数'), findsNothing, reason: '选中后弹窗自动关闭');
+    expect(find.text('每组 20 词'), findsOneWidget, reason: '每组词数更新为 20 词');
 
     await tester.pump(const Duration(seconds: 60));
   });
