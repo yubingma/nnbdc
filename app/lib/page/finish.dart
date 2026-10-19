@@ -28,7 +28,6 @@ import '../services/user_privilege_manager.dart';
 import '../widget/daka_poster.dart';
 import '../widget/daka_poster_dialog.dart';
 import '../widget/daka_stamp_badge.dart';
-import '../widget/daily_tip_challenge_card.dart';
 import '../widget/guardian_pet.dart';
 import 'index.dart';
 import 'bdc/models/bdc_page_args.dart';
@@ -308,15 +307,6 @@ class FinishPageState extends State<FinishPage> {
             _buildMetricsCard(themeConfig),
             const SizedBox(height: 14),
           ],
-          DailyTipChallengeCard(
-            onFruitAwarded: () {
-              final user = Global.getLoggedInUser();
-              if (user != null && mounted) {
-                setState(() => cowDung = user.cowDung);
-              }
-            },
-          ),
-          const SizedBox(height: 14),
           if (isAdmin) ...[
             _buildPetCard(themeConfig),
             const SizedBox(height: 14),
@@ -665,6 +655,16 @@ class FinishPageState extends State<FinishPage> {
                 title: '前往词表',
                 subtitle: '复习今日学习的单词',
                 onTap: () => context.go('/index', extra: IndexPageArgs(1)),
+              ),
+              _buildActionDivider(themeConfig),
+              _buildActionItem(
+                themeConfig,
+                key: const Key('finish_feature_handbook_btn'),
+                icon: Icons.lightbulb_outline_rounded,
+                iconColor: const Color(0xFFF59E0B),
+                title: '玩转技巧与常见问题',
+                subtitle: '探索 App 隐藏机制与高频解答',
+                onTap: () => context.push('/feature_handbook'),
               ),
               _buildActionDivider(themeConfig),
               _buildActionItem(

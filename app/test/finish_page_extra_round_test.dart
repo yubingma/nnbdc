@@ -297,4 +297,52 @@ void main() {
     expect(find.text('打卡成功'), findsNothing);
     expect(find.text('加量完成'), findsNothing);
   });
+
+  testWidgets('打卡完成页：智慧技能/FAQ不再占中央显要卡片，而是作为菜单项放在"前往词表"下方',
+      (tester) async {
+    await seedDakaedDay(planWords: 5, extraWords: 0);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<DarkMode>.value(
+        value: DarkMode(),
+        child: MaterialApp.router(
+          routerConfig: GoRouter(
+            initialLocation: '/finish',
+            routes: [
+              GoRoute(path: '/finish', builder: (context, state) => const FinishPage()),
+              GoRoute(path: '/index', builder: (context, state) => const Scaffold(body: Text('词表页'))),
+              GoRoute(
+                  path: '/feature_handbook',
+                  builder: (context, state) => const Scaffold(body: Text('玩转技巧页面'))),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    for (int i = 0; i < 200; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+      if (find.text('前往词表').evaluate().isNotEmpty) break;
+    }
+
+    // 1. 中央显要位置不再有智慧锦囊大卡片
+    expect(find.text('今日智慧锦囊'), findsNothing, reason: '中央不再有智慧锦囊卡片');
+
+    // 2. 菜单中包含"前往词表"与紧随其后的"玩转技巧与常见问题"
+    final wordListBtn = find.byKey(const Key('finish_word_list_btn'));
+    final handbookBtn = find.byKey(const Key('finish_feature_handbook_btn'));
+    expect(wordListBtn, findsOneWidget);
+    expect(handbookBtn, findsOneWidget);
+    expect(find.text('玩转技巧与常见问题'), findsOneWidget);
+
+    // 几何顺序：玩转技巧在前往词表下方
+    final wordListBottom = tester.getBottomLeft(wordListBtn).dy;
+    final handbookTop = tester.getTopLeft(handbookBtn).dy;
+    expect(handbookTop, greaterThan(wordListBottom), reason: '玩转技巧必须在前往词表下方');
+
+    // 3. 点击能正确跳转至 /feature_handbook
+    await tester.tap(handbookBtn);
+    await tester.pumpAndSettle();
+    expect(find.text('玩转技巧页面'), findsOneWidget);
+  });
 }

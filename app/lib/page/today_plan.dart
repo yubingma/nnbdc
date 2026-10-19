@@ -3986,6 +3986,11 @@ class TodayPlanPageState extends State<TodayPlanPage>
           ),
         );
 
+    final bool isExtraInProgress = hasDakaToday && _pendingExtraWordCount > 0;
+    final int extraProgress = _extraTotalCount > 0
+        ? ((_extraCompletedCount / _extraTotalCount) * 100).clamp(0, 100).toInt()
+        : 0;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -4046,18 +4051,36 @@ class TodayPlanPageState extends State<TodayPlanPage>
 
         dot(),
 
-        // 3. 当前状态（已打卡 / 学习中 / 未开始）
+        // 3. 当前状态（已打卡 / 学习中 xx% / 未开始）
         _buildCurrentStatusItem(
           ink: ink,
           sealColor: sealColor,
           shadows: shadows,
           isStarted: isStarted,
         ),
+
+        // 4. 若已打卡且有未完成的加量批次，紧接着展示加量进度
+        if (isExtraInProgress) ...[
+          dot(),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              '加量中 $extraProgress%',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: ink.muted,
+                letterSpacing: 0.3,
+                shadows: shadows,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
 
-  /// 状态栏末尾的当前状态：已打卡（翡翠绿 + 对勾）/ 学习中 / 未开始
+  /// 状态栏末尾的当前状态：已打卡（翡翠绿 + 对勾）/ 学习中 xx% / 未开始
   Widget _buildCurrentStatusItem({
     required ({Color primary, Color muted, Color faint}) ink,
     required Color sealColor,
@@ -4090,10 +4113,13 @@ class TodayPlanPageState extends State<TodayPlanPage>
     }
 
     if (isStarted) {
+      final int planProgress = _totalStepCount > 0
+          ? ((_completedStepCount / _totalStepCount) * 100).clamp(0, 100).toInt()
+          : 0;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Text(
-          '学习中',
+          '学习中 $planProgress%',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,

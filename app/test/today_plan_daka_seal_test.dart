@@ -216,6 +216,7 @@ void main() {
 
     expect(seal, findsOneWidget, reason: '今天打过卡，顶部状态流水线要显示已打卡');
     expect(tester.getSemantics(seal).label, '已打卡');
+    expect(find.textContaining('加量中 40%'), findsOneWidget, reason: '加量批次 5 词完成 2 词，顶部状态流水线展示加量进度');
     expect(find.textContaining('每组'), findsOneWidget, reason: '顶部状态流水线要展示每组单词数');
     expect(find.text('目标已锁定'), findsNothing, reason: '印章态不再重复讲"目标已锁定"');
     expect(find.text('继续学习（加量）'), findsOneWidget,
