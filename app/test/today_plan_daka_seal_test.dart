@@ -163,7 +163,7 @@ void main() {
             isTodayNewWord: true,
             learnedTimes: learnedTimes,
             todayLearnedTimes: learnedTimes,
-            lastLearningDate: learnedTimes > 0 ? now : null,
+            lastLearningDate: now,
             learningOrder: 0,
             createTime: now,
             updateTime: now,
