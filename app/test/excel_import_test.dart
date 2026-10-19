@@ -334,6 +334,42 @@ void main() {
       expect(hits['studies'], 'w4');
       expect(hits.containsKey('unknown'), isFalse);
     });
+
+    test('导入系统词库不存在的新词时，自动在本地创建私有 Word 并记录 INSERT 同步日志', () async {
+      await seed();
+
+      final result = await WordBo().addWordsToCustomDict('d1', const [
+        DictWordImportItem(
+          wordId: 'custom_w99',
+          newSpell: 'customrareword',
+          unit: 1,
+          meaning: '自定义罕见词释义',
+          partOfSpeech: 'n.',
+        ),
+      ]);
+
+      expect(result.success, isTrue);
+      expect(result.data!.inserted, 1);
+
+      // 验证本地 words 表中成功落库该新词，且 ownerId 为词书 ownerId ('u1')
+      final createdWord = await (database.select(database.words)
+            ..where((w) => w.id.equals('custom_w99')))
+          .getSingleOrNull();
+      expect(createdWord, isNotNull);
+      expect(createdWord!.spell, 'customrareword');
+      expect(createdWord.ownerId, 'u1');
+
+      // 验证关联到 dictWords
+      final entries = await entriesOf('d1');
+      expect(entries.any((e) => e.wordId == 'custom_w99'), isTrue);
+
+      // 验证 user_db_log 记录了 words 的 INSERT 操作日志
+      final allLogs = await (database.select(database.userDbLogs)).get();
+      final wordLogs = allLogs.where((l) => l.tblName == 'words' && l.recordId == 'custom_w99').toList();
+      expect(wordLogs.length, 1);
+      expect(wordLogs.first.operate, 'INSERT');
+      expect(wordLogs.first.userId, 'u1');
+    });
   });
 
   group('单次导入行数上限', () {

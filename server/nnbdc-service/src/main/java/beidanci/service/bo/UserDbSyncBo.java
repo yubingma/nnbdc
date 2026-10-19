@@ -521,6 +521,7 @@ public class UserDbSyncBo {
             case "learning_log" -> processLearningLogSync(userId, recordJson, operation);
             case "user_study_daily_stat" -> processUserStudyDailyStatSync(userId, recordJson, operation);
             case "user_badge" -> processUserBadgeSync(userId, recordJson, operation);
+            case "word" -> processWordSync(userId, recordJson, operation);
             default -> {
                 String errorMsg = String.format("不支持的表同步: %s, 记录ID: %s, 操作: %s", tableName, log.getRecordId(),
                         operation);
@@ -1619,6 +1620,24 @@ public class UserDbSyncBo {
             }
         }
 
+        if (wanted(wantedTables, "word")) {
+            // 生成用户私有自定义单词全量日志
+            List<WordDto> customWordDtos = wordBo.getCustomWordDtosOfUser(userId);
+            for (WordDto dto : customWordDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "word",
+                        dto.getId(),
+                        JsonUtils.toJson(dto),
+                        dto.getCreateTime(),
+                        dto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
             // mastered_word 全量日志已不再需要：已掌握单词现在作为 dict + dict_word 同步
 
         if (wanted(wantedTables, "user_cow_dung_log")) {
@@ -1800,6 +1819,7 @@ public class UserDbSyncBo {
             ordered.put("user_wrong_word", counts.getOrDefault("user_wrong_word", 0));
             ordered.put("dict_word", counts.getOrDefault("dict_word", 0));
             ordered.put("meaning_item", counts.getOrDefault("meaning_item", 0));
+            ordered.put("word", counts.getOrDefault("word", 0));
             ordered.put("user_cow_dung_log", counts.getOrDefault("user_cow_dung_log", 0));
             ordered.put("learning_log", counts.getOrDefault("learning_log", 0));
             ordered.put("user_study_daily_stats", counts.getOrDefault("user_study_daily_stats", 0));
@@ -1898,6 +1918,57 @@ public class UserDbSyncBo {
                 }
             default -> {
                 String errorMsg = String.format("不支持的释义表操作: %s", operation);
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
+        }
+    }
+
+    /**
+     * 处理用户私有自定义单词同步
+     */
+    private void processWordSync(String userId, String recordJson, String operation) {
+        if (null == operation) {
+            String errorMsg = "不支持的单词表操作: null";
+            logger.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
+        }
+        WordDto wordDto = JsonUtils.makeObject(recordJson, WordDto.class);
+        // 关键安全校验：客户端上报的私有词，所有者必须且只能绑定当前 userId，绝不允许伪造或篡改系统词
+        wordDto.setOwnerId(userId);
+        Word word = Word.fromDto(wordDto);
+        word.setOwnerId(userId);
+
+        switch (operation) {
+            case "INSERT" -> {
+                Word existing = wordBo.findById(word.getId());
+                if (existing == null) {
+                    wordBo.createEntity(word);
+                    logger.info("同步插入用户私有单词成功: id={}, spell={}, userId={}", word.getId(), word.getSpell(), userId);
+                } else {
+                    logger.info("用户私有单词已存在，跳过 INSERT: id={}", word.getId());
+                }
+            }
+            case "UPDATE" -> {
+                Word existing = wordBo.findById(word.getId());
+                if (existing == null) {
+                    wordBo.createEntity(word);
+                } else if (userId.equals(existing.getOwnerId())) {
+                    wordBo.updateEntity(word);
+                    logger.info("同步更新用户私有单词成功: id={}, spell={}", word.getId(), word.getSpell());
+                } else {
+                    logger.warn("非法尝试修改非本人所属单词，拒绝同步: id={}, targetOwner={}", word.getId(), existing.getOwnerId());
+                }
+            }
+            case "DELETE" -> {
+                Word existing = wordBo.findById(word.getId());
+                if (existing != null && userId.equals(existing.getOwnerId())) {
+                    wordBo.deleteEntity(existing);
+                    logger.info("同步删除用户私有单词成功: id={}", word.getId());
+                }
+            }
+            default -> {
+                String errorMsg = String.format("不支持的单词表操作: %s", operation);
                 logger.error(errorMsg);
                 throw new IllegalArgumentException(errorMsg);
             }

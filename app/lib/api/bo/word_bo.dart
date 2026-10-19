@@ -119,6 +119,9 @@ class _WordTspNode {
 class DictWordImportItem {
   final String wordId;
 
+  /// 当单词为词库未收录的新词时，此字段携带其拼写以便创建私有单词记录
+  final String? newSpell;
+
   /// 所属单元；0 表示无单元。
   final int unit;
 
@@ -130,6 +133,7 @@ class DictWordImportItem {
 
   const DictWordImportItem({
     required this.wordId,
+    this.newSpell,
     this.unit = 0,
     this.meaning = '',
     this.partOfSpeech = '',
@@ -2494,6 +2498,26 @@ class WordBo {
       var updated = 0;
 
       await db.transaction(() async {
+        // 0. 若存在词库未收录的新词，先在本地创建私有单词记录并写入同步日志
+        for (final item in items) {
+          if (item.newSpell != null && item.newSpell!.trim().isNotEmpty) {
+            final spell = item.newSpell!.trim();
+            final existingWord = await (db.select(db.words)..where((w) => w.id.equals(item.wordId))).getSingleOrNull();
+            if (existingWord == null) {
+              final newWord = Word(
+                id: item.wordId,
+                spell: spell,
+                popularity: 5,
+                ownerId: dict.ownerId,
+                createTime: now,
+                updateTime: now,
+              );
+              await db.wordsDao.insertEntity(newWord);
+              await DbLogUtil.logOperation(dict.ownerId, 'INSERT', 'words', item.wordId, newWord);
+            }
+          }
+        }
+
         final existingEntries = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
         final existingWordIds = existingEntries.map((e) => e.wordId).toSet();
         var maxSeq = 0;

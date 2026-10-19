@@ -48,4 +48,19 @@ public class WordDtoShortDescCnTest {
         assertFalse(json.contains("short_desc_cn"), "下发 JSON 用驼峰，不得泄漏数据库列名");
         assertFalse(json.contains("en_definition"), "下发 JSON 用驼峰，不得泄漏数据库列名");
     }
+
+    @Test
+    public void testOwnerIdMappingAndDefault() {
+        Word systemWord = buildWord();
+        WordDto systemDto = new WordBo().toDto(systemWord);
+        assertTrue("15118".equals(systemDto.getOwnerId()), "系统词默认 ownerId 必须为 15118");
+
+        Word customWord = buildWord();
+        customWord.setOwnerId("user_999");
+        WordDto customDto = new WordBo().toDto(customWord);
+        assertTrue("user_999".equals(customDto.getOwnerId()), "私有自建词必须保留用户的 ownerId");
+
+        Word restored = Word.fromDto(customDto);
+        assertTrue("user_999".equals(restored.getOwnerId()), "fromDto 必须正确还原用户的 ownerId");
+    }
 }

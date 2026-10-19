@@ -306,6 +306,9 @@ class Words extends Table {
 
   DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
+  /// 单词所有者ID：15118 为系统公共词，用户ID为私有自定义词
+  TextColumn get ownerId => text().nullable().withDefault(const Constant('15118'))();
+
   @override
   Set<Column>? get primaryKey => {id};
 }

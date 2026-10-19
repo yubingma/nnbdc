@@ -33,7 +33,15 @@ public class WordVo extends UuidVo {
     private List<CigenWordLinkVo> cigenWordLinks;
     private List<WordShortDescChineseVo> shortDescChineses;
     private List<WordImageVo> images;
+    private String ownerId;
 
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
+    }
 
     public WordVo() {
 

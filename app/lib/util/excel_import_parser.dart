@@ -43,6 +43,9 @@ class ExcelImportRow {
   /// 词库命中的词条 ID（仅在词库已收录时有值）。
   String? wordId;
 
+  /// 是否为系统词库未收录的新词（自建生词）
+  bool isCustomNewWord;
+
   ExcelImportRow({
     required this.lineNumber,
     required this.spell,
@@ -51,6 +54,7 @@ class ExcelImportRow {
     required this.unit,
     required this.status,
     this.wordId,
+    this.isCustomNewWord = false,
   });
 
   /// 合并同一拼写的释义项，保持首次出现的顺序。

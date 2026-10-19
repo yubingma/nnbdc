@@ -19,16 +19,24 @@ import beidanci.util.Constants;
 import org.springframework.util.Assert;
 
 import net.sf.json.JSONObject;
+import beidanci.api.model.WordDto;
 import net.sf.json.JsonConfig;
 
 @Entity
-@Table(name = "word", indexes = {@Index(name = "idx_wordspell", columnList = "spell", unique = true)})
+@Table(name = "word", indexes = {@Index(name = "idx_word_spell_owner", columnList = "spell, owner_id", unique = true)})
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class Word extends UuidPo implements Ownerable {
 
+    @Column(name = "owner_id", length = 32, nullable = false)
+    private String ownerId = Constants.SYS_USER_SYS_ID;
+
     @Override
     public String getOwnerId() {
-        return Constants.SYS_USER_SYS_ID;
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     // serial marker removed; entities are not serialized via Java serialization
@@ -298,5 +306,25 @@ public class Word extends UuidPo implements Ownerable {
 
     public void setEmbedding1bit(byte[] embedding1bit) {
         this.embedding1bit = embedding1bit;
+    }
+
+    public static Word fromDto(WordDto dto) {
+        Word word = new Word();
+        word.setId(dto.getId());
+        word.setSpell(dto.getSpell());
+        word.setAmericaPronounce(dto.getAmericaPronounce());
+        word.setBritishPronounce(dto.getBritishPronounce());
+        word.setPronounce(dto.getPronounce());
+        word.setPopularity(dto.getPopularity() != null ? dto.getPopularity() : 5);
+        word.setGroupInfo(dto.getGroupInfo());
+        word.setShortDesc(dto.getShortDesc());
+        word.setShortDescCn(dto.getShortDescCn());
+        word.setEnDefinition(dto.getEnDefinition());
+        word.setLongDesc(dto.getLongDesc());
+        word.setEmbedding1bit(dto.getEmbedding1bit());
+        word.setOwnerId(dto.getOwnerId() != null ? dto.getOwnerId() : Constants.SYS_USER_SYS_ID);
+        word.setCreateTime(dto.getCreateTime() != null ? dto.getCreateTime() : new java.util.Date());
+        word.setUpdateTime(dto.getUpdateTime() != null ? dto.getUpdateTime() : new java.util.Date());
+        return word;
     }
 }

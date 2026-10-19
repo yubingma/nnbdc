@@ -97,11 +97,36 @@ public class WordBo extends BaseBo<Word> {
     }
 
     public Word getWordBySpell(String spell) {
-        String sql = "SELECT * FROM word WHERE spell = :spell";
-        MapSqlParameterSource params = new MapSqlParameterSource("spell", spell);
+        String sql = "SELECT * FROM word WHERE spell = :spell ORDER BY CASE WHEN owner_id = :sysOwner THEN 0 ELSE 1 END LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource("spell", spell)
+                .addValue("sysOwner", Constants.SYS_USER_SYS_ID);
         List<Word> results = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(Word.class));
         return results.isEmpty() ? null : results.get(0);
+    }
+
+    public Word getWordBySpell(String spell, String userId) {
+        if (userId == null || Constants.SYS_USER_SYS_ID.equals(userId)) {
+            return getWordBySpell(spell);
+        }
+        String sql = "SELECT * FROM word WHERE spell = :spell AND (owner_id = :userId OR owner_id = :sysOwner) "
+                + "ORDER BY CASE WHEN owner_id = :userId THEN 0 ELSE 1 END LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource("spell", spell)
+                .addValue("userId", userId)
+                .addValue("sysOwner", Constants.SYS_USER_SYS_ID);
+        List<Word> results = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(Word.class));
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    public List<WordDto> getCustomWordDtosOfUser(String userId) {
+        String sql = "SELECT * FROM word WHERE owner_id = :userId ORDER BY create_time ASC";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        List<Word> list = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(Word.class));
+        List<WordDto> dtos = new ArrayList<>();
+        for (Word word : list) {
+            dtos.add(toDto(word));
+        }
+        return dtos;
     }
 
     public WordVo getWordVoBySpell(String spell, String[] excludeFields) {
@@ -751,6 +776,7 @@ public class WordBo extends BaseBo<Word> {
         dto.setEmbedding1bit(word.getEmbedding1bit());
         dto.setCreateTime(word.getCreateTime());
         dto.setUpdateTime(word.getUpdateTime());
+        dto.setOwnerId(word.getOwnerId());
         return dto;
     }
 

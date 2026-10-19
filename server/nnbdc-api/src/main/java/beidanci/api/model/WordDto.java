@@ -3,9 +3,15 @@ package beidanci.api.model;
 import beidanci.util.Utils;
 
 public class WordDto extends Dto implements Ownerable {
+    private String ownerId = beidanci.util.Constants.SYS_USER_SYS_ID;
+
     @Override
     public String getOwnerId() {
-        return beidanci.util.Constants.SYS_USER_SYS_ID;
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     private String id;

@@ -13,6 +13,7 @@ import 'package:nnbdc/models/external_import_file.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/excel_import_parser.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/xlsx_reader.dart';
 import 'package:provider/provider.dart';
 
@@ -257,7 +258,8 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
       if (row.status != ExcelRowStatus.ready) continue;
       final wordId = wordIdsBySpell[row.spell.toLowerCase()];
       if (wordId == null) {
-        row.status = ExcelRowStatus.notInLibrary;
+        row.isCustomNewWord = true;
+        row.status = ExcelRowStatus.ready;
       } else {
         row.wordId = wordId;
         row.status = existingWordIds.contains(wordId) ? ExcelRowStatus.alreadyInDict : ExcelRowStatus.ready;
@@ -295,7 +297,8 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
     final tooLongCiXingLines = <int>[];
     for (final row in _rows) {
       if (!_selectedLines.contains(row.lineNumber)) continue;
-      final wordId = row.wordId;
+      final isNewWord = row.isCustomNewWord;
+      final wordId = row.wordId ?? (isNewWord ? Util.uuid() : null);
       if (wordId == null) continue;
       // 只有确实会把词性写进释义的行才校验：已存在的词在未勾选「更新释义」时不会写释义
       final willWriteMeaning =
@@ -306,6 +309,7 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
       }
       items.add(DictWordImportItem(
         wordId: wordId,
+        newSpell: isNewWord ? row.spell : null,
         unit: row.unit,
         meaning: row.meaning,
         partOfSpeech: row.partOfSpeech,
@@ -344,6 +348,7 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
               .where((row) => row.status == ExcelRowStatus.notInLibrary)
               .map((row) => row.spell)
               .toList(),
+          customNewWords: _rows.where((row) => row.isCustomNewWord && _selectedLines.contains(row.lineNumber)).length,
         );
       });
 
@@ -839,15 +844,22 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
   }
 
   Widget _buildStats(AppThemeConfig themeConfig, Map<ExcelRowStatus, int> counts) {
+    final newWordCount = _rows.where((row) => row.isCustomNewWord).length;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
       child: Row(
         children: [
           _buildStat(themeConfig, counts[ExcelRowStatus.ready] ?? 0, '可导入', themeConfig.primaryColor),
+          if (newWordCount > 0) ...[
+            const SizedBox(width: 16),
+            _buildStat(themeConfig, newWordCount, '新词', const Color(0xFF10B981)),
+          ],
           const SizedBox(width: 16),
           _buildStat(themeConfig, counts[ExcelRowStatus.alreadyInDict] ?? 0, '已存在', themeConfig.textSecondary),
-          const SizedBox(width: 16),
-          _buildStat(themeConfig, counts[ExcelRowStatus.notInLibrary] ?? 0, '未收录', const Color(0xFFD97706)),
+          if ((counts[ExcelRowStatus.notInLibrary] ?? 0) > 0) ...[
+            const SizedBox(width: 16),
+            _buildStat(themeConfig, counts[ExcelRowStatus.notInLibrary] ?? 0, '未收录', const Color(0xFFD97706)),
+          ],
           const SizedBox(width: 16),
           _buildStat(themeConfig, counts[ExcelRowStatus.invalid] ?? 0, '格式错误', const Color(0xFFE54D3B)),
         ],
@@ -1051,6 +1063,9 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
   }
 
   (String, Color)? _statusText(ExcelImportRow row) {
+    if (row.isCustomNewWord) {
+      return ('新词', const Color(0xFF10B981));
+    }
     switch (row.status) {
       case ExcelRowStatus.alreadyInDict:
         return ('已存在', const Color(0xFF8A9A96));
@@ -1115,6 +1130,10 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
                 child: Column(
                   children: [
                     _buildOutcomeRow(themeConfig, '新增', outcome.inserted, themeConfig.primaryColor),
+                    if (outcome.customNewWords > 0) ...[
+                      _buildOutcomeDivider(themeConfig),
+                      _buildOutcomeRow(themeConfig, '自建新词（系统未收录）', outcome.customNewWords, const Color(0xFF10B981)),
+                    ],
                     if (outcome.updated > 0) ...[
                       _buildOutcomeDivider(themeConfig),
                       _buildOutcomeRow(themeConfig, '已更新释义', outcome.updated, const Color(0xFF2563EB)),
@@ -1323,6 +1342,7 @@ class _ImportOutcome {
   final int invalid;
   final int duplicate;
   final List<String> missingSpells;
+  final int customNewWords;
 
   const _ImportOutcome({
     required this.inserted,
@@ -1332,6 +1352,7 @@ class _ImportOutcome {
     required this.invalid,
     required this.duplicate,
     required this.missingSpells,
+    this.customNewWords = 0,
   });
 }
 
