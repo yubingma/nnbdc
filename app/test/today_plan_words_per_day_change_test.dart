@@ -197,7 +197,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('今日已开始学习时，点击修改每日单词数，今日计划保持不变且不弹 Toast（明日生效）', (tester) async {
+  testWidgets('今日已开始学习时，点击修改每日单词数，提示设置已锁定且不打开选择弹窗', (tester) async {
     await seedData(todayStudyStarted: true, initialWords: 5);
 
     await tester.pumpWidget(
@@ -216,22 +216,18 @@ void main() {
     }
 
     expect(find.text('今日 5 词'), findsOneWidget);
+    expect(find.byIcon(Icons.lock_outline_rounded), findsWidgets, reason: '学习已开始时应显示锁图标');
 
     await tester.tap(find.text('今日 5 词'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
-    final option10 = find.text('10');
-    await tester.tap(option10);
-    await tester.pumpAndSettle();
+    // 今日已开始学习，点击后提示锁定，不弹出选择弹窗
+    expect(find.text('今日学习已开始，设置已锁定'), findsOneWidget, reason: '已开始学习时点击词数应提示已锁定');
+    expect(find.text('选择每日学习词数'), findsNothing, reason: '已锁定状态下不应弹出词数选择弹窗');
 
-    // 今日已开始学习，当天词数仍是 5（不因改设置而变）；
-    // 新目标 10 只作为「实际 / 期望」并列展示，标签由裸「今日 5 词」变成「今日 5 / 10 词」。
-    expect(find.text('今日 5 / 10 词'), findsOneWidget, reason: '已开始学习时今日词数当天不应改变（仍是 5 词）');
-    expect(find.textContaining('今日已开始学习'), findsNothing, reason: '设置词数后不应弹出 Toast 提示');
+    final user = await db.usersDao.getUserById(userId);
+    expect(user?.wordsPerDay, 5, reason: '用户设置的 wordsPerDay 保持不变');
 
-    final updatedUser = await db.usersDao.getUserById(userId);
-    expect(updatedUser?.wordsPerDay, 10, reason: '用户设置的 wordsPerDay 仍应被保存为 10（明日生效）');
-
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 4));
   });
 }

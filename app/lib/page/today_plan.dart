@@ -1735,6 +1735,8 @@ class TodayPlanPageState extends State<TodayPlanPage>
               ),
             ],
               ),
+              const SizedBox(height: 10),
+              _buildDakaStatusLine(ink: ink, onDark: onDark),
             ],
           );
         }
@@ -2215,7 +2217,12 @@ class TodayPlanPageState extends State<TodayPlanPage>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        setState(() => _trackExpanded = !_trackExpanded);
+        setState(() {
+          _trackExpanded = !_trackExpanded;
+          if (!_trackExpanded) {
+            _trackEditing = false;
+          }
+        });
         Prefs.write('today_plan_track_expanded', _trackExpanded);
       },
       child: Padding(
@@ -2256,37 +2263,85 @@ class TodayPlanPageState extends State<TodayPlanPage>
     );
   }
 
-  /// 轨道图底部的打卡状态：已打卡就盖一枚「已打卡 · MM-DD」，没打卡就写今日目标。
+  /// 轨道图底部的打卡状态：已打卡盖一枚翡翠绿微型打卡胶囊，未打卡则极简展示今日目标。
   Widget _buildDakaStatusLine({
     required ({Color primary, Color muted, Color faint}) ink,
     required bool onDark,
   }) {
     final date = planIslandDateLabel(AppClock.today());
     final sealColor = onDark ? const Color(0xFF34D399) : const Color(0xFF059669);
-    // 大字号下「日期 + 已打卡/今日目标 + 词数」会撑破屏宽（实测 110px），
-    // 整行按可用宽度等比缩，宁可小一点也不许溢出。
+
+    if (hasDakaToday) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+        decoration: BoxDecoration(
+          color: sealColor.withValues(alpha: onDark ? 0.12 : 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: sealColor.withValues(alpha: onDark ? 0.32 : 0.22),
+            width: 0.8,
+          ),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.check_rounded, size: 13, color: sealColor),
+              const SizedBox(width: 4),
+              Text(
+                '已打卡',
+                key: const Key('today_plan_daka_seal_text'),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: sealColor,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                '·',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: sealColor.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                date,
+                key: const Key('today_plan_daka_seal_date'),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: sealColor.withValues(alpha: 0.85),
+                  fontFamily: 'Roboto',
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 未打卡时：保持极简克制，纯文本轻量展示
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (hasDakaToday) ...[
-          Icon(Icons.check_circle_outline_rounded, size: 14, color: sealColor),
-          const SizedBox(width: 5),
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
           Text(
-            '已打卡',
-            key: const Key('today_plan_daka_seal_text'),
-            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: ink.muted),
+            date,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: ink.faint,
+              fontFamily: 'Roboto',
+            ),
           ),
-          const SizedBox(width: 6),
-        ],
-        Text(
-          date,
-          key: hasDakaToday ? const Key('today_plan_daka_seal_date') : null,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ink.faint, fontFamily: 'Roboto'),
-        ),
-        if (!hasDakaToday) ...[
           const SizedBox(width: 8),
           Text(
             '今日目标',
@@ -2295,10 +2350,14 @@ class TodayPlanPageState extends State<TodayPlanPage>
           const SizedBox(width: 4),
           Text(
             '${_planWords.length} 词',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ink.faint, fontFamily: 'Roboto'),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: ink.faint,
+              fontFamily: 'Roboto',
+            ),
           ),
         ],
-      ],
       ),
     );
   }

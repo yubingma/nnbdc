@@ -325,4 +325,51 @@ void main() {
 
     await tester.pump(const Duration(seconds: 60));
   });
+
+  testWidgets('今日已打卡：收起态下直接显示已打卡胶囊，无需先展开轨道', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final seal = find.byKey(const Key('today_plan_daka_seal_text'));
+    final sealDate = find.byKey(const Key('today_plan_daka_seal_date'));
+    final today = AppClock.today();
+    final dateLabel = planIslandDateLabel(today);
+
+    await seedTodayPlan(dakaed: true);
+    await pumpTodayPlan(tester);
+    await pumpUntil(tester, seal);
+
+    expect(seal, findsOneWidget, reason: '学习轨道收起态下，页面也要直接显示已打卡胶囊');
+    expect(tester.getSemantics(seal).label, '已打卡');
+    expect(sealDate, findsOneWidget);
+    expect(tester.getSemantics(sealDate).label, dateLabel);
+
+    semantics.dispose();
+    await tester.pump(const Duration(seconds: 60));
+  });
+
+  testWidgets('编辑态下点击收起轨道：自动退出编辑态，小宠物和主按钮保持显示，卡片不掉底', (tester) async {
+    await seedTodayPlan(dakaed: false);
+    await pumpTodayPlan(tester);
+    await pumpUntil(tester, find.text('学习轨道'));
+
+    // 1. 展开轨道
+    await tester.tap(find.text('学习轨道'));
+    await tester.pumpAndSettle();
+
+    // 2. 点击「编辑」进入编辑态
+    await tester.tap(find.text('编辑'));
+    await tester.pumpAndSettle();
+    expect(find.text('完成'), findsOneWidget, reason: '进入编辑态');
+
+    // 3. 不点完成，直接点「收起轨道」
+    await tester.tap(find.text('收起轨道'));
+    await tester.pumpAndSettle();
+
+    // 4. 断言已自动退出编辑态，小宠物和主操作按钮正常展示
+    expect(find.text('完成'), findsNothing, reason: '收起轨道后应自动退出编辑态');
+    expect(find.text('继续学习'), findsOneWidget, reason: '底部主操作按钮不能消失');
+    expect(find.byType(Image), findsWidgets, reason: '小宠物组件不能消失');
+
+    await tester.pump(const Duration(seconds: 60));
+  });
 }
+
