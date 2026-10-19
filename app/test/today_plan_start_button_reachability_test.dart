@@ -232,23 +232,24 @@ void main() {
     }
   }
 
-  /// 学习轨道默认收起（只露新词 / 旧词数字），展开后才有「今日目标」与完整轨迹。
+  /// 学习轨道默认收起（只露新词 / 旧词数字），展开后展示完整轨迹。
   Future<void> expandTrack(WidgetTester tester) async {
-    if (find.text('学习轨道').evaluate().isNotEmpty) {
-      await tester.tap(find.text('学习轨道'));
+    final toggle = find.byKey(const ValueKey('today_plan_track_toggle'));
+    if (toggle.evaluate().isNotEmpty && find.text('学习轨道').evaluate().isNotEmpty) {
+      await tester.tap(toggle);
       await tester.pumpAndSettle();
     }
   }
 
-  /// 两种背景必须渲染同一套结构：中心目标岛 + 左任务量卡（新词 / 旧词）+ 主操作卡。
+  /// 两种背景必须渲染同一套结构：轨道卡（新词 / 旧词 / 轨道切换）+ 主操作卡。
   void expectSharedStructure() {
-    expect(find.text('今日目标'), findsOneWidget, reason: '中心目标岛（壁纸底/主题底共用）');
+    expect(find.byKey(const ValueKey('today_plan_track_toggle')), findsOneWidget, reason: '中心轨道折叠切换按钮（壁纸底/主题底共用）');
     expect(find.text('新词'), findsOneWidget, reason: '左任务量卡里的新词量');
     expect(find.text('旧词'), findsOneWidget, reason: '左任务量卡里的旧词量');
   }
 
   Map<String, Rect> layoutGeometry(WidgetTester tester) => <String, Rect>{
-        '中心岛': tester.getRect(find.text('今日目标')),
+        '中心轨道切换': tester.getRect(find.byKey(const ValueKey('today_plan_track_toggle'))),
         '新词量': tester.getRect(find.text('新词')),
         '旧词量': tester.getRect(find.text('旧词')),
         '主按钮': tester.getRect(find.text('开始学习')),

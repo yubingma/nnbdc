@@ -33,6 +33,9 @@ class BrickItem {
   bool isWrongJiggle = false;
   double jiggleProgress = 0.0;
 
+  /// 本题已答错：方块不再接受点击，加速坠落到堆叠顶部后垒进底部。
+  bool isDoomed = false;
+
   BrickItem({
     required this.id,
     required this.word,
@@ -48,6 +51,14 @@ class BrickItem {
     required this.phase,
     required this.baseColor,
   });
+}
+
+/// 底部堆积的失败方块层（死词层）
+class BrickStackRow {
+  final String word;
+  final Color color;
+
+  BrickStackRow({required this.word, required this.color});
 }
 
 /// 底部中文释义选项实体
@@ -150,9 +161,13 @@ class BrickPageState extends State<BrickPage>
   bool isPlaying = false;
   bool myStarted = false;
   bool opponentStarted = false;
-  int myHp = 10;
   int opponentHp = 10;
   static const int maxHp = 10;
+
+  /// 我方生命值由底部死词层数唯一决定：堆满 10 层即防线失守。
+  /// 这样"堆叠高度 / 血条 / 服务端 stackRows"三者天然是同一个事实，不会再各算一套。
+  int get myHp => max(0, maxHp - stackRows.length);
+
   int myCombo = 0;
   int propsStarfish = 0;
   int propsMine = 0;
@@ -166,9 +181,10 @@ class BrickPageState extends State<BrickPage>
 
   WordVo? currWord;
   final List<String> distractorWords = [];
-  bool hasMistakeInCurrentWord = false;
 
   final List<BrickItem> bricks = [];
+  /// 底部已堆积的失败方块，从下往上垒；行数就等于 maxHp - myHp。
+  final List<BrickStackRow> stackRows = [];
   final List<BrickOption> currentOptions = [];
   final List<BrickParticle> particles = [];
   final List<BrickFloatingText> _floatingTexts = [];
@@ -183,6 +199,9 @@ class BrickPageState extends State<BrickPage>
   double _screenShake = 0.0;
   double opponentShake = 0.0;
   double wavePhase = 0.0;
+
+  /// 本局胜负是否已经展示过（本地血尽与随后到达的服务端 loser 事件只结算一次）
+  bool _resultShown = false;
 
   static const List<Color> brickColors = [
     Color(0xFF38BDF8),
@@ -362,21 +381,46 @@ class BrickPageState extends State<BrickPage>
 
     socket.off('stackSync');
     socket.on('stackSync', (data) {
-      if (!mounted || !isPlaying || data == null || data is! List) return;
-      final userId = data[0]?.toString();
-      final stackCount = (data.length > 1 && data[1] is num) ? (data[1] as num).toInt() : 0;
-      final remainingHp = max(0, maxHp - stackCount);
-      if (userId == myUserId) {
-        setState(() => myHp = remainingHp);
-      } else {
-        setState(() => opponentHp = remainingHp);
-      }
+      if (!mounted || !isPlaying) return;
+      _handleStackSync(data);
     });
 
     socket.off('gameResultNotice');
     socket.on('gameResultNotice', (data) {
       if (!mounted) return;
-      _handleGameOver(data);
+      // 断线期间被判负的补发提示，只是一条文字通知，不是本局的结算事件
+      ToastUtil.error(data?.toString() ?? '');
+    });
+
+    socket.off('loser');
+    socket.on('loser', (loserId) {
+      if (!mounted) return;
+      _handleLoser(loserId);
+    });
+
+    socket.off('giveProps');
+    socket.on('giveProps', (data) {
+      if (!mounted || data is! List || data.length < 2) return;
+      _handleGiveProps((data[0] as num).toInt(), (data[1] as num).toInt());
+    });
+
+    socket.off('propsUsed');
+    socket.on('propsUsed', (data) {
+      if (!mounted || data is! List || data.length < 2) return;
+      _handlePropsUsed(data[0]?.toString() ?? '', (data[1] as num).toInt());
+    });
+
+    // 服务端已经不在这一局里（断线期间被判负、房间已解散）：继续出题只会石沉大海
+    socket.off('gameNotInProgress');
+    socket.on('gameNotInProgress', (data) {
+      if (!mounted) return;
+      _handleGameNotInProgress(data?.toString() ?? '');
+    });
+
+    socket.off('forceClose');
+    socket.on('forceClose', (data) {
+      if (!mounted) return;
+      _handleForceClose(data?.toString() ?? '');
     });
 
     socket.off('leaveRoom');
@@ -393,16 +437,25 @@ class BrickPageState extends State<BrickPage>
 
   void _cleanupSocketListeners() {
     final socket = SocketIoClient.instance.socket;
-    socket.off('roomId');
-    socket.off('enterWait');
-    socket.off('enterReady');
-    socket.off('enterRoom');
-    socket.off('userStarted');
-    socket.off('sysCmd');
-    socket.off('wordPack');
-    socket.off('stackSync');
-    socket.off('gameResultNotice');
-    socket.off('leaveRoom');
+    for (final event in [
+      'roomId',
+      'enterWait',
+      'enterReady',
+      'enterRoom',
+      'userStarted',
+      'sysCmd',
+      'wordPack',
+      'stackSync',
+      'gameResultNotice',
+      'loser',
+      'giveProps',
+      'propsUsed',
+      'gameNotInProgress',
+      'forceClose',
+      'leaveRoom',
+    ]) {
+      socket.off(event);
+    }
   }
 
   void _enterHallAndRoom() {
@@ -456,7 +509,7 @@ class BrickPageState extends State<BrickPage>
   void _onGameStart() {
     setState(() {
       isPlaying = true;
-      myHp = maxHp;
+      stackRows.clear();
       opponentHp = maxHp;
       myCombo = 0;
       propsMine = 0;
@@ -464,6 +517,9 @@ class BrickPageState extends State<BrickPage>
       myWordIndex = 0;
       isIntroPlaying = true;
       introProgress = 0.0;
+      _resultShown = false;
+      currWord = null;
+      distractorWords.clear();
       bricks.clear();
       currentOptions.clear();
       particles.clear();
@@ -539,7 +595,6 @@ class BrickPageState extends State<BrickPage>
   void _spawnBricksForRound(Size size, dynamic wireWordData) {
     bricks.clear();
     currentOptions.clear();
-    hasMistakeInCurrentWord = false;
     if (currWord == null) return;
 
     final mediaQuery = MediaQuery.maybeOf(context);
@@ -630,7 +685,7 @@ class BrickPageState extends State<BrickPage>
   void _onOptionTapped(BrickOption opt) {
     if (!isPlaying || bricks.isEmpty || isIntroPlaying) return;
     final b = bricks.first;
-    if (b.isPopping) return;
+    if (b.isPopping || b.isDoomed) return;
 
     if (opt.isCorrect) {
       setState(() {
@@ -641,34 +696,37 @@ class BrickPageState extends State<BrickPage>
       StudyAudioSessionController.instance.playSoundEffect('correct.mp3', volume: 0.7);
       HapticFeedback.mediumImpact();
 
-      if (!hasMistakeInCurrentWord) {
-        myCombo++;
-        if (myCombo % 3 == 0) {
-          final isStarfish = rand.nextBool();
-          if (isStarfish) {
-            propsStarfish++;
-            _floatingTexts.add(BrickFloatingText(x: b.x, y: b.y - 30, text: '⭐ 获得防线修复!', color: const Color(0xFF10B981)));
-          } else {
-            propsMine++;
-            _floatingTexts.add(BrickFloatingText(x: b.x, y: b.y - 30, text: '💣 获得导弹!', color: const Color(0xFFEF4444)));
-          }
-        }
-        _floatingTexts.add(BrickFloatingText(x: b.x, y: b.y, text: '连击 +$myCombo', color: const Color(0xFF38BDF8)));
+      myCombo++;
+      if (myCombo % 3 == 0) {
+        // 道具由服务端在收到本题答对后随机发放（giveProps），这里只提示掉落
+        _floatingTexts.add(BrickFloatingText(
+          x: b.x,
+          y: b.y - 52,
+          text: '🔥 $myCombo 连击！道具掉落',
+          color: const Color(0xFFFBBF24),
+        ));
       }
+      _floatingTexts.add(BrickFloatingText(x: b.x, y: b.y, text: '连击 +$myCombo', color: const Color(0xFF38BDF8)));
 
       Future.delayed(const Duration(milliseconds: 220), () {
         if (!mounted || !isPlaying) return;
-        _reportAnswer('CORRECT');
+        _reportAnswer('true');
       });
     } else {
+      // 答错：本题作废，方块加速坠到底部堆叠层，落地时统一扣血、上报答错
       setState(() {
         opt.isWrong = true;
         b.isWrongJiggle = true;
         b.jiggleProgress = 0.0;
-        hasMistakeInCurrentWord = true;
+        b.isDoomed = true;
       });
       HapticFeedback.heavyImpact();
-      _applyDamage(1, reason: '选错 -1 HP!');
+      _floatingTexts.add(BrickFloatingText(
+        x: b.x,
+        y: b.y - 30,
+        text: '选错了，方块坠落…',
+        color: const Color(0xFFF87171),
+      ));
     }
   }
 
@@ -682,6 +740,7 @@ class BrickPageState extends State<BrickPage>
     final mediaQuery = MediaQuery.maybeOf(context);
     final size = mediaQuery?.size ?? const Size(390, 844);
     final double barrierBottomY = size.height * 0.44;
+    final double stackTopY = _stackTopY(barrierBottomY, mediaQuery?.padding.top ?? 44.0);
 
     wavePhase += dt * 2.2;
     for (final ap in _ambientParticles) {
@@ -727,15 +786,12 @@ class BrickPageState extends State<BrickPage>
             b.jiggleProgress = 0.0;
           }
         }
-        b.y += b.speed * dt;
+        // 答错的方块加速坠落；漏答的方块按原速下落。两者都落到堆叠顶面即垒起来。
+        b.y += (b.isDoomed ? 520.0 : b.speed) * dt;
         b.x = b.baseX + sin(wavePhase * b.swingFreq) * b.swingAmplitude;
 
-        if (b.y + b.height / 2 >= barrierBottomY) {
-          b.isPopping = true;
-          _spawnBrickExplosion(b.x, barrierBottomY, const Color(0xFFEF4444));
-          HapticFeedback.heavyImpact();
-          _applyDamage(1, reason: '方块触底 -1 HP!');
-          _reportAnswer('TIMEOUT');
+        if (b.y + b.height / 2 >= stackTopY) {
+          _settleBrick(b, stackTopY);
         }
       }
     }
@@ -782,10 +838,50 @@ class BrickPageState extends State<BrickPage>
     }
   }
 
-  void _applyDamage(int amount, {String reason = '受损 -1 HP!'}) {
+  /// 每一层死词砖占用的高度：把从出生点到防线的行程均分成 maxHp + 2 份，
+  /// 多留两行余量，保证垒到第 10 层前仍有一小段可反应的下落距离。
+  double _stackRowHeight(double barrierBottomY, double topPadding) {
+    final double startY = max(topPadding, 16.0) + 62.0;
+    return max(1.0, (barrierBottomY - startY) / (maxHp + 2));
+  }
+
+  /// 当前堆叠顶面（也是下一个方块真正的触底线）：堆得越高，下落行程越短。
+  double _stackTopY(double barrierBottomY, double topPadding) {
+    return barrierBottomY - stackRows.length * _stackRowHeight(barrierBottomY, topPadding);
+  }
+
+  void _addStackRows(int count, {String word = '', Color color = const Color(0xFF64748B)}) {
+    for (int i = 0; i < count && stackRows.length < maxHp; i++) {
+      stackRows.add(BrickStackRow(word: word, color: color));
+    }
+  }
+
+  /// 方块落到堆叠顶面：垒成一层死词砖，扣 1 点防线生命，并上报本题答错。
+  void _settleBrick(BrickItem b, double stackTopY) {
+    if (!isPlaying) return;
+    b.isPopping = true;
+    b.popProgress = 0.0;
+    _spawnBrickExplosion(b.x, stackTopY, const Color(0xFFEF4444));
+    HapticFeedback.heavyImpact();
+    _applyDamage(
+      1,
+      reason: b.isDoomed ? '选错 -1 HP!' : '方块触底 -1 HP!',
+      word: b.word,
+      color: b.baseColor,
+    );
+    if (isPlaying) {
+      _reportAnswer('false');
+    }
+  }
+
+  void _applyDamage(int amount, {
+    String reason = '受损 -1 HP!',
+    String word = '',
+    Color color = const Color(0xFF64748B),
+  }) {
     if (!isPlaying) return;
     setState(() {
-      myHp = max(0, myHp - amount);
+      _addStackRows(amount, word: word, color: color);
       myCombo = 0;
       _hitFlash = 1.0;
       _screenShake = 1.0;
@@ -798,9 +894,10 @@ class BrickPageState extends State<BrickPage>
       color: const Color(0xFFEF4444),
     ));
 
-    sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
+    sendUserCmd('REPORT_STACK_ROWS', [stackRows.length]);
     if (myHp <= 0) {
       sendUserCmd('GAME_OVER', ['A']);
+      _endGame(isWin: false);
     }
   }
 
@@ -812,23 +909,96 @@ class BrickPageState extends State<BrickPage>
       _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '🚀 导弹发射!', color: const Color(0xFFEF4444)));
       setState(() => opponentHp = max(0, opponentHp - 1));
     } else if (propsIdx == 1 && propsStarfish > 0) {
+      if (myHp >= maxHp) {
+        _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '防线已满格', color: const Color(0xFF38BDF8)));
+        return;
+      }
       propsStarfish--;
+      setState(() => stackRows.removeLast());
       sendUserCmd('USE_PROPS', [propsIdx]);
       _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '✨ 防线修复 +1!', color: const Color(0xFF10B981)));
-      setState(() => myHp = min(maxHp, myHp + 1));
-      sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
+      sendUserCmd('REPORT_STACK_ROWS', [stackRows.length]);
     }
   }
 
-  void _handleGameOver(dynamic data) {
+  /// 服务端按时间推演出的权威堆叠行数：客户端挂后台、方块停在原地的那段时间会被补扣。
+  /// 两边对同一个事实各有一份推演，取更严的一方，服务端更宽松就不动本地。
+  void _handleStackSync(dynamic data) {
+    if (!mounted || !isPlaying) return;
+    final int rows = (data is List && data.isNotEmpty && data[0] is num) ? (data[0] as num).toInt() : 0;
+    final String reason = (data is List && data.length > 1) ? data[1].toString() : '';
+    final int serverHp = max(0, maxHp - rows);
+    if (serverHp >= myHp) return;
+
+    final int lost = myHp - serverHp;
+    setState(() {
+      _addStackRows(lost);
+      myCombo = 0;
+      _hitFlash = 1.0;
+    });
+    _floatingTexts.add(BrickFloatingText(
+      x: 100,
+      y: 200,
+      text: reason.isEmpty ? '⏳ 漏答 -$lost HP' : '⏳ $reason -$lost HP',
+      color: const Color(0xFFEF4444),
+    ));
+    HapticFeedback.heavyImpact();
+  }
+
+  /// 服务端发放道具：数量以服务端为准，避免本地随机结果和真实库存各算一套。
+  void _handleGiveProps(int propsType, int count) {
+    setState(() {
+      if (propsType == 0) {
+        propsMine = count;
+      } else {
+        propsStarfish = count;
+      }
+    });
+    _floatingTexts.add(BrickFloatingText(
+      x: 200,
+      y: 260,
+      text: propsType == 0 ? '💣 获得导弹 ×$count' : '⭐ 获得防线修复 ×$count',
+      color: propsType == 0 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+    ));
+  }
+
+  /// 对手使用道具：导弹扣我方 1 点防线，海星给对手回 1 点。
+  void _handlePropsUsed(String fromUserId, int propsType) {
+    if (fromUserId == myUserId) return; // 自己用道具时已在本地即时表现
+    if (propsType == 0) {
+      _applyDamage(1, reason: '💥 遭受对手导弹轰击！-1 HP');
+    } else {
+      setState(() => opponentHp = min(maxHp, opponentHp + 1));
+      _floatingTexts.add(BrickFloatingText(
+        x: 200,
+        y: 260,
+        text: '💚 对手修复防线 +1 HP',
+        color: const Color(0xFFFBBF24),
+      ));
+    }
+  }
+
+  void _handleLoser(dynamic loserId) {
+    if (!mounted) return;
+    _endGame(isWin: loserId?.toString() != myUserId);
+  }
+
+  /// 本局结束（本地血尽或服务端判负广播 loser）：只结算一次。
+  void _endGame({required bool isWin}) {
+    if (!mounted || _resultShown) return;
+    _resultShown = true;
+    _tts.stop();
     setState(() {
       isPlaying = false;
+      if (isWin) {
+        opponentHp = 0;
+      } else {
+        _addStackRows(maxHp - stackRows.length);
+      }
+      bricks.clear();
+      currWord = null;
+      currentOptions.clear();
     });
-
-    bool isWin = false;
-    if (data is List && data.isNotEmpty) {
-      isWin = data[0]?.toString() == myUserId;
-    }
 
     showDialog(
       context: context,
@@ -844,7 +1014,7 @@ class BrickPageState extends State<BrickPage>
           textAlign: TextAlign.center,
         ),
         content: Text(
-          isWin ? '恭喜你成功击垮对方防线，赢得本局胜利！' : '方块触底防线失守，再接再厉削退方块！',
+          isWin ? '恭喜你成功击垮对方防线，赢得本局胜利！' : '错词方块堆满了防线，本局告负，再接再厉！',
           style: const TextStyle(color: Colors.white70, fontSize: 14),
           textAlign: TextAlign.center,
         ),
@@ -865,6 +1035,35 @@ class BrickPageState extends State<BrickPage>
         ],
       ),
     );
+  }
+
+  /// 服务端已经没有这一局了（断线期间被判负、房间已解散）：继续出题只会石沉大海
+  void _handleGameNotInProgress(String cmd) {
+    if (!mounted || _resultShown) return;
+    _pendingUserCmds.clear();
+    Global.logger.w('削砖块: 服务端已无本局对局（触发指令[$cmd]），退出对战界面');
+    _exitBattleScreen('对局已结束或房间已解散，请重新开始');
+  }
+
+  /// 本连接被服务端顶掉（同一账号在别处登录）：退出对战界面
+  void _handleForceClose(String reason) {
+    if (!mounted || _resultShown) return;
+    _pendingUserCmds.clear();
+    Global.logger.w('削砖块: 连接被服务端关闭: $reason');
+    _exitBattleScreen(reason.isEmpty ? '连接已被关闭' : '连接已被关闭：$reason');
+  }
+
+  void _exitBattleScreen(String message) {
+    _tts.stop();
+    setState(() {
+      isPlaying = false;
+      stackRows.clear();
+      bricks.clear();
+      currWord = null;
+      currentOptions.clear();
+    });
+    ToastUtil.error(message);
+    if (mounted) context.pop();
   }
 
   @override

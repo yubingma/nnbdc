@@ -867,6 +867,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
         ? (onDark ? Colors.white.withValues(alpha: 0.95) : const Color(0xFF0F172A))
         : themeConfig.textSecondary;
     final sealColor = onDark ? const Color(0xFF34D399) : const Color(0xFF059669);
+    final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark);
     final shadows = <Shadow>[
       Shadow(
         color: onDark ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.95),
@@ -876,23 +877,15 @@ class TodayPlanPageState extends State<TodayPlanPage>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 左上角：今日单词总数（点它从底部滑出词量设置），并在收起态右侧展示已打卡状态
+        // 左上角：今日单词总数 · 每组词数 · 当前状态
         Flexible(
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildTotalWordsEntry(
-                  ink: _cardInk(hasWallpaper: hasWallpaper, onDark: onDark),
-                  hasWallpaper: hasWallpaper,
-                  onDark: onDark,
-                ),
-                if (!_trackExpanded && hasDakaToday) ...[
-                  _buildTopDakaStatus(sealColor: sealColor, shadows: shadows),
-                ],
-              ],
+            child: _buildPlanStatusBar(
+              ink: ink,
+              sealColor: sealColor,
+              shadows: shadows,
             ),
           ),
         ),
@@ -957,58 +950,6 @@ class TodayPlanPageState extends State<TodayPlanPage>
           ),
         ),
       ],
-    );
-  }
-
-  /// 学习轨道收起时，在顶部「今日xx词」右侧展示极简打卡状态（纯文字与图标，无胶囊包裹）。
-  Widget _buildTopDakaStatus({
-    required Color sealColor,
-    required List<Shadow> shadows,
-  }) {
-    final date = planIslandDateLabel(AppClock.today());
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(Icons.check_rounded, size: 13, color: sealColor, shadows: shadows),
-          const SizedBox(width: 2),
-          Text(
-            '已打卡',
-            key: const Key('today_plan_daka_seal_text'),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: sealColor,
-              letterSpacing: 0.3,
-              shadows: shadows,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '·',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: sealColor.withValues(alpha: 0.65),
-              shadows: shadows,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            date,
-            key: const Key('today_plan_daka_seal_date'),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: sealColor.withValues(alpha: 0.9),
-              fontFamily: 'Roboto',
-              shadows: shadows,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1844,6 +1785,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                         const SizedBox(width: columnGap),
                         Expanded(child: track(isNew: false, countScale: countScale)),
                       ],
+                    ),
                     if (_trackEditing)
                       _buildTrackTray(ink: ink, nodeBg: nodeBg, nodeBorder: nodeBorder, shadows: shadows),
                   ],
@@ -2277,6 +2219,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
   /// 轨道展开 / 收起按钮：默认收起，只露新词旧词两枚数字，点它才展开整条轨道。
   Widget _buildTrackToggle({required Color inkColor, List<Shadow>? shadows}) {
     return GestureDetector(
+      key: const ValueKey('today_plan_track_toggle'),
       behavior: HitTestBehavior.opaque,
       onTap: () {
         setState(() {
@@ -2321,85 +2264,6 @@ class TodayPlanPageState extends State<TodayPlanPage>
           ),
           ),
         ),
-      ),
-    );
-  }
-
-  /// 轨道图底部的打卡状态：展开态下纯文字展示，无胶囊包裹。
-  Widget _buildDakaStatusLine({
-    required ({Color primary, Color muted, Color faint}) ink,
-    required bool onDark,
-  }) {
-    final date = planIslandDateLabel(AppClock.today());
-    final sealColor = onDark ? const Color(0xFF34D399) : const Color(0xFF059669);
-
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (hasDakaToday) ...[
-            Icon(Icons.check_rounded, size: 14, color: sealColor),
-            const SizedBox(width: 4),
-            Text(
-              '已打卡',
-              key: const Key('today_plan_daka_seal_text'),
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: sealColor,
-                letterSpacing: 0.3,
-              ),
-            ),
-            const SizedBox(width: 5),
-            Text(
-              '·',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: sealColor.withValues(alpha: 0.65),
-              ),
-            ),
-            const SizedBox(width: 5),
-            Text(
-              date,
-              key: const Key('today_plan_daka_seal_date'),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: sealColor.withValues(alpha: 0.9),
-                fontFamily: 'Roboto',
-              ),
-            ),
-          ],
-          if (!hasDakaToday) ...[
-            Text(
-              date,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: ink.faint,
-                fontFamily: 'Roboto',
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '今日目标',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ink.faint),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '${_planWords.length} 词',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: ink.faint,
-                fontFamily: 'Roboto',
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }
@@ -4093,12 +3957,12 @@ class TodayPlanPageState extends State<TodayPlanPage>
   }
 
   /// 弹出"高级设置"对话框
-  /// 顶部「今日单词总数」入口：点它从底部滑出词量设置。
-  /// 视觉沿用「高级学习设置」那套毛玻璃渐变 + 圆角 + 缓动动画，只是改为底部锚定。
-  Widget _buildTotalWordsEntry({
+  /// 顶部计划与状态流水线：[今日 xx 词 · 每组 xx 词 · 当前状态]。
+  /// 遵循现代极简排版与零多余容器原则，用柔和原点串联核心学习规划与状态。
+  Widget _buildPlanStatusBar({
     required ({Color primary, Color muted, Color faint}) ink,
-    required bool hasWallpaper,
-    required bool onDark,
+    required Color sealColor,
+    required List<Shadow> shadows,
   }) {
     final bool isStarted = user?.todayStudyStarted == true;
     final int total = _planWords.length;
@@ -4107,45 +3971,150 @@ class TodayPlanPageState extends State<TodayPlanPage>
     final String totalLabel = isStarted
         ? '今日 $total 词'
         : (total < expected ? '今日 $total / $expected 词' : '今日 $total 词');
-    // 这行字直接压在壁纸上（没有卡片底），浅色照片上会糊掉。
-    // 用「与字色相反的柔光投影」把它从背景里托出来：亮底配白投影、暗底配黑投影。
-    final shadows = <Shadow>[
-      Shadow(
-        color: onDark ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.95),
-        blurRadius: 6,
-      ),
-    ];
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        if (isStarted) {
-          ToastUtil.info('今日学习已开始，设置已锁定');
-          return;
-        }
-        _showWordsPerDaySheet();
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+    final int batchSize = StudyBo.batchSize;
+
+    Widget dot() => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          child: Text(
+            '·',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: ink.muted.withValues(alpha: 0.45),
+              shadows: shadows,
+            ),
+          ),
+        );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // 1. 今日词数（未开始时点它从底部滑出词量设置，已开始时提示已锁定）
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            if (isStarted) {
+              ToastUtil.info('今日学习已开始，设置已锁定');
+              return;
+            }
+            _showWordsPerDaySheet();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  totalLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: ink.muted,
+                    letterSpacing: 0.3,
+                    shadows: shadows,
+                  ),
+                ),
+                const SizedBox(width: 3),
+                Icon(
+                  isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
+                  size: isStarted ? 11.5 : 13.5,
+                  color: ink.muted,
+                  shadows: shadows,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        dot(),
+
+        // 2. 每组单词数
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            '每组 $batchSize 词',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: ink.muted,
+              letterSpacing: 0.3,
+              shadows: shadows,
+            ),
+          ),
+        ),
+
+        dot(),
+
+        // 3. 当前状态（已打卡 / 学习中 / 未开始）
+        _buildCurrentStatusItem(
+          ink: ink,
+          sealColor: sealColor,
+          shadows: shadows,
+          isStarted: isStarted,
+        ),
+      ],
+    );
+  }
+
+  /// 状态栏末尾的当前状态：已打卡（翡翠绿 + 对勾）/ 学习中 / 未开始
+  Widget _buildCurrentStatusItem({
+    required ({Color primary, Color muted, Color faint}) ink,
+    required Color sealColor,
+    required List<Shadow> shadows,
+    required bool isStarted,
+  }) {
+    if (hasDakaToday) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Icon(Icons.check_rounded, size: 12.5, color: sealColor, shadows: shadows),
+            const SizedBox(width: 2.5),
             Text(
-              totalLabel,
+              '已打卡',
+              key: const Key('today_plan_daka_seal_text'),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: ink.muted,
-                letterSpacing: 0.4,
+                color: sealColor,
+                letterSpacing: 0.3,
                 shadows: shadows,
               ),
             ),
-            const SizedBox(width: 3),
-            Icon(
-              isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
-              size: isStarted ? 12 : 14,
-              color: ink.muted,
-            ),
           ],
+        ),
+      );
+    }
+
+    if (isStarted) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          '学习中',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: ink.muted,
+            letterSpacing: 0.3,
+            shadows: shadows,
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(
+        '未开始',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: ink.faint,
+          letterSpacing: 0.3,
+          shadows: shadows,
         ),
       ),
     );

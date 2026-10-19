@@ -209,22 +209,14 @@ void main() {
     // 印面文字是逐字画出来的（不是 Text），断言走承载它的 Key 与语义标签
     final semantics = tester.ensureSemantics();
     final seal = find.byKey(const Key('today_plan_daka_seal_text'));
-    final sealDate = find.byKey(const Key('today_plan_daka_seal_date'));
-    final today = AppClock.today();
-    // 日期串的单一来源：跟页面共用同一个格式化函数，杜绝"实现改了测试没跟上"
-    final dateLabel = planIslandDateLabel(today);
 
     await seedTodayPlan(dakaed: true, extraWords: 5, extraDone: 2);
     await pumpTodayPlan(tester);
-    // 学习轨道默认收起（只露新词 / 旧词两枚数字），打卡印章在展开后才出现
-    await tester.tap(find.text('学习轨道'));
-    await tester.pumpAndSettle();
     await pumpUntil(tester, seal);
 
-    expect(seal, findsOneWidget, reason: '今天打过卡，环心要盖上印章');
-    expect(tester.getSemantics(seal).label, '已打卡', reason: '印章上写"已打卡"即可，日期就在下面');
-    expect(sealDate, findsOneWidget, reason: '印章上要有年月日的日期');
-    expect(tester.getSemantics(sealDate).label, dateLabel, reason: '日期要是今天（逻辑日期）');
+    expect(seal, findsOneWidget, reason: '今天打过卡，顶部状态流水线要显示已打卡');
+    expect(tester.getSemantics(seal).label, '已打卡');
+    expect(find.textContaining('每组'), findsOneWidget, reason: '顶部状态流水线要展示每组单词数');
     expect(find.text('目标已锁定'), findsNothing, reason: '印章态不再重复讲"目标已锁定"');
     expect(find.text('继续学习（加量）'), findsOneWidget,
         reason: '还有未学完的加量批次时，主按钮是继续学习，而不是让人以为要新增单词');
@@ -245,8 +237,7 @@ void main() {
     expect(find.text('目标已锁定'), findsNothing, reason: '学习已开始后不再展示冗余的"目标已锁定"文字');
     expect(find.byKey(const Key('today_plan_daka_seal_text')), findsNothing,
         reason: '还没打卡就不能盖已打卡的章');
-    expect(find.byKey(const Key('today_plan_daka_seal_date')), findsNothing,
-        reason: '还没打卡就没有盖章日期');
+    expect(find.textContaining('学习中'), findsOneWidget, reason: '已开始学习但未打卡时展示学习中');
     expect(find.textContaining('加量已完成'), findsNothing,
         reason: '今天没有加量批次，就不该出现加量进度');
 
@@ -326,21 +317,17 @@ void main() {
     await tester.pump(const Duration(seconds: 60));
   });
 
-  testWidgets('今日已打卡：收起态下在顶部今日xx词右侧直接显示已打卡文字，无需先展开轨道', (tester) async {
+  testWidgets('今日已打卡：顶部状态流水线直接显示已打卡与每组词数，无需展开轨道', (tester) async {
     final semantics = tester.ensureSemantics();
     final seal = find.byKey(const Key('today_plan_daka_seal_text'));
-    final sealDate = find.byKey(const Key('today_plan_daka_seal_date'));
-    final today = AppClock.today();
-    final dateLabel = planIslandDateLabel(today);
 
     await seedTodayPlan(dakaed: true);
     await pumpTodayPlan(tester);
     await pumpUntil(tester, seal);
 
-    expect(seal, findsOneWidget, reason: '学习轨道收起态下，页面顶部今日xx词右侧直接显示已打卡文字');
+    expect(seal, findsOneWidget, reason: '学习轨道收起态下，页面顶部直接显示已打卡文字');
     expect(tester.getSemantics(seal).label, '已打卡');
-    expect(sealDate, findsOneWidget);
-    expect(tester.getSemantics(sealDate).label, dateLabel);
+    expect(find.textContaining('每组'), findsOneWidget, reason: '页面顶部展示每组词数');
 
     semantics.dispose();
     await tester.pump(const Duration(seconds: 60));
