@@ -66,8 +66,11 @@ class AiStoryPage extends StatelessWidget {
             icon: const Icon(Icons.copy_rounded, color: Colors.white),
             tooltip: '复制全文',
             onPressed: () {
-              // 复制/导出时保留显式标识（《人工智能生成合成内容标识办法》第九条）
-              Clipboard.setData(ClipboardData(text: 'AI生成\n$storyContent'));
+              // 复制/导出时保留显式标识（《人工智能生成合成内容标识办法》第九条）；
+              // 去掉 Markdown 加粗标记 **，只复制词语本身
+              final plainText = storyContent.replaceAllMapped(
+                  RegExp(r'\*\*(.*?)\*\*'), (match) => match.group(1) ?? '');
+              Clipboard.setData(ClipboardData(text: 'AI生成\n$plainText'));
               ToastUtil.info('已复制到剪贴板');
             },
           ),
