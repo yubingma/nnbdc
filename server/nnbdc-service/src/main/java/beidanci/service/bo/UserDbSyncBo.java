@@ -1,5 +1,6 @@
 package beidanci.service.bo;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -1927,7 +1928,8 @@ public class UserDbSyncBo {
     /**
      * 处理用户私有自定义单词同步
      */
-    private void processWordSync(String userId, String recordJson, String operation) {
+    private void processWordSync(String userId, String recordJson, String operation)
+            throws IllegalAccessException {
         if (null == operation) {
             String errorMsg = "不支持的单词表操作: null";
             logger.error(errorMsg);
