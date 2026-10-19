@@ -115,7 +115,13 @@ void main() async {
       // 注入当前页面/场景解析器，供错误上报带上现场位置
       currentAppSceneResolver = () {
         try {
-          return goRouter.routerDelegate.currentConfiguration.uri.toString();
+          final config = goRouter.routerDelegate.currentConfiguration;
+          if (config.matches.isNotEmpty) {
+            final lastMatch = config.matches.last;
+            final path = lastMatch.matchedLocation;
+            if (path.isNotEmpty) return path;
+          }
+          return config.uri.toString();
         } catch (_) {
           return '';
         }

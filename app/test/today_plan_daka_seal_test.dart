@@ -326,7 +326,7 @@ void main() {
     await tester.pump(const Duration(seconds: 60));
   });
 
-  testWidgets('今日已打卡：收起态下直接显示已打卡胶囊，无需先展开轨道', (tester) async {
+  testWidgets('今日已打卡：收起态下在顶部今日xx词右侧直接显示已打卡文字，无需先展开轨道', (tester) async {
     final semantics = tester.ensureSemantics();
     final seal = find.byKey(const Key('today_plan_daka_seal_text'));
     final sealDate = find.byKey(const Key('today_plan_daka_seal_date'));
@@ -337,7 +337,7 @@ void main() {
     await pumpTodayPlan(tester);
     await pumpUntil(tester, seal);
 
-    expect(seal, findsOneWidget, reason: '学习轨道收起态下，页面也要直接显示已打卡胶囊');
+    expect(seal, findsOneWidget, reason: '学习轨道收起态下，页面顶部今日xx词右侧直接显示已打卡文字');
     expect(tester.getSemantics(seal).label, '已打卡');
     expect(sealDate, findsOneWidget);
     expect(tester.getSemantics(sealDate).label, dateLabel);

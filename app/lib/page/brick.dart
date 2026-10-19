@@ -929,26 +929,34 @@ class BrickPageState extends State<BrickPage>
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 20),
                   onPressed: () => context.pop(),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white24, width: 0.8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.grid_view_rounded, color: Color(0xFFF59E0B), size: 14),
-                      const SizedBox(width: 5),
-                      Text(
-                        '削砖块 · ${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white24, width: 0.8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.grid_view_rounded, color: Color(0xFFF59E0B), size: 14),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            '削砖块 · ${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const Spacer(),
-                if (!isPlaying)
+                if (!isPlaying) ...[
+                  const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () {
                       sendUserCmd('START_GAME', []);
@@ -960,6 +968,7 @@ class BrickPageState extends State<BrickPage>
                     ),
                     child: Text(myStarted ? '等待对手...' : '开始对战', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
                   ),
+                ],
               ],
             ),
           ),
