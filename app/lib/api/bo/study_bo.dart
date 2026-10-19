@@ -1073,10 +1073,10 @@ class StudyBo {
         final currentFsrs = FSRSItem(
           stability: currWord.stability!,
           difficulty: currWord.difficulty!,
-          elapsedDays: currWord.elapsedDays!,
-          scheduledDays: currWord.scheduledDays!,
-          reps: currWord.reps!,
-          lapses: currWord.lapses!,
+          elapsedDays: currWord.elapsedDays ?? 0,
+          scheduledDays: currWord.scheduledDays ?? 0,
+          reps: currWord.reps ?? 0,
+          lapses: currWord.lapses ?? 0,
           state: FsrsStateExt.fromInt(currWord.state),
         );
         // 判定当天首次 vs 当天非首次（业务日比较；跨天重置保留 lastLearningDate，判定可靠）
