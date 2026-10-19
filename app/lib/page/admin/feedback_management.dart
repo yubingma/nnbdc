@@ -570,46 +570,49 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Material(
             color: theme.cardBg,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.cardBorder),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isFromUser)
-                ListTile(
-                  leading: Icon(Icons.reply_rounded, color: context.primaryColor),
-                  title: const Text('引用回复这条'),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    setState(() => _quotedMessage = message);
-                  },
-                ),
-              if (isFromUser)
-                ListTile(
-                  leading: Icon(
-                    message.tag == '需求' ? Icons.lightbulb : Icons.lightbulb_outline,
-                    color: const Color(0xFFF59E0B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(color: theme.cardBorder),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isFromUser)
+                  ListTile(
+                    leading: Icon(Icons.reply_rounded, color: context.primaryColor),
+                    title: const Text('引用回复这条'),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      setState(() => _quotedMessage = message);
+                    },
                   ),
-                  title: Text(message.tag == '需求' ? '取消需求标记' : '标为需求'),
+                if (isFromUser)
+                  ListTile(
+                    leading: Icon(
+                      message.tag == '需求' ? Icons.lightbulb : Icons.lightbulb_outline,
+                      color: const Color(0xFFF59E0B),
+                    ),
+                    title: Text(message.tag == '需求' ? '取消需求标记' : '标为需求'),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _toggleRequirementTag(message);
+                    },
+                  ),
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  title: const Text('删除这条消息', style: TextStyle(color: Colors.redAccent)),
                   onTap: () {
                     Navigator.pop(sheetContext);
-                    _toggleRequirementTag(message);
+                    _deleteMessage(message);
                   },
                 ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                title: const Text('删除这条消息', style: TextStyle(color: Colors.redAccent)),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _deleteMessage(message);
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -244,7 +244,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -254,12 +253,18 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(
-          color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-          width: 1,
-        ),
       ),
-      child: ListTile(
+      child: Material(
+        color: cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+            width: 1,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         leading: CircleAvatar(
           backgroundColor: context.primaryColor.withValues(alpha: 0.1),
@@ -336,6 +341,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

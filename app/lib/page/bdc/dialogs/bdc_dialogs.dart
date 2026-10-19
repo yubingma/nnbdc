@@ -609,25 +609,28 @@ extension BdcPageStateDialogs on BdcPageState {
                                     ),
                                 ];
 
-                                return Column(
-                                  children: [
-                                    for (int i = 0; i < items.length; i++) ...[
-                                      if (i > 0)
-                                        Divider(
-                                          height: 1,
-                                          thickness: 0.5,
-                                          indent: 16,
-                                          endIndent: 16,
-                                          color: Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.08)
-                                              : Colors.grey
-                                                  .withValues(alpha: 0.2),
-                                        ),
-                                      items[i],
-                                    ]
-                                  ],
+                                return Material(
+                                  type: MaterialType.transparency,
+                                  child: Column(
+                                    children: [
+                                      for (int i = 0; i < items.length; i++) ...[
+                                        if (i > 0)
+                                          Divider(
+                                            height: 1,
+                                            thickness: 0.5,
+                                            indent: 16,
+                                            endIndent: 16,
+                                            color: Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.white
+                                                    .withValues(alpha: 0.08)
+                                                : Colors.grey
+                                                    .withValues(alpha: 0.2),
+                                          ),
+                                        items[i],
+                                      ]
+                                    ],
+                                  ),
                                 );
                               },
                             ),
