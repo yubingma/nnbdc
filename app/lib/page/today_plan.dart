@@ -1760,7 +1760,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
           shadow: skin.shadow,
           // 收起态把上下内边距压到最小，卡片高度只够两枚数字，壁纸能露出来
           padding: _trackExpanded
-              ? const EdgeInsets.fromLTRB(14, 16, 14, 4)
+              ? const EdgeInsets.fromLTRB(14, 16, 14, 20)
               : const EdgeInsets.fromLTRB(14, 12, 14, 2),
           child: AnimatedSize(
             duration: const Duration(milliseconds: 220),

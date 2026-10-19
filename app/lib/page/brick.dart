@@ -842,7 +842,7 @@ class BrickPageState extends State<BrickPage>
   /// 多留两行余量，保证垒到第 10 层前仍有一小段可反应的下落距离。
   double _stackRowHeight(double barrierBottomY, double topPadding) {
     final double startY = max(topPadding, 16.0) + 62.0;
-    return max(1.0, (barrierBottomY - startY) / (maxHp + 2));
+    return max(8.0, (barrierBottomY - startY) / (maxHp + 2));
   }
 
   /// 当前堆叠顶面（也是下一个方块真正的触底线）：堆得越高，下落行程越短。
@@ -863,15 +863,15 @@ class BrickPageState extends State<BrickPage>
     b.popProgress = 0.0;
     _spawnBrickExplosion(b.x, stackTopY, const Color(0xFFEF4444));
     HapticFeedback.heavyImpact();
+    // 先把本题判错上报给服务端，再在本地垒层并同步行数：
+    // 服务端会为这次答错记一行，随后的 REPORT_STACK_ROWS 与它是同一个事实，取更严的一方即可。
+    _reportAnswer('false');
     _applyDamage(
       1,
       reason: b.isDoomed ? '选错 -1 HP!' : '方块触底 -1 HP!',
       word: b.word,
       color: b.baseColor,
     );
-    if (isPlaying) {
-      _reportAnswer('false');
-    }
   }
 
   void _applyDamage(int amount, {
@@ -943,6 +943,10 @@ class BrickPageState extends State<BrickPage>
       color: const Color(0xFFEF4444),
     ));
     HapticFeedback.heavyImpact();
+    if (myHp <= 0) {
+      sendUserCmd('GAME_OVER', ['A']);
+      _endGame(isWin: false);
+    }
   }
 
   /// 服务端发放道具：数量以服务端为准，避免本地随机结果和真实库存各算一套。
@@ -980,7 +984,12 @@ class BrickPageState extends State<BrickPage>
 
   void _handleLoser(dynamic loserId) {
     if (!mounted) return;
-    _endGame(isWin: loserId?.toString() != myUserId);
+    final String id = loserId?.toString() ?? '';
+    if (id.isEmpty) {
+      Global.logger.e('削砖块: loser 事件缺少失败者ID，无法判定胜负');
+      return;
+    }
+    _endGame(isWin: id != myUserId);
   }
 
   /// 本局结束（本地血尽或服务端判负广播 loser）：只结算一次。
@@ -1109,10 +1118,12 @@ class BrickPageState extends State<BrickPage>
             child: CustomPaint(
               painter: _BrickScenePainter(
                 bricks: bricks,
+                stackRows: stackRows,
                 particles: particles,
                 floatingTexts: _floatingTexts,
                 ambientParticles: _ambientParticles,
                 barrierBottomY: barrierBottomY,
+                stackRowHeight: _stackRowHeight(barrierBottomY, topPadding),
               ),
             ),
           ),
@@ -1403,18 +1414,24 @@ class BrickPageState extends State<BrickPage>
 /// 削砖块专属场景绘制器
 class _BrickScenePainter extends CustomPainter {
   final List<BrickItem> bricks;
+  final List<BrickStackRow> stackRows;
   final List<BrickParticle> particles;
   final List<BrickFloatingText> floatingTexts;
   final List<BrickAmbientParticle> ambientParticles;
   final double barrierBottomY;
+  final double stackRowHeight;
 
   _BrickScenePainter({
     required this.bricks,
+    required this.stackRows,
     required this.particles,
     required this.floatingTexts,
     required this.ambientParticles,
     required this.barrierBottomY,
+    required this.stackRowHeight,
   });
+
+  double get _stackTopY => barrierBottomY - stackRows.length * stackRowHeight;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1448,7 +1465,11 @@ class _BrickScenePainter extends CustomPainter {
       canvas.drawCircle(Offset(ap.x, ap.y), ap.radius, pPaint);
     }
 
-    // 4. 下落大方块触底警戒线
+    // 4. 底部死词砖堆叠层
+    _drawStack(canvas, size);
+
+    // 5. 当前堆叠顶面就是触底警戒线：堆得越高，这条线越往上压
+    final double dangerLineY = _stackTopY;
     final barrierPaint = Paint()
       ..shader = LinearGradient(
         colors: [
@@ -1456,16 +1477,16 @@ class _BrickScenePainter extends CustomPainter {
           const Color(0xFFEF4444).withValues(alpha: 0.9),
           const Color(0xFFEF4444).withValues(alpha: 0.15),
         ],
-      ).createShader(Rect.fromLTWH(0, barrierBottomY, size.width, 2))
+      ).createShader(Rect.fromLTWH(0, dangerLineY, size.width, 2))
       ..strokeWidth = 2.0;
-    canvas.drawLine(Offset(0, barrierBottomY), Offset(size.width, barrierBottomY), barrierPaint);
+    canvas.drawLine(Offset(0, dangerLineY), Offset(size.width, dangerLineY), barrierPaint);
 
-    // 5. 下落单一目标英文单词大方块绘制
+    // 6. 下落单一目标英文单词大方块绘制
     for (final b in bricks) {
       _drawBrick(canvas, b);
     }
 
-    // 6. 爆破微粒
+    // 7. 爆破微粒
     for (final p in particles) {
       final pPaint = Paint()
         ..color = p.color.withValues(alpha: (p.life / p.maxLife).clamp(0.0, 1.0))
@@ -1473,7 +1494,7 @@ class _BrickScenePainter extends CustomPainter {
       canvas.drawCircle(Offset(p.x, p.y), p.radius, pPaint);
     }
 
-    // 7. 飘字
+    // 8. 飘字
     for (final ft in floatingTexts) {
       final tp = TextPainter(
         text: TextSpan(
@@ -1488,6 +1509,49 @@ class _BrickScenePainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(ft.x - tp.width / 2, ft.y));
+    }
+  }
+
+  /// 底部死词层：从防线基准线往上垒，每层一个错词，越堆越高、越堆越窄的行程。
+  void _drawStack(Canvas canvas, Size size) {
+    for (int i = 0; i < stackRows.length; i++) {
+      final row = stackRows[i];
+      final double top = barrierBottomY - (i + 1) * stackRowHeight;
+      final Rect rect = Rect.fromLTWH(16, top + 0.8, size.width - 32, stackRowHeight - 1.6);
+      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(5));
+
+      final fill = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.lerp(row.color, const Color(0xFF1E293B), 0.55)!,
+            Color.lerp(row.color, const Color(0xFF0B1220), 0.74)!,
+          ],
+        ).createShader(rect);
+      canvas.drawRRect(rrect, fill);
+
+      final edge = Paint()
+        ..color = Colors.white.withValues(alpha: 0.16)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8;
+      canvas.drawRRect(rrect, edge);
+
+      if (row.word.isEmpty || stackRowHeight < 12) continue;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: row.word,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.82),
+            fontSize: min(12.0, stackRowHeight * 0.62),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+        ellipsis: '…',
+      )..layout(maxWidth: rect.width - 14);
+      tp.paint(canvas, Offset(rect.center.dx - tp.width / 2, rect.center.dy - tp.height / 2));
     }
   }
 

@@ -34,6 +34,30 @@ void main() {
     expect(source, contains('class BrickOption'), reason: '必须声明中文选项实体 BrickOption');
     expect(source, contains('final List<BrickOption> currentOptions'), reason: '必须维护当前中文释义选项列表');
     expect(source, contains('_onOptionTapped'), reason: '必须提供中文释义点击事件');
-    expect(source, contains("'TIMEOUT'"), reason: '方块触底需判定超时并扣除防线生命');
+
+    // 7. 答题结果必须用服务端认识的 'true'/'false'；'CORRECT'/'TIMEOUT' 都会被当作"既不对也不错"
+    expect(source, contains("_reportAnswer('true')"), reason: '答对必须上报 true');
+    expect(source, contains("_reportAnswer('false')"), reason: '答错/触底必须上报 false');
+    expect(source, isNot(contains("_reportAnswer('CORRECT')")), reason: '服务端不认识 CORRECT');
+    expect(source, isNot(contains("_reportAnswer('TIMEOUT')")), reason: '服务端不认识 TIMEOUT');
+
+    // 8. 对局结束必须监听服务端的 loser 广播；gameResultNotice 只是断线补发文字，不能当结算事件
+    expect(source, contains("socket.on('loser'"), reason: '必须监听 loser 才能结束对局');
+    expect(source, contains('_endGame(isWin: id != myUserId)'), reason: '由 loser 的 userId 判定胜负');
+    expect(source, isNot(contains('_handleGameOver')), reason: '禁止再把 gameResultNotice 当结算事件');
+    expect(source, contains('_resultShown'), reason: '本地血尽与服务端 loser 只允许结算一次');
+
+    // 9. 堆叠：错词垒到底部，触底线随堆叠高度上移
+    expect(source, contains('class BrickStackRow'), reason: '必须有底部死词层实体');
+    expect(source, contains('final List<BrickStackRow> stackRows'), reason: '必须维护底部堆叠层');
+    expect(source, contains('b.y + b.height / 2 >= stackTopY'), reason: '触底判定必须用堆叠顶面而非固定防线');
+    expect(source, contains('_addStackRows'), reason: '扣血必须同步垒高死词层');
+    expect(source, contains('int get myHp => max(0, maxHp - stackRows.length)'), reason: '生命值与堆叠层数必须同源');
+    expect(source, contains("socket.on('stackSync'"), reason: '必须接收服务端权威堆叠行数');
+
+    // 10. 道具库存以服务端 giveProps 为准，不能本地随机各发一套
+    expect(source, contains("socket.on('giveProps'"), reason: '必须接收服务端发放的道具');
+    expect(source, contains("socket.on('propsUsed'"), reason: '必须处理对手使用道具');
+    expect(source, isNot(contains('rand.nextBool()')), reason: '禁止本地随机决定道具类型');
   });
 }
