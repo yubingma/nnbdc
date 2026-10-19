@@ -298,7 +298,7 @@ void main() {
     expect(find.text('加量完成'), findsNothing);
   });
 
-  testWidgets('打卡完成页：智慧技能/FAQ不再占中央显要卡片，而是作为菜单项放在"前往词表"下方',
+  testWidgets('打卡完成页：每日问题挑战不再占中央显要卡片，而是作为菜单项放在"前往词表"下方点击弹窗挑战',
       (tester) async {
     await seedDakaedDay(planWords: 5, extraWords: 0);
 
@@ -325,24 +325,25 @@ void main() {
       if (find.text('前往词表').evaluate().isNotEmpty) break;
     }
 
-    // 1. 中央显要位置不再有智慧锦囊大卡片
-    expect(find.text('今日智慧锦囊'), findsNothing, reason: '中央不再有智慧锦囊卡片');
+    // 1. 中央显要位置不再有每日挑战大卡片
+    expect(find.text('今日智慧锦囊'), findsNothing, reason: '中央不再有大卡片');
 
-    // 2. 菜单中包含"前往词表"与紧随其后的"玩转技巧与常见问题"
+    // 2. 菜单中包含"前往词表"与紧随其后的"每日问题挑战"
     final wordListBtn = find.byKey(const Key('finish_word_list_btn'));
-    final handbookBtn = find.byKey(const Key('finish_feature_handbook_btn'));
+    final challengeBtn = find.byKey(const Key('finish_daily_challenge_btn'));
     expect(wordListBtn, findsOneWidget);
-    expect(handbookBtn, findsOneWidget);
-    expect(find.text('玩转技巧与常见问题'), findsOneWidget);
+    expect(challengeBtn, findsOneWidget);
+    expect(find.text('每日问题挑战'), findsOneWidget);
 
-    // 几何顺序：玩转技巧在前往词表下方
+    // 几何顺序：每日问题挑战必须在前往词表下方
     final wordListBottom = tester.getBottomLeft(wordListBtn).dy;
-    final handbookTop = tester.getTopLeft(handbookBtn).dy;
-    expect(handbookTop, greaterThan(wordListBottom), reason: '玩转技巧必须在前往词表下方');
+    final challengeTop = tester.getTopLeft(challengeBtn).dy;
+    expect(challengeTop, greaterThan(wordListBottom), reason: '每日问题挑战必须在前往词表下方');
 
-    // 3. 点击能正确跳转至 /feature_handbook
-    await tester.tap(handbookBtn);
+    // 3. 点击菜单项，弹出每日挑战弹窗并展示问题挑战
+    await tester.tap(challengeBtn);
     await tester.pumpAndSettle();
-    expect(find.text('玩转技巧页面'), findsOneWidget);
+    expect(find.text('今日智慧锦囊'), findsOneWidget, reason: '弹窗中展示每日问题挑战卡片');
+    expect(find.byType(Dialog), findsOneWidget, reason: '以弹窗方式呈现每天一个问题挑战');
   });
 }

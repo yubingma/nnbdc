@@ -24,10 +24,12 @@ import '../util/learning_service.dart';
 import '../util/notification_util.dart';
 import '../util/platform_util.dart';
 import '../util/prefs.dart';
+import '../services/feature_challenge_service.dart';
 import '../services/user_privilege_manager.dart';
 import '../widget/daka_poster.dart';
 import '../widget/daka_poster_dialog.dart';
 import '../widget/daka_stamp_badge.dart';
+import '../widget/daily_tip_challenge_card.dart';
 import '../widget/guardian_pet.dart';
 import 'index.dart';
 import 'bdc/models/bdc_page_args.dart';
@@ -659,12 +661,14 @@ class FinishPageState extends State<FinishPage> {
               _buildActionDivider(themeConfig),
               _buildActionItem(
                 themeConfig,
-                key: const Key('finish_feature_handbook_btn'),
+                key: const Key('finish_daily_challenge_btn'),
                 icon: Icons.lightbulb_outline_rounded,
                 iconColor: const Color(0xFFF59E0B),
-                title: '玩转技巧与常见问题',
-                subtitle: '探索 App 隐藏机制与高频解答',
-                onTap: () => context.push('/feature_handbook'),
+                title: '每日问题挑战',
+                subtitle: FeatureChallengeService().hasAnsweredToday()
+                    ? '今日已完成挑战 · 查看题目与秘籍'
+                    : '每天一题，答对赢 +3 智慧果 🍒',
+                onTap: _openDailyChallengeDialog,
               ),
               _buildActionDivider(themeConfig),
               _buildActionItem(
@@ -854,6 +858,32 @@ class FinishPageState extends State<FinishPage> {
     );
 
     DakaPosterDialog.show(context, posterData);
+  }
+
+  /// 打开每日问题挑战弹窗：每天一题，答对解锁秘籍并奖励智慧果
+  void _openDailyChallengeDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.54),
+      builder: (dialogCtx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: SingleChildScrollView(
+            child: DailyTipChallengeCard(
+              onFruitAwarded: () {
+                final user = Global.getLoggedInUser();
+                if (user != null && mounted) {
+                  setState(() => cowDung = user.cowDung);
+                }
+              },
+            ),
+          ),
+        );
+      },
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
