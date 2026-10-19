@@ -99,7 +99,6 @@ void main() {
       updateTime: now,
     );
 
-    print('👉 调用 updateCurrWord(fsrsRating: good, isFirstAttempt: true)...');
     final nextFsrs = await studyBo.updateCurrWord(
       isWordMastered: false,
       currWord: staleLw,
@@ -110,7 +109,6 @@ void main() {
       isFirstAttempt: true,
       fsrsRating: FsrsRating.good,
     );
-    print('✅ updateCurrWord 成功执行！nextFsrs: stability=${nextFsrs?.stability}, reps=${nextFsrs?.reps}');
     expect(nextFsrs, isNotNull);
   });
 }
