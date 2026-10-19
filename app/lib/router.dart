@@ -34,6 +34,7 @@ import 'package:nnbdc/page/reminder_settings.dart';
 import 'package:nnbdc/page/study_date_rules.dart';
 import 'package:nnbdc/page/study_plan_settings.dart';
 import 'package:nnbdc/page/feature_handbook_page.dart';
+import 'package:nnbdc/page/daily_challenge_page.dart';
 import 'package:nnbdc/page/study_stats.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/test.dart';
@@ -99,5 +100,6 @@ final goRouter = GoRouter(
     GoRoute(path: '/study_date_rules', builder: (context, state) => const StudyDateRulesPage()),
     GoRoute(path: '/study_plan_settings', builder: (context, state) => const StudyPlanSettingsPage()),
     GoRoute(path: '/feature_handbook', builder: (context, state) => const FeatureHandbookPage()),
+    GoRoute(path: '/daily_challenge', builder: (context, state) => const DailyChallengePage()),
   ],
 );

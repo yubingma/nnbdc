@@ -136,7 +136,7 @@ class _DailyTipChallengeCardState extends State<DailyTipChallengeCard> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text(
-                    '+3 智慧果',
+                    '+1 智慧果',
                     style: TextStyle(
                       color: Color(0xFF10B981),
                       fontSize: 11,
@@ -218,6 +218,8 @@ class _DailyTipChallengeCardState extends State<DailyTipChallengeCard> {
                 optionTextColor = textColor;
               }
 
+              final letter = String.fromCharCode(65 + index);
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Material(
@@ -227,53 +229,70 @@ class _DailyTipChallengeCardState extends State<DailyTipChallengeCard> {
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                       decoration: BoxDecoration(
                         color: bgColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: borderCol, width: 1),
+                        border: Border.all(color: borderCol, width: (isSelected && isAnswered) ? 1.5 : 1),
                       ),
                       child: Row(
                         children: [
-                          Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSelected && isAnswered
-                                  ? const Color(0xFF10B981)
-                                  : (isWrong ? const Color(0xFFEF4444) : Colors.transparent),
-                              border: Border.all(
-                                color: isSelected && isAnswered
-                                    ? const Color(0xFF10B981)
-                                    : (isWrong ? const Color(0xFFEF4444) : subTextColor.withValues(alpha: 0.35)),
-                                width: 1.2,
-                              ),
+                          // 左侧选项代号专区
+                          SizedBox(
+                            width: 44,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  letter,
+                                  style: TextStyle(
+                                    color: (isSelected && isAnswered)
+                                        ? const Color(0xFF10B981)
+                                        : (isWrong ? const Color(0xFFEF4444) : textColor.withValues(alpha: 0.85)),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (isSelected && isAnswered) ...[
+                                  const SizedBox(height: 2),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.35 : 0.20),
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                    child: const Text(
+                                      '+1',
+                                      style: TextStyle(
+                                        color: Color(0xFF10B981),
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                            alignment: Alignment.center,
-                            child: isSelected && isAnswered
-                                ? const Icon(Icons.check_rounded, color: Colors.white, size: 13)
-                                : (isWrong
-                                    ? const Icon(Icons.close_rounded, color: Colors.white, size: 13)
-                                    : Text(
-                                        String.fromCharCode(65 + index),
-                                        style: TextStyle(
-                                          color: subTextColor,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      )),
                           ),
-                          const SizedBox(width: 10),
+                          // 竖向分割线
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                          ),
+                          const SizedBox(width: 12),
+                          // 右侧选项正文
                           Expanded(
-                            child: Text(
-                              optionText,
-                              style: TextStyle(
-                                color: optionTextColor,
-                                fontSize: 13.5,
-                                fontWeight: (isSelected && isAnswered) ? FontWeight.w600 : FontWeight.w400,
-                                fontFamily: 'NotoSansSC',
-                                fontFamilyFallback: AppTheme.sansSerifFallback,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 4),
+                              child: Text(
+                                optionText,
+                                style: TextStyle(
+                                  color: optionTextColor,
+                                  fontSize: 13.5,
+                                  fontWeight: (isSelected && isAnswered) ? FontWeight.w600 : FontWeight.w400,
+                                  fontFamily: 'NotoSansSC',
+                                  fontFamilyFallback: AppTheme.sansSerifFallback,
+                                ),
                               ),
                             ),
                           ),
@@ -302,14 +321,28 @@ class _DailyTipChallengeCardState extends State<DailyTipChallengeCard> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('✨', style: TextStyle(fontSize: 14)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: const Text(
+                      '泡泡 tips',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '【${_challenge.title}】',
+                          _challenge.title,
                           style: TextStyle(
                             color: textColor,
                             fontSize: 12.5,

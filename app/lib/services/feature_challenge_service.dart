@@ -1,4 +1,4 @@
-
+import 'dart:convert';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/model/feature_challenge.dart';
@@ -18,6 +18,38 @@ class ChallengeResult {
     required this.fruitEarned,
     required this.explanation,
   });
+}
+
+class ChallengeHistoryItem {
+  final String challengeId;
+  final String title;
+  final String question;
+  final DateTime answerTime;
+  final int fruitEarned;
+
+  const ChallengeHistoryItem({
+    required this.challengeId,
+    required this.title,
+    required this.question,
+    required this.answerTime,
+    required this.fruitEarned,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'challengeId': challengeId,
+    'title': title,
+    'question': question,
+    'answerTime': answerTime.toIso8601String(),
+    'fruitEarned': fruitEarned,
+  };
+
+  factory ChallengeHistoryItem.fromJson(Map<String, dynamic> json) => ChallengeHistoryItem(
+    challengeId: json['challengeId'] as String? ?? '',
+    title: json['title'] as String? ?? '',
+    question: json['question'] as String? ?? '',
+    answerTime: DateTime.tryParse(json['answerTime'] as String? ?? '') ?? DateTime.now(),
+    fruitEarned: json['fruitEarned'] as int? ?? 1,
+  );
 }
 
 class FeatureChallengeService {
@@ -117,9 +149,18 @@ class FeatureChallengeService {
       await Prefs.write(_prefUnlockedIds, unlocked.toList());
     }
 
-    // 不限制每道题只能答一次，每次答对均发放奖励
-    const int fruitAwarded = 3;
+    // 奖励调整为 1 颗智慧果（每天学习得 2 颗，答题得 1 颗）
+    const int fruitAwarded = 1;
     await _awardFruits(fruitAwarded, '完成功能秘籍挑战「${challenge.title}」');
+
+    // 记录答题历史
+    await _recordHistory(ChallengeHistoryItem(
+      challengeId: challenge.id,
+      title: challenge.title,
+      question: challenge.question,
+      answerTime: AppClock.now(),
+      fruitEarned: fruitAwarded,
+    ));
 
     return ChallengeResult(
       isCorrect: true,
@@ -127,6 +168,34 @@ class FeatureChallengeService {
       fruitEarned: fruitAwarded,
       explanation: challenge.explanation,
     );
+  }
+
+  static const String _prefChallengeHistory = 'feature_challenge_answer_history';
+
+  /// 读取所有历史答题记录（倒序）
+  List<ChallengeHistoryItem> getAnswerHistory() {
+    final rawList = Prefs.read<List<String>>(_prefChallengeHistory);
+    if (rawList == null) return [];
+    final res = <ChallengeHistoryItem>[];
+    for (final s in rawList) {
+      try {
+        final decoded = jsonDecode(s);
+        if (decoded is Map<String, dynamic>) {
+          res.add(ChallengeHistoryItem.fromJson(decoded));
+        } else if (decoded is Map) {
+          res.add(ChallengeHistoryItem.fromJson(Map<String, dynamic>.from(decoded)));
+        }
+      } catch (_) {}
+    }
+    return res;
+  }
+
+  Future<void> _recordHistory(ChallengeHistoryItem item) async {
+    final list = getAnswerHistory();
+    // 插入到头部
+    list.insert(0, item);
+    final strList = list.map((e) => jsonEncode(e.toJson())).toList();
+    await Prefs.write(_prefChallengeHistory, strList);
   }
 
   /// 发放智慧果奖励

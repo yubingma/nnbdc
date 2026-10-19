@@ -666,8 +666,8 @@ class FinishPageState extends State<FinishPage> {
                 iconColor: const Color(0xFFF59E0B),
                 title: '每日问题挑战',
                 subtitle: FeatureChallengeService().hasAnsweredToday()
-                    ? '今日已完成挑战 · 查看题目与秘籍'
-                    : '每天一题，答对赢 +3 智慧果 🍒',
+                    ? '今日已完成挑战 · 查看题目与解析'
+                    : '每天一题，答对赢 +1 智慧果 🍒',
                 onTap: _openDailyChallengeDialog,
               ),
               _buildActionDivider(themeConfig),
@@ -860,7 +860,7 @@ class FinishPageState extends State<FinishPage> {
     DakaPosterDialog.show(context, posterData);
   }
 
-  /// 打开每日问题挑战弹窗：每天一题，答对解锁秘籍并奖励智慧果
+  /// 打开每日问题挑战弹窗：每天一题，答对解锁秘籍并奖励 1 颗智慧果
   void _openDailyChallengeDialog() {
     showDialog(
       context: context,

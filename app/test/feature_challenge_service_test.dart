@@ -51,7 +51,7 @@ void main() {
       expect(service.getUnlockedIds(), isEmpty);
     });
 
-    test('首次答对题目：解锁成功，标记今日已答，发放 3 颗智慧果奖励', () async {
+    test('首次答对题目：解锁成功，标记今日已答，发放 1 颗智慧果奖励并写入历史', () async {
       final service = FeatureChallengeService();
       final todayChallenge = service.getTodayChallenge();
 
@@ -62,13 +62,18 @@ void main() {
 
       expect(res.isCorrect, true);
       expect(res.isFirstUnlock, true);
-      expect(res.fruitEarned, 3);
+      expect(res.fruitEarned, 1);
       expect(res.explanation, equals(todayChallenge.explanation));
       expect(service.hasAnsweredToday(), true);
       expect(service.getUnlockedIds(), contains(todayChallenge.id));
+
+      final history = service.getAnswerHistory();
+      expect(history.isNotEmpty, true);
+      expect(history.first.challengeId, equals(todayChallenge.id));
+      expect(history.first.fruitEarned, equals(1));
     });
 
-    test('已解锁题目再次作答：不限制每道题只能答一次，每次答对均发放智慧果', () async {
+    test('已解锁题目再次作答：不限制每道题只能答一次，每次答对均发放 1 颗智慧果', () async {
       final service = FeatureChallengeService();
       final todayChallenge = service.getTodayChallenge();
 
@@ -85,7 +90,7 @@ void main() {
       );
 
       expect(res2.isCorrect, true);
-      expect(res2.fruitEarned, 3);
+      expect(res2.fruitEarned, 1);
     });
   });
 }
