@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
-/// 削砖块游戏生命周期与网络通信契约测试
+/// 消砖块游戏生命周期与网络通信契约测试
 void main() {
-  test('削砖块指令与服务端协议严格保持一致', () {
+  test('消砖块指令与服务端协议严格保持一致', () {
     final source = File('lib/page/brick.dart').readAsStringSync();
 
     // 1. sendUserCmd 必须为 Map 结构，禁止发 List

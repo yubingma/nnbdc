@@ -501,8 +501,8 @@ class FeatureChallengeRepository {
     FeatureChallenge(
       id: 'tip_brick_stack_pressure',
       category: '功能技巧',
-      title: '削砖块：错词堆叠会抬高防线',
-      question: '在「削砖块」对战中答错或没来得及作答时，那个单词方块会带来什么连锁反应？',
+      title: '消砖块：错词堆叠会抬高防线',
+      question: '在「消砖块」对战中答错或没来得及作答时，那个单词方块会带来什么连锁反应？',
       options: [
         '方块落到防线前垒成一层死词，堆得越高下一题的下落行程越短，堆满 10 层防线失守',
         '方块直接消失，只扣一格生命，对后面的题目没有任何影响',
@@ -510,7 +510,7 @@ class FeatureChallengeRepository {
       ],
       correctIndex: 0,
       explanation:
-          '错词不会凭空消失：它会垒在防线前，每多一层，下一个方块可用的下落行程就更短，反应时间被一点点压缩；画面左右两侧的竖排防线也会同步长高，一眼就能看出双方各堆了多高。所以削砖块要尽量一次答对，别把空间让给错词。',
+          '错词不会凭空消失：它会垒在防线前，每多一层，下一个方块可用的下落行程就更短，反应时间被一点点压缩；画面左右两侧的竖排防线也会同步长高，一眼就能看出双方各堆了多高。所以消砖块要尽量一次答对，别把空间让给错词。',
     ),
     FeatureChallenge(
       id: 'tip_monster_joystick',
@@ -529,8 +529,8 @@ class FeatureChallengeRepository {
     FeatureChallenge(
       id: 'tip_brick_shared_word_order',
       category: '功能技巧',
-      title: '削砖块：怎么确认双方拿到的是同一套词',
-      question: '「削砖块」对战里，怎么判断双方是不是被区别出题、对手拿了更简单的词？',
+      title: '消砖块：怎么确认双方拿到的是同一套词',
+      question: '「消砖块」对战里，怎么判断双方是不是被区别出题、对手拿了更简单的词？',
       options: [
         '看名字上方实时显示的双方当前单词：两人共用同一份共享词序，同一索引永远是同一个词',
         '看谁的血条更长，血条长的一方题目更简单',

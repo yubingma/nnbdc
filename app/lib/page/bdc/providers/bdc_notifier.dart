@@ -877,7 +877,7 @@ class BdcNotifier extends _$BdcNotifier {
       lastFsrsRating: null,
       lastFsrsRatingReason: null,
       currentAsrCandidates: [],
-      asrRoundHeardText: null, // 换词：上一词的"没听清/不对"结论不能带到新词
+      asrRoundHeardNothing: false, // 换词：上一词的"没听清"不能带到新词
       loadError: null, // Successfully loaded a word, clear error
       loadErrorCause: null,
       tabIndex: newTabIndex,
@@ -1304,7 +1304,7 @@ class BdcNotifier extends _$BdcNotifier {
       showSentenceWordMeaning: false,
       currentScore: null,
       currentAsrCandidates: [],
-      asrRoundHeardText: null, // 练习＝这一轮重来，上一轮的判错结论作废
+      asrRoundHeardNothing: false, // 练习＝这一轮重来
     );
     _heardNothingTimer?.cancel();
     _heardNothingTimer = null;
@@ -1783,7 +1783,7 @@ class BdcNotifier extends _$BdcNotifier {
         wordWrapper: wrapper,
         isUpdatingByHint: !state.isUpdatingByHint,
         currentAsrCandidates: [],
-        asrRoundHeardText: null, // 用户主动清空＝重新作答，旧结论作废
+        asrRoundHeardNothing: false, // 用户主动清空＝重新作答
       );
       _heardNothingTimer?.cancel();
       _heardNothingTimer = null;
@@ -2411,10 +2411,10 @@ class BdcNotifier extends _$BdcNotifier {
 
       // 用户又开口说话了：上一轮"没听清 / 说得不对"的结论已经过时，先撤掉再判这一轮。
       // 只在真的听到字时才撤（空帧频繁到达，不能让它把结论闪掉）。
-      if (best.isNotEmpty && state.asrRoundHeardText != null) {
+      if (best.isNotEmpty && state.asrRoundHeardNothing) {
         _heardNothingTimer?.cancel();
         _heardNothingTimer = null;
-        state = state.copyWith(asrRoundHeardText: null);
+        state = state.copyWith(asrRoundHeardNothing: false);
       }
 
       debugPrint('🔎 [ASR-DIAG] enter step=${state.studyStep} finished=${state.hasFinishedAnswering} '
@@ -2994,7 +2994,7 @@ class BdcNotifier extends _$BdcNotifier {
           canLeaveCurrWord: true,
           wordWrapper: clonedWrapper,
           // 这一轮已经听对了：上一轮残留的"没听清/不对"结论必须撤掉
-          asrRoundHeardText: null,
+          asrRoundHeardNothing: false,
         );
         // ⚡ 极速听觉反馈：在正确答案视觉点亮的同一瞬间，立即触发播放正确反馈音！
         // 彻底消除由于后续异步关麦、FSRS 评分计算等排队造成的音效滞后感
@@ -4423,7 +4423,7 @@ class BdcNotifier extends _$BdcNotifier {
       _heardNothingTimer = null;
       if (_isDisposed || state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
       if (_isWordAiRefereeJudging) return;
-      state = state.copyWith(asrRoundHeardText: "");
+      state = state.copyWith(asrRoundHeardNothing: true);
     });
   }
 
@@ -4475,11 +4475,7 @@ class BdcNotifier extends _$BdcNotifier {
       List<String> inputs, int matchedCountAtSchedule) async {
     // 同一个答案刚判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
     // 只能放在停顿回调里——调度入口每一帧识别都会进一次，提示会刷屏。
-    if (_remindAlreadyJudgedAnswer(cleanInput)) {
-      // 说明只弹一次就会被忽略，状态行上的"听到的是哪句"要留在屏幕上
-      state = state.copyWith(asrRoundHeardText: AsrUtil.heardEchoText(asrText, cleanInput));
-      return;
-    }
+    if (_remindAlreadyJudgedAnswer(cleanInput)) return;
     await _evaluateWordWithAiReferee(cleanInput,
         rawInput: asrText,
         candidates: inputs,

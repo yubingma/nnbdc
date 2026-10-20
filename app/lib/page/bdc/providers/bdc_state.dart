@@ -58,12 +58,12 @@ class BdcState extends Equatable {
   final String asrResult;
   final List<String> currentAsrCandidates;
 
-  /// 本轮开口的结论回显（null = 暂无结论）。
+  /// 这一轮开口什么都没听清（识别为空或只剩单字杂音）。
   ///
-  /// 空字符串表示"这一轮根本没听到可判的文字"，非空表示"听到的是这句，但不对"。
-  /// 它只在用户**说完之后**写入一次，重新开口、换词、说中释义时清空；
-  /// 只用于让用户看见"系统听到了什么"，不参与判题、不影响通过与否。
-  final String? asrRoundHeardText;
+  /// 只在用户**说完之后**置位一次，重新开口、换词、说中释义时复位；
+  /// 只用于把状态行从"请说中文释义"换成"没听清，再说一遍"，不参与判题。
+  /// 与"匹配度为 0"是两回事：那是听清了但不对，由 [currentScore] 表达。
+  final bool asrRoundHeardNothing;
 
   final bool isKeyboardVisible;
   final bool autoJumpAfterCorrectCh2En;
@@ -172,7 +172,7 @@ class BdcState extends Equatable {
     this.asrState = AsrState.unknown,
     this.asrResult = "",
     this.currentAsrCandidates = const [],
-    this.asrRoundHeardText,
+    this.asrRoundHeardNothing = false,
     this.isKeyboardVisible = false,
     this.autoJumpAfterCorrectCh2En = true,
     this.autoJumpAfterCorrectEn2Ch = true,
@@ -263,7 +263,7 @@ class BdcState extends Equatable {
     AsrState? asrState,
     String? asrResult,
     List<String>? currentAsrCandidates,
-    Object? asrRoundHeardText = _sentinel,
+    bool? asrRoundHeardNothing,
     bool? isKeyboardVisible,
     bool? autoJumpAfterCorrectCh2En,
     bool? autoJumpAfterCorrectEn2Ch,
@@ -352,9 +352,7 @@ class BdcState extends Equatable {
       asrState: asrState ?? this.asrState,
       asrResult: asrResult ?? this.asrResult,
       currentAsrCandidates: currentAsrCandidates ?? this.currentAsrCandidates,
-      asrRoundHeardText: asrRoundHeardText == _sentinel
-          ? this.asrRoundHeardText
-          : (asrRoundHeardText as String?),
+      asrRoundHeardNothing: asrRoundHeardNothing ?? this.asrRoundHeardNothing,
       isKeyboardVisible: isKeyboardVisible ?? this.isKeyboardVisible,
       autoJumpAfterCorrectCh2En: autoJumpAfterCorrectCh2En ?? this.autoJumpAfterCorrectCh2En,
       autoJumpAfterCorrectEn2Ch: autoJumpAfterCorrectEn2Ch ?? this.autoJumpAfterCorrectEn2Ch,
@@ -443,7 +441,7 @@ class BdcState extends Equatable {
     asrState,
     asrResult,
     currentAsrCandidates,
-    asrRoundHeardText,
+    asrRoundHeardNothing,
     isKeyboardVisible,
     autoJumpAfterCorrectCh2En,
     autoJumpAfterCorrectEn2Ch,

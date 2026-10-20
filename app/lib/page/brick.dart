@@ -14,7 +14,7 @@ import '../util/platform_util.dart';
 import '../util/prefs.dart';
 import '../util/word_pack_queue.dart';
 
-/// 削砖块 · 下落英文单词大方块
+/// 消砖块 · 下落英文单词大方块
 class BrickItem {
   final int id;
   final String word;
@@ -136,7 +136,7 @@ class BrickAmbientParticle {
   });
 }
 
-/// 削砖块 · 经典下落消除独立对战页面（英选中还原版）
+/// 消砖块 · 经典下落消除独立对战页面（英选中还原版）
 class BrickPage extends StatefulWidget {
   const BrickPage({super.key});
 
@@ -241,7 +241,7 @@ class BrickPageState extends State<BrickPage>
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    // 削砖块是纵向堆叠玩法，锁定竖屏，避免横屏把下落行程和答题区一起压扁
+    // 消砖块是纵向堆叠玩法，锁定竖屏，避免横屏把下落行程和答题区一起压扁
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     _tts.init();
     // 提前装载音效池和答对音，避免第一题答对时因首次解码而听不到声音
@@ -667,7 +667,7 @@ class BrickPageState extends State<BrickPage>
         }
       });
     } catch (e) {
-      Global.logger.e('削砖块解析单词出错: $e');
+      Global.logger.e('消砖块解析单词出错: $e');
     }
   }
 
@@ -1131,7 +1131,7 @@ class BrickPageState extends State<BrickPage>
     if (!mounted) return;
     final String id = loserId?.toString() ?? '';
     if (id.isEmpty) {
-      Global.logger.e('削砖块: loser 事件缺少失败者ID，无法判定胜负');
+      Global.logger.e('消砖块: loser 事件缺少失败者ID，无法判定胜负');
       return;
     }
     _endGame(isWin: id != myUserId);
@@ -1168,7 +1168,7 @@ class BrickPageState extends State<BrickPage>
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         title: Text(
-          isWin ? '🏆 削砖大捷！' : '💥 防线失守',
+          isWin ? '🏆 消砖大捷！' : '💥 防线失守',
           style: TextStyle(
             color: isWin ? const Color(0xFFFBBF24) : const Color(0xFFEF4444),
             fontWeight: FontWeight.bold,
@@ -1203,7 +1203,7 @@ class BrickPageState extends State<BrickPage>
   void _handleGameNotInProgress(String cmd) {
     if (!mounted || _resultShown) return;
     _pendingUserCmds.clear();
-    Global.logger.w('削砖块: 服务端已无本局对局（触发指令[$cmd]），退出对战界面');
+    Global.logger.w('消砖块: 服务端已无本局对局（触发指令[$cmd]），退出对战界面');
     _exitBattleScreen('对局已结束或房间已解散，请重新开始');
   }
 
@@ -1211,7 +1211,7 @@ class BrickPageState extends State<BrickPage>
   void _handleForceClose(String reason) {
     if (!mounted || _resultShown) return;
     _pendingUserCmds.clear();
-    Global.logger.w('削砖块: 连接被服务端关闭: $reason');
+    Global.logger.w('消砖块: 连接被服务端关闭: $reason');
     _exitBattleScreen(reason.isEmpty ? '连接已被关闭' : '连接已被关闭：$reason');
   }
 
@@ -1326,7 +1326,7 @@ class BrickPageState extends State<BrickPage>
                         const SizedBox(width: 5),
                         Flexible(
                           child: Text(
-                            '削砖块 · ${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
+                            '消砖块 · ${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
                             style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
@@ -1554,7 +1554,7 @@ class BrickPageState extends State<BrickPage>
   }
 }
 
-/// 削砖块专属场景绘制器
+/// 消砖块专属场景绘制器
 class _BrickScenePainter extends CustomPainter {
   final List<BrickItem> bricks;
   final List<BrickStackRow> stackRows;

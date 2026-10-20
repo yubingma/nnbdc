@@ -127,11 +127,14 @@ class WordWrapper {
   /// 最近一次的语音识别结果（用于展示）
   String? lastAsrResult;
 
-  /// 本轮开口的结论回显（null = 暂无结论；空字符串 = 没听清；非空 = 听到的是这句，但不对）。
+  /// 这一轮开口的匹配度（0~100，null = 还没判过）。
   ///
-  /// 词表页「说中文/说英文」的答题行据此告诉用户"我听到了什么、对不对"，
-  /// 与背单词页 `BdcState.asrRoundHeardText` 同一套语义。只用于展示，不参与判题。
-  String? roundHeardText;
+  /// 词表页「说中文/说英文」的答题行只显示这个数字：用户说了一长句时，
+  /// 回显原话既放不下也读不清，数字才是能一眼看懂的结论。
+  int? roundMatchScore;
+
+  /// 这一轮什么都没听清（与"匹配度为 0"是两回事：那是听清了但不对）。
+  bool roundHeardNothing = false;
 
   /// 缓存进度信息，用于 UI 展示
   double? currentProgress;
@@ -195,7 +198,8 @@ class WordWrapper {
       ..isAiEvaluating = isAiEvaluating
       ..aiApprovedAnswer = aiApprovedAnswer
       ..lastAsrResult = lastAsrResult
-      ..roundHeardText = roundHeardText
+      ..roundMatchScore = roundMatchScore
+      ..roundHeardNothing = roundHeardNothing
       ..currentProgress = currentProgress
       ..maxProgress = maxProgress;
   }
@@ -334,35 +338,24 @@ bool chineseInputMatchesAnyMeaning(WordVo word, Object input, {bool strict = fal
   return false;
 }
 
-/// 本轮开口结论的文案（背单词页与词表页共用，不许各写一套）。
-///
-/// [heardText] 为 null 表示暂无结论（不展示）；空字符串表示这一轮什么都没听清；
-/// 非空表示系统听到的就是这句，但它不对。
-String? asrRoundVerdictText(String? heardText) {
-  if (heardText == null) return null;
-  return heardText.isEmpty ? '没听清，再说一遍' : '听到的是「$heardText」，不对';
-}
+/// 这一轮什么都没听清时的提示（背单词页与词表页共用，够短，不会撑爆一行）。
+const String asrHeardNothingText = '没听清，再说一遍';
 
-/// 本轮开口结论（背单词页整行一条、词表页行内小字，两处共用同一套文案与配色）。
+/// 匹配度数字：告诉用户"系统听清了、离目标有多远"，**不回显原话**。
 ///
-/// 这一行是用户唯一能看见"我听到了什么、对不对"的地方：
-/// 没有它，答错与程序卡死在界面上完全一样。
-///
-/// 允许折行（[maxLines] 默认 2）：用户说了很长一句时回显本身就长，
-/// 折行比把这一行等比缩成几像素的小字可读得多。
-Widget buildAsrRoundVerdict(String? heardText,
-    {double fontSize = 10, int maxLines = 2}) {
-  final text = asrRoundVerdictText(heardText);
-  if (text == null) return const SizedBox.shrink();
+/// 为什么不回显原话：用户说一长句时，原话既放不下，又会让整行被等比缩成看不清的小字
+/// （线上反馈："波形那里冒出一堆黄色小字"）。一个 0~100 的数字才是这行该有的信息量。
+Widget buildAsrMatchScore(int? score, {double fontSize = 10}) {
+  if (score == null) return const SizedBox.shrink();
   return Text(
-    text,
-    maxLines: maxLines,
+    '匹配度 $score',
+    maxLines: 1,
     overflow: TextOverflow.ellipsis,
     style: TextStyle(
       fontSize: fontSize,
-      height: 1.35,
+      height: 1.3,
       color: Colors.orange,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w600,
     ),
   );
 }

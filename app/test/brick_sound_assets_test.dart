@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
-/// 削砖块音效资源契约测试：
+/// 消砖块音效资源契约测试：
 /// 代码里引用的每一个音效文件都必须真实存在，且所在目录已在 pubspec 里声明。
 /// （之前 correct.mp3 就是个不存在的文件，导致答对时静默无声。）
 void main() {
-  test('削砖块引用的音效资源存在且已声明', () {
+  test('消砖块引用的音效资源存在且已声明', () {
     final source = File('lib/page/brick.dart').readAsStringSync();
     final pubspec = File('pubspec.yaml').readAsStringSync();
 

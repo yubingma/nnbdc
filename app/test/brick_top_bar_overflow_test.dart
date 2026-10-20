@@ -46,7 +46,7 @@ void main() {
                             const SizedBox(width: 5),
                             Flexible(
                               child: Text(
-                                '削砖块 · $hallName${roomId != null ? ' · 房号$roomId' : ''}',
+                                '消砖块 · $hallName${roomId != null ? ' · 房号$roomId' : ''}',
                                 style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
@@ -78,7 +78,7 @@ void main() {
     );
   }
 
-  testWidgets('削砖块顶部栏在360dp窄屏与长房间名下不产生RenderFlex溢出', (tester) async {
+  testWidgets('消砖块顶部栏在360dp窄屏与长房间名下不产生RenderFlex溢出', (tester) async {
     final exceptions = <FlutterErrorDetails>[];
     final originalOnError = FlutterError.onError;
     FlutterError.onError = (details) => exceptions.add(details);
@@ -96,7 +96,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(exceptions, isEmpty, reason: '不应产生任何溢出错误');
-      expect(find.textContaining('削砖块 · 英语专业八级'), findsOneWidget);
+      expect(find.textContaining('消砖块 · 英语专业八级'), findsOneWidget);
       expect(find.text('开始对战'), findsOneWidget);
     } finally {
       FlutterError.onError = originalOnError;
@@ -104,7 +104,7 @@ void main() {
     }
   });
 
-  testWidgets('削砖块顶部栏在320dp极窄屏下仍自适应且无溢出', (tester) async {
+  testWidgets('消砖块顶部栏在320dp极窄屏下仍自适应且无溢出', (tester) async {
     final exceptions = <FlutterErrorDetails>[];
     final originalOnError = FlutterError.onError;
     FlutterError.onError = (details) => exceptions.add(details);

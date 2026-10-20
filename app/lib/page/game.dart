@@ -30,7 +30,7 @@ class _GamePageState extends State<GamePage> {
   String? errorMessage;
   bool _isLoading = false;
 
-  /// 当前选中的游戏类型：'bubble'（戳泡泡）、'brick'（削砖块）、'monster'（打哭小馋怪）
+  /// 当前选中的游戏类型：'bubble'（戳泡泡）、'brick'（消砖块）、'monster'（打哭小馋怪）
   String _selectedGame = 'bubble';
 
   String get _targetGameRoute =>
@@ -458,7 +458,7 @@ class _GamePageState extends State<GamePage> {
                   child: _buildCurrentDictSection(themeConfig),
                 ),
 
-                // 2. 主内容区域（多人房间列表仅在戳泡泡和削砖块模式展示）
+                // 2. 主内容区域（多人房间列表仅在戳泡泡和消砖块模式展示）
                 if (_selectedGame != 'monster')
                   SliverToBoxAdapter(
                     child: errorMessage != null
@@ -566,11 +566,11 @@ class _GamePageState extends State<GamePage> {
           ),
           const SizedBox(width: 8),
 
-          // 2. 削砖块（PVP 对战，经典下落消除）
+          // 2. 消砖块（PVP 对战，经典下落消除）
           Expanded(
             child: _buildGameTabCard(
               id: 'brick',
-              title: '削砖块',
+              title: '消砖块',
               tag: '1v1 消除',
               icon: Icons.grid_view_rounded,
               themeConfig: themeConfig,
@@ -711,7 +711,7 @@ class _GamePageState extends State<GamePage> {
           '成群结队的小馋怪正迈着小短腿压过长桥，企图抢走桥头守护的水果！左下摇杆带着小宠物在桥头前后左右走位，小宠物自动朝正前方投掷坚果：桥两侧悬着一对单词牌，把队伍挪到正确那个单词的正下方，坚果就会打中它——答对火力升级，打错或超时火力下降；小馋怪被打哭会抹着眼泪跑掉，水果被抢光就输啦！';
     } else if (_selectedGame == 'brick') {
       icon = Icons.dashboard_rounded;
-      title = '削砖块 · 1v1 经典下落消除';
+      title = '消砖块 · 1v1 经典下落消除';
       subtitle = '单词下落触底 · 辨析中文释义';
       description =
           '单局从顶部缓缓下落 1 个英文单词方块；看准词义在底部 3 个中文释义中快速点选正确答案。答对爆破方块消除，连对可获得道具：左侧「治疗」用在自己这边，右侧「攻击」打向对手；若未在方块触底前答出或答错，该方块会落到防线前堆成死词层——两侧竖排防线会同步长高，堆得越高下一题的下落行程越短，压力越来越大；名字上方会实时显示双方当前单词，两人共用同一份共享词序、同一索引永远是同一个词；堆满 10 层防线失守，先耗尽者判负。';
