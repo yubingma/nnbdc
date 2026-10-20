@@ -739,13 +739,16 @@ class _MonsterSpriteState extends State<MonsterSprite>
               ));
             }
 
-            // ---- 左下虚拟摇杆：小队走位（按住持续走、松手停）
-            // 右下角先留空，将来要加右摇杆/道具时直接摆进去。
+            // ---- 左下就是整块摇杆热区：底盘跟着手指按下点出现（王者荣耀那套浮动摇杆）。
+            // 热区给得比底盘大得多，左手拇指落在左下任意位置都能直接推；右下角先留空，
+            // 将来要加右摇杆/道具时直接摆进去。
             final EdgeInsets safe = MediaQuery.paddingOf(context);
-            final double joyRadius = (c.maxHeight * 0.17).clamp(44.0, 72.0);
+            final double joyRadius = (c.maxHeight * 0.17).clamp(44.0, 68.0);
             children.add(Positioned(
-              left: 6 + safe.left,
-              bottom: 4 + safe.bottom,
+              left: safe.left,
+              bottom: safe.bottom,
+              width: c.maxWidth * 0.46,
+              height: c.maxHeight * 0.68,
               child: GameJoystick(
                 radius: joyRadius,
                 onChanged: (dir, mag) {

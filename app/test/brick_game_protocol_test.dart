@@ -55,9 +55,21 @@ void main() {
     expect(source, contains('int get myHp => max(0, maxHp - stackRows.length)'), reason: '生命值与堆叠层数必须同源');
     expect(source, contains("socket.on('stackSync'"), reason: '必须接收服务端权威堆叠行数');
 
-    // 10. 道具库存以服务端 giveProps 为准，不能本地随机各发一套
+    // 10. 竖排血条：stackSync 载荷为 [userId, rows, reason]，对手行数也要落到竖排血条上
+    expect(source, contains('data[1] is num'), reason: 'stackSync 的第二项才是堆叠行数');
+    expect(source, contains('opponentHp = max(0, maxHp - rows)'), reason: '对手行数必须同步到对手血条');
+    expect(source, contains('opponentStackRows'), reason: '对手堆叠行数必须传给画布');
+    expect(source, contains('_drawHpRail'), reason: '左右两侧必须绘制竖排防线');
+
+    // 11. 道具库存以服务端 giveProps 为准，不能本地随机各发一套
     expect(source, contains("socket.on('giveProps'"), reason: '必须接收服务端发放的道具');
     expect(source, contains("socket.on('propsUsed'"), reason: '必须处理对手使用道具');
     expect(source, isNot(contains('rand.nextBool()')), reason: '禁止本地随机决定道具类型');
+
+    // 12. 道具语义与站位：治疗给自己放左侧，攻击打对手放右侧
+    final int healLabelIdx = source.indexOf("label: '治疗'");
+    final int attackLabelIdx = source.indexOf("label: '攻击'");
+    expect(healLabelIdx, greaterThan(0), reason: '治疗按钮必须存在');
+    expect(attackLabelIdx, greaterThan(healLabelIdx), reason: '治疗在我方左侧，攻击在对手右侧');
   });
 }

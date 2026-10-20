@@ -225,11 +225,20 @@ public class ReadyState extends RoomState {
     /**
      * 答题上报的公共处理：取消该用户的触底计时；若答错，则堆叠+1（同一单词最多+1）。
      * 老协议 GET_NEXT_WORD 与新协议 ANSWER 共用这段逻辑。
+     *
+     * 处理完必须把 stackAddedOnce 复位：它只负责"同一单词的触底与答错不重复计数"，
+     * 不是"一局只加一次"。机器人每答一题都走这里，不复位的话它整局只会堆到第 1 层，
+     * 人类永远等不到它堆满 10 层，对局也就结束不了。
      */
     private void processAnswerReport(UserVo user, UserCmd userCmd) {
         cancelFallTask(user);
         String[] args = userCmd.getArgs();
-        if (args == null || args.length < 2 || !"false".equals(args[1])) {
+        if (args == null || args.length < 2) {
+            return;
+        }
+        if (!"false".equals(args[1])) {
+            // 本题答对：本词没有堆叠，清掉标记给下一题用
+            stackAddedOnce.put(user.getId(), Boolean.FALSE);
             return;
         }
         String word = (args.length >= 3 && args[2] != null) ? args[2] : "";
@@ -241,7 +250,9 @@ public class ReadyState extends RoomState {
             } catch (NumberFormatException ignored) {
                 /* 安静忽略 */ }
         }
-        tryAddStackOnce(user, word.isEmpty() ? "答错[]" : ("答错[" + word + "]"));
+        tryAddStackOnce(user, word.isEmpty() ? "答错[]" : ("答错[" + word + "]"), false);
+        // 本题处理完（不管这次是否真的加了一行），清掉标记给下一题用
+        stackAddedOnce.put(user.getId(), Boolean.FALSE);
     }
 
     /**
@@ -380,7 +391,20 @@ public class ReadyState extends RoomState {
     }
 
     /**
-     * 按漏答给用户补扣堆叠行数，并把服务端的权威行数同步给客户端校正血条。
+     * 把某个玩家当前的堆叠行数广播给房间里的双方：
+     * 自己的客户端据此校正血条，对手的客户端据此看到对方的堆叠高度。
+     * 事件载荷为 [userId, 堆叠行数, 原因]。
+     */
+    private void broadcastStackRows(UserVo user, String reason) {
+        UserGameData playData = room.getUserPlayData(user);
+        if (playData == null) {
+            return;
+        }
+        room.broadcastEvent("stackSync", new Object[]{user.getId(), playData.getStackRows(), reason});
+    }
+
+    /**
+     * 按漏答给用户补扣堆叠行数，并把双方的权威行数同步给客户端。
      */
     private void addStackRows(UserVo user, int rows, String reason) {
         if (rows <= 0) {
@@ -390,7 +414,7 @@ public class ReadyState extends RoomState {
         playData.setStackRows(playData.getStackRows() + rows);
         log.info(String.format("🧱 玩家[%s] %s，堆叠+%d => %d",
                 Util.getNickNameOfUser(user), reason, rows, playData.getStackRows()));
-        room.sendEventToUser(user, "stackSync", new Object[]{playData.getStackRows(), reason});
+        broadcastStackRows(user, reason);
         if (playData.getStackRows() >= 10) {
             try {
                 gameOverProcessor.handleLoser(user);
@@ -409,7 +433,7 @@ public class ReadyState extends RoomState {
 
         if (etaMs <= 0) {
             // 立即处理触底
-            tryAddStackOnce(user, "立即触底上报");
+            tryAddStackOnce(user, "立即触底上报", true);
             return;
         }
 
@@ -422,7 +446,7 @@ public class ReadyState extends RoomState {
                         return;
                     }
                     // 若在ETA到达时该用户没有提交答题（近似判断：lastUserCmd不是GET_NEXT_WORD或时间未更新），则判定触底堆叠+1
-                    tryAddStackOnce(user, "触底周期完成");
+                    tryAddStackOnce(user, "触底周期完成", true);
                 } catch (Exception ignored) {
                     cancel();
                 }
@@ -438,7 +462,7 @@ public class ReadyState extends RoomState {
             old.cancel();
     }
 
-    private void tryAddStackOnce(UserVo user, String reason) {
+    private void tryAddStackOnce(UserVo user, String reason, boolean botFellThrough) {
         Boolean added = stackAddedOnce.get(user.getId());
         if (Boolean.TRUE.equals(added))
             return; // 已加过，忽略
@@ -449,6 +473,7 @@ public class ReadyState extends RoomState {
         LoggerFactory.getLogger(ReadyState.class)
                 .info(String.format("🧱 玩家[%s] %s，堆叠+1 => %d",
                         Util.getNickNameOfUser(user), reason, pd.getStackRows()));
+        broadcastStackRows(user, reason);
 
         // 如果堆叠达到 10 行（生命值耗尽淘汰），立即判定该玩家为失败者
         if (pd.getStackRows() >= 10) {
@@ -460,8 +485,9 @@ public class ReadyState extends RoomState {
             return;
         }
 
-        // 如果是机器人触底，强制立即进行下一次答题动作（Force False），解决高叠时的同步延迟
-        if (botUserObj != null && user.getId().equals(botUserObj.getId())) {
+        // 只有机器人真的触底（不是它自己答错）才强制补一次答题；
+        // 答错路径本来就会在 triggerBotAnswer 末尾调度下一题，这里再触发会重排出两条答题链。
+        if (botFellThrough && botUserObj != null && user.getId().equals(botUserObj.getId())) {
             triggerBotAnswer(false);
         }
     }
@@ -619,12 +645,14 @@ public class ReadyState extends RoomState {
                     if (another != null) {
                         UserGameData opp = room.getUserPlayData(another);
                         opp.setStackRows(opp.getStackRows() + 1);
+                        broadcastStackRows(another, "对手导弹轰击");
                         if (opp.getStackRows() >= 10) {
                             gameOverProcessor.handleLoser(another);
                         }
                     }
                 } else if (props == 1) {
                     playData.setStackRows(Math.max(0, playData.getStackRows() - 1));
+                    broadcastStackRows(user, "海星修复防线");
                 }
             } catch (Exception ignored) {
             }
@@ -633,7 +661,7 @@ public class ReadyState extends RoomState {
 
     /**
      * 精准同步堆叠行数：
-     * args[0] = 自己的 rows；可选 args[1] = 对手的 rows（若前端已一并上报）
+     * args[0] = 自己的 rows；服务端取更严的一方，并把结果广播给双方。
      */
     private void processReportStackRows(UserVo user, UserCmd userCmd) throws IllegalAccessException {
         try {
@@ -645,6 +673,7 @@ public class ReadyState extends RoomState {
                 // 客户端报的是"它看见的漏答"，服务端推演的是"按时间它应该漏掉的"，
                 // 同一个事实取更严的一方，客户端收到 stackSync 后会把血条校正过来。
                 playData.setStackRows(Math.max(playData.getStackRows(), selfRows));
+                broadcastStackRows(user, "堆叠校正");
                 if (playData.getStackRows() >= 10) {
                     gameOverProcessor.handleLoser(user);
                 }

@@ -2643,11 +2643,20 @@ class RussiaPageState extends State<RussiaPage>
 
   /// 服务端按时间推演出的权威堆叠行数：客户端挂了后台、气泡停在原地的那段时间
   /// 服务端会补扣，这里把血条校正过来并告诉用户为什么掉血。
+  /// 载荷为 [userId, 堆叠行数, 原因]；对手的行数也广播过来了，顺带把对手血条校准。
   void _handleStackSync(dynamic data) {
-    final int rows = (data is List && data.isNotEmpty && data[0] is num)
-        ? (data[0] as num).toInt()
-        : 0;
-    final String reason = (data is List && data.length > 1) ? data[1].toString() : '';
+    if (data is! List || data.length < 2) return;
+    final String userId = data[0]?.toString() ?? '';
+    final int rows = (data[1] is num) ? (data[1] as num).toInt() : 0;
+    final String reason = data.length > 2 ? data[2].toString() : '';
+
+    if (userId != myUserId) {
+      setState(() {
+        opponentHp = max(0, maxHp - rows);
+      });
+      return;
+    }
+
     final int serverHp = max(0, maxHp - rows);
     // 两边对同一个事实各有一份推演，取更严的一方：服务端更宽松就不动本地的血
     if (serverHp >= myHp) return;

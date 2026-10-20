@@ -225,6 +225,8 @@ class BrickPageState extends State<BrickPage>
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // 削砖块是纵向堆叠玩法，锁定竖屏，避免横屏把下落行程和答题区一起压扁
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     _tts.init();
     LoadingUtils.disableApiLoading();
 
@@ -605,6 +607,10 @@ class BrickPageState extends State<BrickPage>
     const double brickW = 230.0;
     const double brickH = 58.0;
     final Color color = brickColors[myWordIndex % brickColors.length];
+    // 初始下落时间按约 6.2 秒定：竞技场变高后速度同步放大，避免场地变大把节奏拖慢
+    final double arenaBottomY = _arenaBottomY(size.height, mediaQuery?.padding.bottom ?? 0.0);
+    final double fallDistance = max(80.0, arenaBottomY - startY - brickH / 2);
+    final double speed = fallDistance / 6.2;
 
     bricks.add(BrickItem(
       id: nextBrickId++,
@@ -615,7 +621,7 @@ class BrickPageState extends State<BrickPage>
       baseX: size.width / 2,
       width: brickW,
       height: brickH,
-      speed: 38.0,
+      speed: speed,
       swingAmplitude: 3.5,
       swingFreq: 1.2,
       phase: 0.0,
@@ -739,7 +745,7 @@ class BrickPageState extends State<BrickPage>
 
     final mediaQuery = MediaQuery.maybeOf(context);
     final size = mediaQuery?.size ?? const Size(390, 844);
-    final double barrierBottomY = size.height * 0.44;
+    final double barrierBottomY = _arenaBottomY(size.height, mediaQuery?.padding.bottom ?? 0.0);
     final double stackTopY = _stackTopY(barrierBottomY, mediaQuery?.padding.top ?? 44.0);
 
     wavePhase += dt * 2.2;
@@ -838,6 +844,13 @@ class BrickPageState extends State<BrickPage>
     }
   }
 
+  /// 下落竞技场底边：默认占屏幕高度的 60%；
+  /// 屏幕较矮时优先给底部答题区（提示 + 三张释义卡 + 道具栏）留出足够高度，避免挤出屏幕。
+  double _arenaBottomY(double screenHeight, double bottomInset) {
+    final double bottomPanelHeight = 300.0 + max(0.0, bottomInset - 10.0);
+    return min(screenHeight * 0.60, screenHeight - bottomPanelHeight);
+  }
+
   /// 每一层死词砖占用的高度：把从出生点到防线的行程均分成 maxHp + 2 份，
   /// 多留两行余量，保证垒到第 10 层前仍有一小段可反应的下落距离。
   double _stackRowHeight(double barrierBottomY, double topPadding) {
@@ -906,28 +919,38 @@ class BrickPageState extends State<BrickPage>
     if (propsIdx == 0 && propsMine > 0) {
       propsMine--;
       sendUserCmd('USE_PROPS', [propsIdx]);
-      _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '🚀 导弹发射!', color: const Color(0xFFEF4444)));
+      _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '🚀 攻击 -1 HP!', color: const Color(0xFFEF4444)));
       setState(() => opponentHp = max(0, opponentHp - 1));
     } else if (propsIdx == 1 && propsStarfish > 0) {
       if (myHp >= maxHp) {
-        _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '防线已满格', color: const Color(0xFF38BDF8)));
+        _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '防线已满格，无需治疗', color: const Color(0xFF38BDF8)));
         return;
       }
       propsStarfish--;
       setState(() => stackRows.removeLast());
       sendUserCmd('USE_PROPS', [propsIdx]);
-      _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '✨ 防线修复 +1!', color: const Color(0xFF10B981)));
+      _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '✨ 治疗 +1 HP!', color: const Color(0xFF10B981)));
       sendUserCmd('REPORT_STACK_ROWS', [stackRows.length]);
     }
   }
 
   /// 服务端按时间推演出的权威堆叠行数：客户端挂后台、方块停在原地的那段时间会被补扣。
-  /// 两边对同一个事实各有一份推演，取更严的一方，服务端更宽松就不动本地。
+  /// 载荷为 [userId, 堆叠行数, 原因]；对手的行数也广播过来了，右侧竖排血条据此显示对方堆叠高度。
   void _handleStackSync(dynamic data) {
-    if (!mounted || !isPlaying) return;
-    final int rows = (data is List && data.isNotEmpty && data[0] is num) ? (data[0] as num).toInt() : 0;
-    final String reason = (data is List && data.length > 1) ? data[1].toString() : '';
+    if (!mounted || !isPlaying || data is! List || data.length < 2) return;
+    final String userId = data[0]?.toString() ?? '';
+    final int rows = (data[1] is num) ? (data[1] as num).toInt() : 0;
+    final String reason = data.length > 2 ? data[2].toString() : '';
+
+    if (userId != myUserId) {
+      setState(() {
+        opponentHp = max(0, maxHp - rows);
+      });
+      return;
+    }
+
     final int serverHp = max(0, maxHp - rows);
+    // 两边对同一个事实各有一份推演，取更严的一方，服务端更宽松就不动本地
     if (serverHp >= myHp) return;
 
     final int lost = myHp - serverHp;
@@ -961,22 +984,22 @@ class BrickPageState extends State<BrickPage>
     _floatingTexts.add(BrickFloatingText(
       x: 200,
       y: 260,
-      text: propsType == 0 ? '💣 获得导弹 ×$count' : '⭐ 获得防线修复 ×$count',
+      text: propsType == 0 ? '💣 获得攻击 ×$count' : '⭐ 获得治疗 ×$count',
       color: propsType == 0 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
     ));
   }
 
-  /// 对手使用道具：导弹扣我方 1 点防线，海星给对手回 1 点。
+  /// 对手使用道具：攻击扣我方 1 点防线，治疗给对手回 1 点。
   void _handlePropsUsed(String fromUserId, int propsType) {
     if (fromUserId == myUserId) return; // 自己用道具时已在本地即时表现
     if (propsType == 0) {
-      _applyDamage(1, reason: '💥 遭受对手导弹轰击！-1 HP');
+      _applyDamage(1, reason: '💥 遭受对手攻击！-1 HP');
     } else {
       setState(() => opponentHp = min(maxHp, opponentHp + 1));
       _floatingTexts.add(BrickFloatingText(
         x: 200,
         y: 260,
-        text: '💚 对手修复防线 +1 HP',
+        text: '💚 对手治疗 +1 HP',
         color: const Color(0xFFFBBF24),
       ));
     }
@@ -1086,6 +1109,7 @@ class BrickPageState extends State<BrickPage>
     SocketIoClient.instance.disconnect();
     LoadingUtils.enableApiLoading();
     Prefs.applyFullScreenMode();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
   }
 
@@ -1100,8 +1124,8 @@ class BrickPageState extends State<BrickPage>
 
     final mediaQuery = MediaQuery.of(context);
     final topPadding = max(mediaQuery.padding.top, 16.0);
-    final bottomPadding = max(mediaQuery.padding.bottom, 10.0);
-    final double barrierBottomY = mediaQuery.size.height * 0.44;
+    final double barrierBottomY = _arenaBottomY(mediaQuery.size.height, mediaQuery.padding.bottom);
+    final double stackRowHeight = _stackRowHeight(barrierBottomY, topPadding);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -1123,7 +1147,13 @@ class BrickPageState extends State<BrickPage>
                 floatingTexts: _floatingTexts,
                 ambientParticles: _ambientParticles,
                 barrierBottomY: barrierBottomY,
-                stackRowHeight: _stackRowHeight(barrierBottomY, topPadding),
+                stackRowHeight: stackRowHeight,
+                maxStackRows: maxHp,
+                myStackRows: stackRows.length,
+                opponentStackRows: min(maxHp, max(0, maxHp - opponentHp)),
+                myHp: myHp,
+                opponentHp: opponentHp,
+                opponentName: opponentNickName,
               ),
             ),
           ),
@@ -1183,28 +1213,15 @@ class BrickPageState extends State<BrickPage>
             ),
           ),
 
-          // 3. 双方血量槽（10格方块防线）
-          Positioned(
-            top: topPadding + 52,
-            left: 20,
-            right: 20,
-            child: Row(
-              children: [
-                _buildHpIndicator(label: '我方防线', hp: myHp, isMine: true),
-                const SizedBox(width: 20),
-                _buildHpIndicator(label: opponentNickName, hp: opponentHp, isMine: false),
-              ],
-            ),
-          ),
-
-          // 4. 下半部：中文释义三选一答题卡片区
+          // 3. 双方竖排防线画在竞技场左右两侧（见画布），这里只保留答题区
+          // 4. 下半部：中文释义三选一答题卡片区（紧凑块，提示、三张卡片、道具栏从上到下挨着排列）
           if (isPlaying)
             Positioned(
-              top: barrierBottomY + 12,
+              top: barrierBottomY + 8,
               left: 18,
               right: 18,
-              bottom: bottomPadding + 62,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
@@ -1222,44 +1239,36 @@ class BrickPageState extends State<BrickPage>
                       ),
                     ],
                   ),
+                  const SizedBox(height: 6),
+                  for (int i = 0; i < currentOptions.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 8),
+                    _buildOptionCard(currentOptions[i]),
+                  ],
                   const SizedBox(height: 10),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: currentOptions.map((opt) {
-                        return _buildOptionCard(opt);
-                      }).toList(),
-                    ),
+                  // 道具操作栏紧贴答题卡片下方：治疗是给自己用的，放左侧（我方）；
+                  // 攻击是打向对手的，放右侧（对手侧），位置和两侧竖排防线一一对应。
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildPropBtn(
+                        icon: Icons.auto_awesome_rounded,
+                        label: '治疗',
+                        count: propsStarfish,
+                        color: const Color(0xFF10B981),
+                        onTap: () => _useProps(1),
+                      ),
+                      _buildPropBtn(
+                        icon: Icons.rocket_launch_rounded,
+                        label: '攻击',
+                        count: propsMine,
+                        color: const Color(0xFFEF4444),
+                        onTap: () => _useProps(0),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-
-          // 5. 底部道具操作栏
-          Positioned(
-            bottom: bottomPadding + 6,
-            left: 20,
-            right: 20,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildPropBtn(
-                  icon: Icons.rocket_launch_rounded,
-                  label: '轰击对手',
-                  count: propsMine,
-                  color: const Color(0xFFEF4444),
-                  onTap: () => _useProps(0),
-                ),
-                _buildPropBtn(
-                  icon: Icons.auto_awesome_rounded,
-                  label: '修复防线',
-                  count: propsStarfish,
-                  color: const Color(0xFF10B981),
-                  onTap: () => _useProps(1),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -1341,35 +1350,6 @@ class BrickPageState extends State<BrickPage>
     );
   }
 
-  Widget _buildHpIndicator({required String label, required int hp, required bool isMine}) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: isMine ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Row(
-            children: List.generate(10, (idx) {
-              final active = idx < hp;
-              return Expanded(
-                child: Container(
-                  height: 7,
-                  margin: const EdgeInsets.symmetric(horizontal: 1),
-                  decoration: BoxDecoration(
-                    color: active
-                        ? (isMine ? const Color(0xFF10B981) : const Color(0xFFF59E0B))
-                        : Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPropBtn({
     required IconData icon,
     required String label,
@@ -1420,6 +1400,12 @@ class _BrickScenePainter extends CustomPainter {
   final List<BrickAmbientParticle> ambientParticles;
   final double barrierBottomY;
   final double stackRowHeight;
+  final int maxStackRows;
+  final int myStackRows;
+  final int opponentStackRows;
+  final int myHp;
+  final int opponentHp;
+  final String opponentName;
 
   _BrickScenePainter({
     required this.bricks,
@@ -1429,6 +1415,12 @@ class _BrickScenePainter extends CustomPainter {
     required this.ambientParticles,
     required this.barrierBottomY,
     required this.stackRowHeight,
+    required this.maxStackRows,
+    required this.myStackRows,
+    required this.opponentStackRows,
+    required this.myHp,
+    required this.opponentHp,
+    required this.opponentName,
   });
 
   double get _stackTopY => barrierBottomY - stackRows.length * stackRowHeight;
@@ -1468,7 +1460,27 @@ class _BrickScenePainter extends CustomPainter {
     // 4. 底部死词砖堆叠层
     _drawStack(canvas, size);
 
-    // 5. 当前堆叠顶面就是触底警戒线：堆得越高，这条线越往上压
+    // 5. 左右两侧竖排防线：格子高度与死词层完全同高，红色部分从底部往上长 = 堆叠高度
+    _drawHpRail(canvas, size, left: true, lostRows: myStackRows, accent: const Color(0xFF34D399));
+    _drawHpRail(canvas, size, left: false, lostRows: opponentStackRows, accent: const Color(0xFFF59E0B));
+    _drawHpRailLabel(
+      canvas,
+      size,
+      left: true,
+      name: '我',
+      hp: myHp,
+      color: const Color(0xFF34D399),
+    );
+    _drawHpRailLabel(
+      canvas,
+      size,
+      left: false,
+      name: opponentName.isEmpty ? '对手' : opponentName,
+      hp: opponentHp,
+      color: const Color(0xFFF59E0B),
+    );
+
+    // 6. 当前堆叠顶面就是触底警戒线：堆得越高，这条线越往上压
     final double dangerLineY = _stackTopY;
     final barrierPaint = Paint()
       ..shader = LinearGradient(
@@ -1477,16 +1489,16 @@ class _BrickScenePainter extends CustomPainter {
           const Color(0xFFEF4444).withValues(alpha: 0.9),
           const Color(0xFFEF4444).withValues(alpha: 0.15),
         ],
-      ).createShader(Rect.fromLTWH(0, dangerLineY, size.width, 2))
+      ).createShader(Rect.fromLTWH(26, dangerLineY, size.width - 52, 2))
       ..strokeWidth = 2.0;
-    canvas.drawLine(Offset(0, dangerLineY), Offset(size.width, dangerLineY), barrierPaint);
+    canvas.drawLine(Offset(26, dangerLineY), Offset(size.width - 26, dangerLineY), barrierPaint);
 
-    // 6. 下落单一目标英文单词大方块绘制
+    // 7. 下落单一目标英文单词大方块绘制
     for (final b in bricks) {
       _drawBrick(canvas, b);
     }
 
-    // 7. 爆破微粒
+    // 8. 爆破微粒
     for (final p in particles) {
       final pPaint = Paint()
         ..color = p.color.withValues(alpha: (p.life / p.maxLife).clamp(0.0, 1.0))
@@ -1494,7 +1506,7 @@ class _BrickScenePainter extends CustomPainter {
       canvas.drawCircle(Offset(p.x, p.y), p.radius, pPaint);
     }
 
-    // 8. 飘字
+    // 9. 飘字
     for (final ft in floatingTexts) {
       final tp = TextPainter(
         text: TextSpan(
@@ -1517,7 +1529,7 @@ class _BrickScenePainter extends CustomPainter {
     for (int i = 0; i < stackRows.length; i++) {
       final row = stackRows[i];
       final double top = barrierBottomY - (i + 1) * stackRowHeight;
-      final Rect rect = Rect.fromLTWH(16, top + 0.8, size.width - 32, stackRowHeight - 1.6);
+      final Rect rect = Rect.fromLTWH(26, top + 0.8, size.width - 52, stackRowHeight - 1.6);
       final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(5));
 
       final fill = Paint()
@@ -1553,6 +1565,108 @@ class _BrickScenePainter extends CustomPainter {
       )..layout(maxWidth: rect.width - 14);
       tp.paint(canvas, Offset(rect.center.dx - tp.width / 2, rect.center.dy - tp.height / 2));
     }
+  }
+
+  /// 单侧竖排防线：10 格从底部往上填，红色格子的高度与死词堆叠层严格同高。
+  void _drawHpRail(Canvas canvas, Size size, {required bool left, required int lostRows, required Color accent}) {
+    const double railWidth = 16.0;
+    final double railHeight = maxStackRows * stackRowHeight;
+    if (railHeight <= 0) return;
+    final double railTop = barrierBottomY - railHeight;
+    final double x = left ? 6.0 : size.width - 6.0 - railWidth;
+    final RRect rail = RRect.fromRectAndRadius(
+      Rect.fromLTWH(x, railTop, railWidth, railHeight),
+      const Radius.circular(8),
+    );
+
+    canvas.drawRRect(rail, Paint()..color = Colors.black.withValues(alpha: 0.30));
+    canvas.drawRRect(
+      rail,
+      Paint()
+        ..color = accent.withValues(alpha: 0.30)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.9,
+    );
+
+    const double gap = 1.5;
+    final double cellHeight = max(2.0, stackRowHeight - gap * 2);
+    for (int i = 0; i < maxStackRows; i++) {
+      final bool filled = i >= maxStackRows - lostRows; // i=0 是最上面一格，所以从底部往上填
+      final double cellTop = railTop + i * stackRowHeight + gap;
+      final RRect cell = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x + 2.5, cellTop, railWidth - 5, cellHeight),
+        const Radius.circular(2),
+      );
+      if (!filled) {
+        canvas.drawRRect(cell, Paint()..color = accent.withValues(alpha: 0.07));
+        continue;
+      }
+      canvas.drawRRect(cell, Paint()..color = const Color(0xFFEF4444).withValues(alpha: 0.92));
+      // 堆叠顶面那一格加一道高光，和中间那条警戒线对上
+      if (i == maxStackRows - lostRows) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(x + 2.5, cellTop, railWidth - 5, min(3.0, cellHeight)),
+            const Radius.circular(2),
+          ),
+          Paint()..color = Colors.white.withValues(alpha: 0.5),
+        );
+      }
+    }
+  }
+
+  /// 竖排防线顶部的名字与剩余格数：数字永远贴外侧，不会被中间下落的方块挡住。
+  void _drawHpRailLabel(
+    Canvas canvas,
+    Size size, {
+    required bool left,
+    required String name,
+    required int hp,
+    required Color color,
+  }) {
+    final double railHeight = maxStackRows * stackRowHeight;
+    final double railTop = barrierBottomY - railHeight;
+
+    final hpTp = TextPainter(
+      text: TextSpan(
+        text: '$hp',
+        style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w800),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final nameTp = TextPainter(
+      text: TextSpan(
+        text: name,
+        style: const TextStyle(color: Colors.white70, fontSize: 9.5, fontWeight: FontWeight.w600),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      ellipsis: '…',
+    )..layout(maxWidth: 62);
+
+    // 数字贴外侧（远离中间下落的方块），名字在内侧
+    final double hpX = left ? 7.0 : size.width - 7.0 - hpTp.width;
+    final double nameX = left ? hpX + hpTp.width + 4.0 : hpX - 4.0 - nameTp.width;
+    final double lineHeight = max(hpTp.height, nameTp.height);
+    final double textY = railTop - lineHeight - 8;
+
+    final double bgLeft = min(hpX, nameX) - 5;
+    final double bgRight = max(hpX + hpTp.width, nameX + nameTp.width) + 5;
+    final RRect bg = RRect.fromRectAndRadius(
+      Rect.fromLTWH(bgLeft, textY - 3, bgRight - bgLeft, lineHeight + 6),
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(bg, Paint()..color = Colors.black.withValues(alpha: 0.36));
+    canvas.drawRRect(
+      bg,
+      Paint()
+        ..color = color.withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    );
+    hpTp.paint(canvas, Offset(hpX, textY + (lineHeight - hpTp.height) / 2));
+    nameTp.paint(canvas, Offset(nameX, textY + (lineHeight - nameTp.height) / 2));
   }
 
   void _drawBrick(Canvas canvas, BrickItem b) {
