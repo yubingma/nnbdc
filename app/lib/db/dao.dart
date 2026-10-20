@@ -529,6 +529,39 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
     }
   }
 
+  /// 批量把单词加入「生词本」（已在生词本里的词跳过，不重复插入）。
+  ///
+  /// 「加入生词本」真正写库只在这里一处：详情页收藏、取消掌握后从零重学、
+  /// 批量重学都经由它写入，避免同一件事出现两套写法。返回真正新加入的词数。
+  Future<int> addWordsToRawWordDict(String userId, List<String> wordIds, bool genLog) async {
+    if (wordIds.isEmpty) return 0;
+    final rawDict = await findUserRawDict(userId);
+    if (rawDict == null) {
+      throw StateError('用户 [$userId] 缺少「生词本」词书，无法加入生词本');
+    }
+    final existing = await db.dictWordsDao.getWordIdsInDict(rawDict.id, wordIds);
+    final newWordIds = wordIds.where((id) => !existing.contains(id)).toList(growable: false);
+    if (newWordIds.isEmpty) return 0;
+
+    final now = AppClock.now();
+    // 生词本沿用既有约定：seq 固定 0（生词本不按序号排序）
+    await db.dictWordsDao.insertEntities(
+      newWordIds
+          .map((wordId) => DictWord(
+                dictId: rawDict.id,
+                wordId: wordId,
+                seq: 0,
+                unit: 0,
+                createTime: now,
+                updateTime: now,
+              ))
+          .toList(growable: false),
+      genLog,
+    );
+    await updateWordCount(rawDict.id, genLog);
+    return newWordIds.length;
+  }
+
   /// 删除词典（支持日志）
   Future<void> deleteEntity(Dict entry, bool genLog) async {
     try {
@@ -811,6 +844,16 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
     final count = await countQuery.getSingle();
     return count.read(countAll()) ?? 0;
+  }
+
+  /// 某本词书里已经存在的词 ID（批量插入前先减掉，避免重复写入）。
+  Future<Set<String>> getWordIdsInDict(String dictId, List<String> wordIds) async {
+    if (wordIds.isEmpty) return {};
+    final rows = await (selectOnly(dictWords)
+          ..addColumns([dictWords.wordId])
+          ..where(dictWords.dictId.equals(dictId) & dictWords.wordId.isIn(wordIds)))
+        .get();
+    return rows.map((row) => row.read(dictWords.wordId)!).toSet();
   }
 
   /// 获取一组词书中去重后的单词总数
@@ -1994,12 +2037,28 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
       if (!removed) return;
 
       // 4. 用户主动取消掌握 = 从零重学：把词加进生词本
-      await _addWordToRawWordDict(userId, wordId, genLog);
+      await db.dictsDao.addWordsToRawWordDict(userId, [wordId], genLog);
+
+      // 5. 删掉学习记录（单条与批量共用同一段实现）
+      await _deleteLearningRecords(userId, [wordId]);
 
       Global.logger.d('已掌握单词删除成功并移动到生词本: userId=$userId, wordId=$wordId');
     } catch (e) {
       Global.logger.e('删除已掌握单词失败: userId=$userId, wordId=$wordId, error=$e');
       rethrow;
+    }
+  }
+
+  /// 删掉这些词的学习记录（取消掌握 = 从零重学）。
+  ///
+  /// 必须删除、而不是把 stability 置空：drift 的 saveEntity 走 nullToAbsent，
+  /// `Value(null)` 会被当作"不修改"静默丢弃。删掉后今日计划会走 init 路径从头开始。
+  Future<void> _deleteLearningRecords(String userId, List<String> wordIds) async {
+    for (final wordId in wordIds) {
+      final learningWord = await db.learningWordsDao.getById(userId, wordId);
+      if (learningWord != null) {
+        await db.learningWordsDao.deleteEntity(learningWord, true);
+      }
     }
   }
 
@@ -2036,26 +2095,6 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
     return true;
   }
 
-  // 将单词添加到生词本的私有方法
-  Future<void> _addWordToRawWordDict(String userId, String wordId, bool genLog) async {
-    try {
-      final word = await (select(db.words)..where((w) => w.id.equals(wordId))).getSingleOrNull();
-      if (word == null) {
-        Global.logger.e('单词不存在: wordId=$wordId');
-        return;
-      }
-      final result = await WordBo().addRawWord(word.spell, '重学添加');
-      if (!result.success) {
-        Global.logger.e('添加单词到生词本失败: ${result.msg}');
-      } else {
-        Global.logger.d('单词已添加到生词本: wordId=$wordId, spell=${word.spell}');
-      }
-    } catch (e) {
-      Global.logger.e('添加单词到生词本失败: userId=$userId, wordId=$wordId, error=$e');
-    }
-  }
-
-  // 将学习中的单词标记为已掌握
   // 将学习中的单词标记为已掌握
   Future<void> setLearningWordAsMastered(String userId, String wordId, bool deleteLearningWord) async {
     final db = attachedDatabase;
@@ -2087,6 +2126,125 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
     }
   }
 
+
+  /// 批量标记为已掌握。
+  ///
+  /// 与单条 [setLearningWordAsMastered] 是同一条业务规则：进「已掌握」词书；当天已开始学习
+  /// 就补满该词今日的环节数；还在规划阶段就删掉学习记录。区别只在写法：整批一个事务、
+  /// 一次序号分配、一次词数重算、一次用户计数重算（段位与勋章判定因此只跑一次）。
+  /// 返回真正新掌握的词数：已在「已掌握」里的词跳过，不重复计数。
+  Future<int> setLearningWordsAsMastered(String userId, List<String> wordIds) async {
+    if (wordIds.isEmpty) return 0;
+
+    final dictId = await _getMasteredDictId(userId);
+    if (dictId == null) {
+      throw StateError('用户 [$userId] 缺少「已掌握」词书，无法标记掌握');
+    }
+
+    final alreadyMastered = await getMasteredWordIdSetForWords(userId, wordIds);
+    final newWordIds = wordIds.where((id) => !alreadyMastered.contains(id)).toList(growable: false);
+    if (newWordIds.isEmpty) return 0;
+
+    final user = await db.usersDao.getUserById(userId);
+    final bool todayStudyStarted = user?.todayStudyStarted ?? false;
+    // 学习轨道末位固定是「单词列表」：饱和值 = 答对组环节数 + 2（测评 + 单词列表）。
+    // 与单条掌握取同一个来源，批量不另写一套数字。
+    final int saturatedSteps = todayStudyStarted
+        ? (await db.userStudyStepsDao.getGroupSteps(userId, 'new', 'correct')).length + 2
+        : 0;
+
+    await transaction(() async {
+      final now = AppClock.now();
+
+      // 1. 一次分配序号。不能逐条走 insertEntity：它每次都查最大序号并整本校验一次，
+      //    批量会退化成 N 次全表扫描。
+      final maxSeqResult = await (selectOnly(db.dictWords)
+            ..addColumns([db.dictWords.seq.max()])
+            ..where(db.dictWords.dictId.equals(dictId)))
+          .getSingle();
+      var seq = maxSeqResult.read(db.dictWords.seq.max()) ?? 0;
+
+      final entries = <DictWord>[];
+      for (final wordId in newWordIds) {
+        entries.add(DictWord(
+          dictId: dictId,
+          wordId: wordId,
+          seq: ++seq,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+      }
+
+      // 2. 一次批量插入（每行照旧生成一条同步日志，端云一致）
+      await db.dictWordsDao.insertEntities(entries, true);
+
+      // 3. 一次词书词数重算
+      await db.dictsDao.updateWordCount(dictId, true);
+
+      // 4. 学习进度：与单条完全同一条规则
+      for (final wordId in newWordIds) {
+        final learningWord = await db.learningWordsDao.getById(userId, wordId);
+        if (learningWord == null) continue;
+        if (todayStudyStarted) {
+          await db.learningWordsDao.saveEntity(
+            learningWord.copyWith(
+              lastLearningDate: Value(now),
+              learnedTimes: learningWord.learnedTimes + 1,
+              todayLearnedTimes: saturatedSteps,
+            ),
+            true,
+          );
+        } else {
+          await db.learningWordsDao.deleteEntity(learningWord, true);
+        }
+      }
+
+      // 5. 一次用户已掌握数重算（段位与勋章判定只跑一次）
+      await updateUserMasteredWordCount(userId);
+    });
+
+    Global.logger.d('批量标记已掌握: userId=$userId, 新增=${newWordIds.length}');
+    return newWordIds.length;
+  }
+
+  /// 批量取消掌握（从零重学）。
+  ///
+  /// 与单条 [deleteMasteredWord] 同一语义：移出「已掌握」、加入生词本、删掉学习记录。
+  /// 整批一个事务、一次词数重算、一次用户计数重算。返回真正被移出的词数。
+  Future<int> deleteMasteredWords(String userId, List<String> wordIds) async {
+    if (wordIds.isEmpty) return 0;
+
+    final dictId = await _getMasteredDictId(userId);
+    if (dictId == null) return 0;
+
+    final rows = await (select(db.dictWords)
+          ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.isIn(wordIds)))
+        .get();
+    if (rows.isEmpty) return 0;
+    final removedIds = rows.map((row) => row.wordId).toList(growable: false);
+
+    await transaction(() async {
+      // 1. 移出「已掌握」（语义排序缓存整批只失效一次）
+      for (final row in rows) {
+        await db.dictWordsDao.deleteEntity(row, true, invalidateTspCache: false);
+      }
+      WordBo.clearTspCache(dictId, db);
+      await db.dictsDao.updateWordCount(dictId, true);
+
+      // 2. 加入生词本（用户主动取消掌握 = 从零重学）
+      await db.dictsDao.addWordsToRawWordDict(userId, removedIds, true);
+
+      // 3. 删掉学习记录：否则 FSRS 仍带着毕业时的记忆强度排期，等于假重学
+      await _deleteLearningRecords(userId, removedIds);
+
+      // 4. 一次用户已掌握数重算
+      await updateUserMasteredWordCount(userId);
+    });
+
+    Global.logger.d('批量取消掌握: userId=$userId, 移出=${removedIds.length}');
+    return removedIds.length;
+  }
 
   // 查询已掌握词书中的单词数, 并据此更新用户已掌握单词数量
   Future<void> updateUserMasteredWordCount(String userId) async {

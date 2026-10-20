@@ -2026,27 +2026,38 @@ class WordBo {
     return WordStatusCounts(unlearned: total - mastered - learning, learning: learning, mastered: mastered);
   }
 
+  /// 当前筛选下可被「全选」掌握的全部词 ID：已在「已掌握」词书里的词不在其中。
+  ///
+  /// 取的是整个视图（不是已加载的那一页）：界面上「全选 N」显示多少，
+  /// 按下去就必须处理多少，否则用户看到的数量与真正执行的数量对不上。
+  Future<List<String>> getSelectableWordIds(String dictId, String userId, WordStatusFilter statusFilter) async {
+    final db = MyDatabase.instance;
+    final masteredIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
+    final statusSql = await _buildStatusFilterSql(statusFilter, userId);
+
+    final Iterable<String> visibleIds;
+    if (statusSql == null) {
+      final rows = await db.customSelect(
+        'SELECT dw.word_id FROM dict_words dw WHERE dw.dict_id = ?',
+        variables: [Variable.withString(dictId)],
+        readsFrom: {db.dictWords},
+      ).get();
+      visibleIds = rows.map((row) => row.read<String>('word_id'));
+    } else {
+      visibleIds = await _getVisibleWordIdSet(dictId, statusSql);
+    }
+    return visibleIds.where((id) => !masteredIds.contains(id)).toList(growable: false);
+  }
+
   /// 取消掌握（选项②：真正从零重学）
   ///
-  /// 除了移出「已掌握」词书（DAO 内还会把词放进生词本），必须同时把 learning_words
-  /// 的记忆状态重置为“新词”——否则用户以为在重学，FSRS 仍带着毕业时的 stability
-  /// 按稀疏节奏排期，属于假学习。重置后 stability/difficulty 为 null，
-  /// 今日计划会走 init 路径从头开始，毕业线也重新爬。
+  /// 移出「已掌握」、放进生词本、删掉学习记录这三步都在
+  /// [MasteredWordsDao.deleteMasteredWords] 里完成，单条与批量共用同一段实现：
+  /// 学习记录必须删掉而不是把 stability 置空（drift 的 saveEntity 走 nullToAbsent，
+  /// `Value(null)` 会被当作"不修改"静默丢弃），否则 FSRS 仍带着毕业时的记忆强度排期，
+  /// 用户以为在重学，实际是假重学。
   Future<Result> deleteMasteredWord(String userId, String wordId) async {
-    final db = MyDatabase.instance;
-    await db.masteredWordsDao.deleteMasteredWord(userId, wordId, true, true);
-
-    final lw = await (db.select(db.learningWords)
-          ..where((t) => t.userId.equals(userId) & t.wordId.equals(wordId)))
-        .getSingleOrNull();
-    if (lw != null) {
-      // 直接删除毕业留下的学习记录：
-      // 1) drift 的 saveEntity(entity) 走 nullToAbsent，Value(null) 会被当作"不修改"静默丢弃，
-      //    所以"把字段置 null"根本无效（上一版就是这么失效的）；
-      // 2) 删除即"未学习"，词已在生词本里，重新学习时会走 init 从零开始 —— 与 _saveMasteredWord
-      //    在规划期删除记录的行为对称。
-      await db.learningWordsDao.deleteEntity(lw, true); // true = 生成同步日志，端云一致
-    }
+    await MyDatabase.instance.masteredWordsDao.deleteMasteredWord(userId, wordId, true, true);
     return Result<dynamic>('200', null, true);
   }
 
@@ -3275,6 +3286,30 @@ class WordBo {
     } catch (e) {
       Global.logger.e('本地化setLearningWordAsMastered失败: $e');
       return Result("ERROR", '标记单词为已掌握失败: $e', false);
+    }
+  }
+
+  /// 批量标记为已掌握：与单条 [setLearningWordAsMastered] 同一规则，整批一次写完。
+  /// 返回真正新掌握的词数（已在「已掌握」里的词跳过）。
+  Future<Result<int>> setWordsAsMastered(String userId, List<String> wordIds) async {
+    try {
+      final count = await MyDatabase.instance.masteredWordsDao.setLearningWordsAsMastered(userId, wordIds);
+      return Result<int>("SUCCESS", null, true)..data = count;
+    } catch (e) {
+      Global.logger.e('批量标记已掌握失败: $e');
+      return Result<int>("ERROR", '批量标记掌握失败: $e', false);
+    }
+  }
+
+  /// 批量取消掌握（从零重学）：与单条 [deleteMasteredWord] 同一语义，整批一次写完。
+  /// 返回真正被移出的词数。
+  Future<Result<int>> unmasterWords(String userId, List<String> wordIds) async {
+    try {
+      final count = await MyDatabase.instance.masteredWordsDao.deleteMasteredWords(userId, wordIds);
+      return Result<int>("SUCCESS", null, true)..data = count;
+    } catch (e) {
+      Global.logger.e('批量取消掌握失败: $e');
+      return Result<int>("ERROR", '批量取消掌握失败: $e', false);
     }
   }
 

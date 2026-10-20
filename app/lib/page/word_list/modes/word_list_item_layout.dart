@@ -41,6 +41,10 @@ class WordListItemLayout extends StatelessWidget {
   final List<Widget> slidableActions;
   final GroupCardPosition groupPosition;
 
+  /// 多选模式：左侧序号位显示勾选圈，并禁用左滑（避免滑动与勾选手势互相抢）
+  final bool selectionMode;
+  final bool selected;
+
   const WordListItemLayout({
     super.key,
     required this.word,
@@ -59,6 +63,8 @@ class WordListItemLayout extends StatelessWidget {
     this.cardMarginOverride,
     required this.slidableActions,
     this.groupPosition = GroupCardPosition.single,
+    this.selectionMode = false,
+    this.selected = false,
   });
 
   @override
@@ -67,17 +73,18 @@ class WordListItemLayout extends StatelessWidget {
     final themeConfig = AppThemeConfig.of(themeStyle);
     final accentColor = themeConfig.primaryColor;
 
-    // 选中时赋予 4%~5% 的极淡通透主题微光底色，未选中时保持纯白/卡片底色
+    // 选中/勾选时赋予 4%~5% 的极淡通透主题微光底色，未选中时保持纯白/卡片底色
+    final bool highlighted = isBookmarked || selected;
     final cardBg = isDarkMode
-        ? (isBookmarked
+        ? (highlighted
             ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), context.cardBg)
             : context.cardBg)
-        : (isBookmarked
+        : (highlighted
             ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), context.cardBg)
             : context.cardBg);
 
-    // 选中时使用精致半透的主题微边框 (1.2px)，未选中时为极淡边框
-    final borderColor = isBookmarked
+    // 选中/勾选时使用精致半透的主题微边框 (1.2px)，未选中时为极淡边框
+    final borderColor = highlighted
         ? accentColor.withValues(alpha: isDarkMode ? 0.6 : 0.45)
         : themeConfig.cardBorder;
 
@@ -86,7 +93,7 @@ class WordListItemLayout extends StatelessWidget {
     // 选中收藏：保留精致半透主题微光投影；未选中：统一卡片阴影(随透明度联动, 深色不拖黑影)
     final cardShadow = headerContent != null
         ? const <BoxShadow>[]
-        : isBookmarked
+        : (isBookmarked || selected)
             ? [
                 BoxShadow(
                   color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.08),
@@ -205,7 +212,7 @@ class WordListItemLayout extends StatelessWidget {
       ),
     );
 
-    if (slidableActions.isEmpty) return itemContent;
+    if (slidableActions.isEmpty || selectionMode) return itemContent;
 
     return Slidable(
       key: ValueKey('slidable_${word.word.id}'),
@@ -230,8 +237,11 @@ class WordListItemLayout extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 环形熟练度微光环徽章（选中时实心高亮）
-              _buildRingMasteryBadge(themeConfig),
+              // 多选模式：序号位换成勾选圈；否则显示环形熟练度微光环徽章
+              if (selectionMode)
+                _buildSelectionBadge(themeConfig)
+              else
+                _buildRingMasteryBadge(themeConfig),
               if (audioIndicator != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -241,6 +251,41 @@ class WordListItemLayout extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// 多选模式的勾选圈：未勾选是空心圆，勾中是实心主题色 + 白色对勾
+  Widget _buildSelectionBadge(AppThemeConfig themeConfig) {
+    final accentColor = themeConfig.primaryColor;
+    if (!selected) {
+      return Container(
+        width: 23,
+        height: 23,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.16),
+            width: 1.5,
+          ),
+        ),
+      );
+    }
+    return Container(
+      width: 23,
+      height: 23,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: accentColor,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.32),
+            blurRadius: 6,
+            offset: const Offset(0, 1.5),
+          ),
+        ],
+      ),
+      child: const Icon(Icons.check_rounded, size: 14, color: Colors.white),
     );
   }
 

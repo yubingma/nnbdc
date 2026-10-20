@@ -22,6 +22,10 @@ class SpeakModeItem extends StatelessWidget {
   final Widget? audioLevelBar;
   final GroupCardPosition groupPosition;
 
+  /// 多选模式：左侧序号位显示勾选圈
+  final bool selectionMode;
+  final bool selected;
+
   const SpeakModeItem({
     super.key,
     required this.word,
@@ -36,6 +40,8 @@ class SpeakModeItem extends StatelessWidget {
     required this.slidableActions,
     this.audioLevelBar,
     this.groupPosition = GroupCardPosition.single,
+    this.selectionMode = false,
+    this.selected = false,
   });
 
   @override
@@ -54,6 +60,8 @@ class SpeakModeItem extends StatelessWidget {
       actions: actions,
       slidableActions: slidableActions,
       groupPosition: groupPosition,
+      selectionMode: selectionMode,
+      selected: selected,
       audioIndicator: ModeComponents.buildAudioIndicator(word, isBookmarked, audioLevelBar),
       centerContent: GestureDetector(
         behavior: HitTestBehavior.opaque,

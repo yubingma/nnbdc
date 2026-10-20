@@ -68,6 +68,14 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   }
 
   @override
+  Future<List<String>?> getSelectableWordIds() async {
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return null;
+    final filter = await getStatusFilter();
+    return WordBo().getSelectableWordIds(dict.id, userId, filter);
+  }
+
+  @override
   Future<WordSortAlg> getSortAlg() async {
     final bookmarkProvider = DictWordsBookMarkProvider(dict);
     final bookmark = await bookmarkProvider.getBookMark();

@@ -15,6 +15,7 @@ import 'package:nnbdc/api/sort_alg.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/api/word_status_filter.dart';
 import 'package:nnbdc/constants.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
@@ -84,6 +85,7 @@ const String menuHideChinese = '遮挡中文';
 const String menuHideEnglish = '遮挡英文';
 const String menuSortSettings = '排序设置';
 const String menuStatusFilter = '状态筛选';
+const String menuBatchSelect = '批量选择';
 const String menuTheme = '外观主题';
 const String menuExportPdf = '导出为 PDF';
 
@@ -104,6 +106,44 @@ mixin WordsProvider {
     final result = await WordBo().deleteMasteredWord(userId, wordWrapper.word.id!);
     return result.success;
   }
+
+  /// 批量标记掌握，返回真正新掌握的词数。
+  ///
+  /// 与单条 [masterWord] 是同一条业务规则，区别只在整批一次写完（一次事务、
+  /// 一次计数重算）。只浏览的词表（形近词、同根词）把 [supportsMastery] 置 false。
+  Future<int> masterWords(List<String> wordIds) async {
+    if (!supportsMastery || wordIds.isEmpty) return 0;
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return 0;
+    final result = await WordBo().setWordsAsMastered(userId, wordIds);
+    if (!result.success) {
+      ToastUtil.error(result.msg ?? '标记掌握失败');
+      return 0;
+    }
+    // 整批写完只触发一次同步，而不是每个词各触发一次
+    ThrottledDbSyncService().requestSync();
+    return result.data ?? 0;
+  }
+
+  /// 批量取消掌握（从零重学），返回真正被移出的词数。
+  Future<int> unmasterWords(List<String> wordIds) async {
+    if (!supportsMastery || wordIds.isEmpty) return 0;
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return 0;
+    final result = await WordBo().unmasterWords(userId, wordIds);
+    if (!result.success) {
+      ToastUtil.error(result.msg ?? '取消掌握失败');
+      return 0;
+    }
+    ThrottledDbSyncService().requestSync();
+    return result.data ?? 0;
+  }
+
+  /// 该数据源是否提供「掌握 / 取消掌握」。仅浏览的词表覆盖为 false。
+  bool get supportsMastery => true;
+
+  /// 当前筛选下可被「全选」的全部词 ID；返回 null 表示该数据源不支持全选。
+  Future<List<String>?> getSelectableWordIds() async => null;
 
   /// 获取指定单词在所有单词中的位置, 如果指定单词不存在，返回-1
   Future<int> getWordIndex(String spell);
@@ -2244,6 +2284,11 @@ class WordListPageState extends State<WordListPage>
   }
 
   void _handleWordTap(WordWrapper word, int index) {
+    // 多选模式下点击整行 = 勾选/取消勾选，不再进入学习动作
+    if (controller.selectionMode) {
+      controller.toggleSelection(word);
+      return;
+    }
     if (studyMode == WordListStudyMode.dictation ||
         studyMode == WordListStudyMode.dictationHandwriting) {
       // 拼写模式点击不发音，避免泄题
@@ -2253,9 +2298,32 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
+  /// 长按进入多选：这是移动端最顺手的"一次选多个"入口。
+  /// 单词详情仍可从左滑面板的「详情」进入，能力不丢。
   void _handleWordLongPress(WordWrapper word, int i) {
+    // 只浏览的词表（形近词、同根词）没有掌握动作，长按仍保持原来的"看详情"
+    if (!args.wordsProvider.supportsMastery) {
+      _openWordDetail(word);
+      return;
+    }
+    if (controller.selectionMode) {
+      controller.toggleSelection(word);
+      return;
+    }
+    _enterSelectionMode(word);
+  }
+
+  void _openWordDetail(WordWrapper word) {
     context.push('/word_detail',
         extra: WordDetailPageArgs(word.word, true, null, false));
+  }
+
+  void _enterSelectionMode([WordWrapper? first]) {
+    if (!mounted) return;
+    FocusScope.of(context).unfocus();
+    // 多选期间不需要麦克风与朗读，先停掉语音会话，避免误触后还在收音
+    _sessionController.stopSession(forceStopMicrophone: false);
+    controller.enterSelection(first);
   }
 
   List<Widget> _getSlidableActions(WordWrapper word, int i, bool isBookmarked,
@@ -2263,39 +2331,27 @@ class WordListPageState extends State<WordListPage>
     final List<Widget> actions = [];
     final String title = args.appBarTitle;
     final bool isMastered = learningStatus == true;
-
-    // 1. 编辑按钮
-    if (args.canEditWord && args.wordsProvider is WordModifier && title != '已掌握') {
-      actions.add(SlidableAction(
-        onPressed: (_) => _showEditMeaningDialog(word),
-        backgroundColor: const Color(0xFF4CAF50),
-        foregroundColor: Colors.white,
-        icon: Icons.edit,
-        label: '编辑',
-      ));
-    }
-
-    // 2. 提示相关按钮 (仅对书签单词有效)
-    if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
-            studyMode == WordListStudyMode.dictationHandwriting ||
-        studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish) && word.hintLetterCount > 0) {
-      // 提示按钮已移至右侧点击区域
-      actions.add(SlidableAction(
-        onPressed: (_) => clearHint(word),
-        backgroundColor: const Color(0xFF9E9E9E),
-        foregroundColor: Colors.white,
-        icon: Icons.refresh,
-        label: '重置',
-      ));
-    }
-
-    // 3. 掌握/删除/重学 逻辑
     final bool isWrongList = title == '今日错词' || title == '历史错词';
     const specialLists = ['学习中', '单词列表', '今日新词', '今日旧词', '今日单词'];
     final bool isSpecialList = specialLists.contains(title);
 
-    if (title != '已掌握' && (!isSpecialList || isWrongList)) {
+    // 1. 主操作放在最靠边。
+    //    左滑面板从右往左展开，手指一滑落到的就是第一颗；「掌握」是这里最常用的动作，
+    //    不该排在「编辑」后面再让人找一下。
+    if (title == '已掌握') {
+      // 已掌握词表的主操作是重学（取消掌握 = 从零重学，并加进生词本）
+      actions.add(CustomSlidableAction(
+        onPressed: (_) => onDelBtnPressed(word, i),
+        backgroundColor: const Color(0xFF2196F3),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.replay, color: Colors.white, size: 20),
+            Text('重学', style: TextStyle(color: Colors.white, fontSize: 10)),
+          ],
+        ),
+      ));
+    } else {
       actions.add(CustomSlidableAction(
         onPressed: (_) => isMastered
             ? onUnmasterBtnPressed(word, i)
@@ -2311,61 +2367,53 @@ class WordListPageState extends State<WordListPage>
       ));
     }
 
-    if (args.showDelBtn || isSpecialList || isWrongList) {
-      if (isMastered && isSpecialList && !isWrongList) {
-        actions.add(CustomSlidableAction(
-          onPressed: (_) => onUnmasterBtnPressed(word, i),
-          backgroundColor: Colors.grey[400]!,
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 20),
-              Text('已掌握', style: TextStyle(color: Colors.white, fontSize: 10)),
-            ],
-          ),
-        ));
-      } else {
-        String buttonText;
-        Color color;
-        IconData icon;
-        
-        if (title == '已掌握') {
-          buttonText = '重学';
-          color = const Color(0xFF2196F3);
-          icon = Icons.replay;
-        } else if (isWrongList) {
-          buttonText = '移出';
-          color = const Color(0xFFEF5350);
-          icon = Icons.delete_outline;
-        } else if (isSpecialList) {
-          buttonText = '掌握';
-          color = const Color(0xFF26A69A);
-          icon = Icons.check_circle;
-        } else {
-          buttonText = '删除';
-          color = const Color(0xFFEF5350);
-          icon = Icons.delete;
-        }
-
-        actions.add(CustomSlidableAction(
-          onPressed: (_) => (buttonText == '掌握') 
-              ? onMasterBtnPressed(word, i) 
-              : onDelBtnPressed(word, i),
-          backgroundColor: color,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.white, size: 20),
-              Text(buttonText, style: const TextStyle(color: Colors.white, fontSize: 10)),
-            ],
-          ),
-        ));
-      }
+    // 2. 编辑按钮
+    if (args.canEditWord && args.wordsProvider is WordModifier && title != '已掌握') {
+      actions.add(SlidableAction(
+        onPressed: (_) => _showEditMeaningDialog(word),
+        backgroundColor: const Color(0xFF4CAF50),
+        foregroundColor: Colors.white,
+        icon: Icons.edit,
+        label: '编辑',
+      ));
     }
 
-    // 4. 详情按钮
+    // 3. 提示相关按钮 (仅对书签单词有效)
+    if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
+            studyMode == WordListStudyMode.dictationHandwriting ||
+        studyMode == WordListStudyMode.speakChinese ||
+        studyMode == WordListStudyMode.speakEnglish) && word.hintLetterCount > 0) {
+      // 提示按钮已移至右侧点击区域
+      actions.add(SlidableAction(
+        onPressed: (_) => clearHint(word),
+        backgroundColor: const Color(0xFF9E9E9E),
+        foregroundColor: Colors.white,
+        icon: Icons.refresh,
+        label: '重置',
+      ));
+    }
+
+    // 4. 删除 / 移出。
+    //    「学习中」「今日新词」这类词表的删除动作本身就是掌握（各数据源的 deleteWord
+    //    就是 masterWord），已在第一颗主操作里覆盖，这里不再重复给一颗。
+    //    「已掌握」页的主操作是重学，也不额外给删除。
+    if (title != '已掌握' && !isSpecialList && (args.showDelBtn || isWrongList)) {
+      actions.add(CustomSlidableAction(
+        onPressed: (_) => onDelBtnPressed(word, i),
+        backgroundColor: const Color(0xFFEF5350),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(isWrongList ? Icons.delete_outline : Icons.delete, color: Colors.white, size: 20),
+            Text(isWrongList ? '移出' : '删除', style: const TextStyle(color: Colors.white, fontSize: 10)),
+          ],
+        ),
+      ));
+    }
+
+    // 5. 详情按钮
     actions.add(CustomSlidableAction(
-      onPressed: (_) => _handleWordLongPress(word, i),
+      onPressed: (_) => _openWordDetail(word),
       backgroundColor: const Color(0xFF2196F3),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -2572,6 +2620,8 @@ class WordListPageState extends State<WordListPage>
           actions: this,
           slidableActions: slidableActions,
           groupPosition: groupPosition,
+          selectionMode: controller.selectionMode,
+          selected: controller.isWordSelected(word),
         );
       case WordListStudyMode.speakChinese:
       case WordListStudyMode.speakEnglish:
@@ -2588,6 +2638,8 @@ class WordListPageState extends State<WordListPage>
           slidableActions: slidableActions,
           audioLevelBar: _audioLevelBar(),
           groupPosition: groupPosition,
+          selectionMode: controller.selectionMode,
+          selected: controller.isWordSelected(word),
         );
       case WordListStudyMode.translateSentence:
         return TranslateSentenceModeItem(
@@ -2602,6 +2654,8 @@ class WordListPageState extends State<WordListPage>
           slidableActions: slidableActions,
           audioLevelBar: _audioLevelBar(),
           groupPosition: groupPosition,
+          selectionMode: controller.selectionMode,
+          selected: controller.isWordSelected(word),
         );
       case WordListStudyMode.dictation:
         return TypingModeItem(
@@ -2615,6 +2669,8 @@ class WordListPageState extends State<WordListPage>
           actions: this,
           slidableActions: slidableActions,
           groupPosition: groupPosition,
+          selectionMode: controller.selectionMode,
+          selected: controller.isWordSelected(word),
         );
       case WordListStudyMode.dictationHandwriting:
         return HandwritingModeItem(
@@ -2628,6 +2684,8 @@ class WordListPageState extends State<WordListPage>
           actions: this,
           slidableActions: slidableActions,
           groupPosition: groupPosition,
+          selectionMode: controller.selectionMode,
+          selected: controller.isWordSelected(word),
         );
       case WordListStudyMode.hideChinese:
       case WordListStudyMode.hideEnglish:
@@ -2643,6 +2701,8 @@ class WordListPageState extends State<WordListPage>
           actions: this,
           slidableActions: slidableActions,
           groupPosition: groupPosition,
+          selectionMode: controller.selectionMode,
+          selected: controller.isWordSelected(word),
         );
       default:
         return ListModeItem(
@@ -2656,6 +2716,8 @@ class WordListPageState extends State<WordListPage>
           actions: this,
           slidableActions: slidableActions,
           groupPosition: groupPosition,
+          selectionMode: controller.selectionMode,
+          selected: controller.isWordSelected(word),
         );
     }
   }
@@ -2966,6 +3028,9 @@ class WordListPageState extends State<WordListPage>
         case menuWalkman:
         _openWalkman();
         break;
+        case menuBatchSelect:
+        _enterSelectionMode();
+        break;
         case menuAiStory:
         _generateAiStory();
         break;
@@ -3016,6 +3081,200 @@ class WordListPageState extends State<WordListPage>
     });
   }
 
+  /// 多选模式的顶部栏：取消 / 已选 N 个 / 全选 N
+  PreferredSizeWidget _buildSelectionAppBar(AppThemeConfig themeConfig) {
+    final int selected = controller.selectedCount;
+    final bool allSelected = controller.canSelectAll &&
+        controller.selectableCount > 0 &&
+        selected == controller.selectableCount;
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      titleSpacing: 0,
+      automaticallyImplyLeading: false,
+      title: Row(
+        children: [
+          TextButton(
+            onPressed: () {
+              controller.exitSelection();
+              _restoreAsrIfNeeded('exitSelection');
+            },
+            child: Text(
+              '取消',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: themeConfig.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                '已选 $selected 个',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: themeConfig.textPrimary,
+                ),
+              ),
+            ),
+          ),
+          if (controller.canSelectAll)
+            TextButton(
+              onPressed: () async {
+                if (allSelected) {
+                  controller.clearSelection();
+                } else {
+                  await controller.selectAll();
+                }
+              },
+              child: Text(
+                allSelected ? '取消全选' : '全选 ${controller.selectableCount}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: themeConfig.primaryColor,
+                ),
+              ),
+            )
+          else
+            const SizedBox(width: 64),
+        ],
+      ),
+    );
+  }
+
+  /// 多选模式的底部操作条：只有一颗主按钮（标记掌握 / 重学）。
+  ///
+  /// 不放删除、不放加入生词本：各词表的"删除"根本不是一件事（词书词表是真删词条，
+  /// 「学习中」的删除就是掌握），而加入生词本会把已掌握的词移出，与掌握互相拆台。
+  Widget _buildSelectionBar(AppThemeConfig themeConfig, bool isDarkMode) {
+    final int selected = controller.selectedCount;
+    final bool busy = controller.batchBusy;
+    final bool unmaster = controller.batchActionIsUnmaster;
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 10, 16, 10 + MediaQuery.of(context).padding.bottom),
+      decoration: BoxDecoration(
+        color: context.cardBg,
+        border: Border(top: BorderSide(color: themeConfig.cardBorder, width: 0.8)),
+      ),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '已选 $selected 个',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: themeConfig.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                unmaster ? '重学后按新词重新安排' : '标记后不再出现在今日任务',
+                style: TextStyle(fontSize: 10.5, color: themeConfig.textSecondary),
+              ),
+            ],
+          ),
+          const Spacer(),
+          SizedBox(
+            height: 42,
+            child: FilledButton.icon(
+              onPressed: selected == 0 || busy ? null : _confirmBatchApply,
+              icon: busy
+                  ? const SizedBox(
+                      width: 15,
+                      height: 15,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Icon(unmaster ? Icons.replay_rounded : Icons.check_rounded, size: 18),
+              label: Text(
+                unmaster ? '重学' : '标记掌握',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: themeConfig.primaryColor,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: themeConfig.primaryColor.withValues(alpha: 0.4),
+                disabledForegroundColor: Colors.white70,
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 批量操作前的确认：说清去向与后果，尤其是"当天进度不会倒退"和"之后要逐个重学"。
+  Future<void> _confirmBatchApply() async {
+    if (!_controllerInitialized || controller.batchBusy) return;
+    final int count = controller.selectedCount;
+    if (count <= 0) return;
+
+    final bool unmaster = controller.batchActionIsUnmaster;
+    final themeStyle = context.read<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final bool isDarkMode = themeStyle.isDark;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          unmaster ? '将 $count 个词重新学习？' : '将 $count 个词标记为已掌握？',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
+          ),
+        ),
+        content: Text(
+          unmaster
+              ? '它们会移出「已掌握」并加进生词本，学习进度清零，之后按新词重新安排。'
+              : '它们会立即进入「已掌握」词表，不再出现在今天的学习任务里；当天已开始的学习进度不会倒退。之后想重新背，需要到「已掌握」里点「重学」。',
+          style: TextStyle(
+            fontSize: 13,
+            height: 1.6,
+            color: isDarkMode ? Colors.white70 : const Color(0xFF4A5568),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消', style: TextStyle(color: Color(0xFF718096), fontSize: 13)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              unmaster ? '重新学习' : '标记掌握',
+              style: TextStyle(
+                color: themeConfig.primaryColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final int changed = await controller.applySelection();
+    if (!mounted) return;
+    if (changed > 0) {
+      ToastUtil.success(unmaster ? '已重新学习 $changed 个单词' : '已掌握 $changed 个单词');
+    } else {
+      ToastUtil.info('所选单词无需变更');
+    }
+  }
+
   void _showFrostedMenu(AppThemeConfig themeConfig, bool isDarkMode) {
     final RenderBox? rb = _menuKey.currentContext?.findRenderObject() as RenderBox?;
     if (rb == null) return;
@@ -3053,6 +3312,7 @@ class WordListPageState extends State<WordListPage>
       ],
       // 辅助工具
       [
+        if (args.wordsProvider.supportsMastery) menuBatchSelect,
         menuWalkman,
         if (args.showAiStory) menuAiStory,
       ],
@@ -3143,6 +3403,9 @@ class WordListPageState extends State<WordListPage>
                                     break;
                                   case menuWalkman:
                                     icon = Icons.headphones_rounded;
+                                    break;
+                                  case menuBatchSelect:
+                                    icon = Icons.checklist_rounded;
                                     break;
                                   case menuImportFromBook:
                                     icon = Icons.import_contacts_rounded;
@@ -3316,6 +3579,7 @@ class WordListPageState extends State<WordListPage>
     final themeStyle = darkModeState.themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
+    final bool selectionMode = _controllerInitialized && controller.selectionMode;
 
     // 在页面build时，检查页面是否可见，如果可见且在语音模式下，确保ASR已启动
     // 如果不可见且在语音模式下，停止ASR（用于从页面离开时停止）
@@ -3339,7 +3603,9 @@ class WordListPageState extends State<WordListPage>
         Scaffold(
           resizeToAvoidBottomInset: false, // 禁止分屏或键盘变化导致的布局挤压，提升 iPad 稳定性
           backgroundColor: Colors.transparent,
-          appBar: AppBar(
+          appBar: selectionMode
+              ? _buildSelectionAppBar(themeConfig)
+              : AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             titleSpacing: 0,
@@ -3610,6 +3876,8 @@ class WordListPageState extends State<WordListPage>
               ],
             ),
           ),
+          bottomNavigationBar:
+              selectionMode ? _buildSelectionBar(themeConfig, isDarkMode) : null,
           floatingActionButton: null,
         ),
         // 新手引导覆盖层 - 在Scaffold之上，覆盖整个屏幕包括AppBar

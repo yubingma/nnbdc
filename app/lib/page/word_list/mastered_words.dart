@@ -56,6 +56,15 @@ class MasteredWordsProvider with WordsProvider implements WordModifier {
     return {for (var id in wordIds) id: true};
   }
 
+  /// 「已掌握」词表的全选 = 全部已掌握词（这一页的批量动作是重学）
+  @override
+  Future<List<String>?> getSelectableWordIds() async {
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return null;
+    final ids = await MyDatabase.instance.masteredWordsDao.getMasteredWordIdSet(userId);
+    return ids.toList(growable: false);
+  }
+
   Future<String?> _getMasteredDictId() async {
     final userId = Global.getLoggedInUser()?.id;
     if (userId == null) return null;

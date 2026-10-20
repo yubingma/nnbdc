@@ -297,238 +297,11 @@ class MyDatabase extends _$MyDatabase {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         // 创建表、索引和初始化数据
-        await _initializeDatabaseSchema(m);
+        await migrateAtomically(schemaVersion, () => _initializeDatabaseSchema(m));
       },
       onUpgrade: (Migrator m, int from, int to) async {
         try {
-          // 从版本 1 升级到版本 2：更新 studyStep 字段值
-          if (from < 2) {
-            await _migrateStudyStepFromV1ToV2();
-          }
-          // 从版本 2 升级到版本 3：修复 dicts 表中 popularityLimit 的 0 值
-          if (from < 3) {
-            await _migratePopularityLimitFromV2ToV3();
-          }
-          // 从版本 3 升级到版本 4：创建本地异常记录表
-          if (from < 4) {
-            await _migrateFromV3ToV4(m);
-          }
-          // 从版本 4 升级到版本 5：添加订阅相关字段（按平台区分）
-          if (from < 5) {
-            await _migrateFromV4ToV5(m);
-          }
-          // 从版本 5 升级到版本 6：修复订阅字段列名（历史版本曾误用驼峰列名）
-          if (from < 6) {
-            await _migrateFromV5ToV6FixIosSubscriptionColumns();
-          }
-          // 从版本 6 升级到版本 7：添加“强制视为会员”字段
-          if (from < 7) {
-            await _migrateFromV6ToV7AddPremiumOverrideFields(m);
-          }
-          // 从版本 7 升级到版本 8：删除levels表
-          if (from < 8) {
-            await _migrateFromV7ToV8RemoveLevelsTable(m);
-          }
-          if (from < 9) {
-            await _migrateFromV8ToV9RemoveLevelId();
-          }
-          if (from < 10) {
-            await _migrateFromV9ToV10RemoveTodayLearningFields();
-          }
-          if (from < 11) {
-            await _migrateFromV10ToV11RemoveTotalScoreField();
-          }
-          if (from < 12) {
-            await _migrateFromV11ToV12RemoveVotedChinesesTable(m);
-          }
-          if (from < 13) {
-            await _migrateFromV12ToV13RemoveLearningPositionFields();
-          }
-          if (from < 14) {
-            await _migrateFromV13ToV14(m);
-          }
-          if (from < 15) {
-            await _migrateFromV14ToV15(m);
-          }
-          if (from < 16) {
-            await _migrateFromV15ToV16();
-          }
-          if (from < 17) {
-            await _migrateFromV16ToV17FixDateTimeFormat();
-          }
-          if (from < 18) {
-            await _migrateFromV17ToV18AddTodayStudyStarted(m);
-          }
-          if (from < 19) {
-            await _migrateFromV18ToV19AddEditable(m);
-          }
-          if (from < 20) {
-            await _migrateFromV19ToV20DropMasteredWordsTable(m);
-          }
-          if (from < 21) {
-            await _migrateFromV20ToV21AddDeletable(m);
-          }
-          if (from < 22) {
-            await _migrateFromV21ToV22AddLearningSeconds(m);
-          }
-          if (from < 23) {
-            await _migrateFromV22ToV23(m);
-          }
-          if (from < 24) {
-            await _migrateFromV23ToV24(m);
-          }
-          if (from < 25) {
-            await _migrateFromV24ToV25(m);
-          }
-          if (from < 26) {
-            await _migrateFromV25ToV26AddWalkmanConfig(m);
-          }
-          if (from < 27) {
-            await _migrateFromV26ToV27SwapWalkmanConfigToStudyConfig(m);
-          }
-          if (from < 28) {
-            await _migrateFromV27ToV28(m);
-          }
-          if (from < 29) {
-            await _migrateFromV28ToV29(m);
-          }
-          if (from < 30) {
-            await _migrateFromV29ToV30AddDomain(m);
-          }
-          if (from < 31) {
-            await _migrateFromV30ToV31(m);
-          }
-          if (from < 32) {
-            await _migrateFromV31ToV32(m);
-          }
-          if (from < 33) {
-            await _migrateFromV32ToV33(m);
-          }
-          if (from < 34) {
-            await _migrateFromV33ToV34(m);
-          }
-          if (from < 35) {
-            await _migrateFromV34ToV35DropWordShortDescChineses(m);
-          }
-          if (from < 36) {
-            await _migrateFromV35ToV36AddCoverUrl(m);
-          }
-          if (from < 37) {
-            await _migrateFromV36ToV37AddUnitToDictWords(m);
-          }
-          if (from < 38) {
-            await _migrateFromV37ToV38AddDescriptionToDicts();
-          }
-          if (from < 39) {
-            await _migrateFromV38ToV39DropSentenceRawFields();
-          }
-          if (from < 40) {
-            await _migrateFromV39ToV40AddUserStudyDailyStats(m);
-          }
-          if (from < 41) {
-            await _migrateFromV40ToV41AddAuditColumns(m);
-          }
-          if (from < 42) {
-            await _migrateFromV41ToV42AddMissingAuditColumns(m);
-          }
-          if (from < 43) {
-            await _migrateFromV42ToV43AddPopularityPercent(m);
-          }
-          if (from < 44) {
-            await _migrateFromV43ToV44AddWordCoordinates(m);
-          }
-          if (from < 45) {
-            await _migrateFromV44ToV45AddSortAlg(m);
-          }
-          if (from < 46) {
-            await _migrateFromV45ToV46(m);
-          }
-          if (from < 47) {
-            await _migrateFromV46ToV47(m);
-          }
-          if (from < 48) {
-            await _migrateFromV47ToV48(m);
-          }
-          if (from < 50) {
-            await _migrateFromV48ToV49UserStudyStepsThreeGroup(m);
-          }
-          if (from < 51) {
-            await _migrateFromV50ToV51AddUserBadges(m);
-          }
-          if (from < 52) {
-            await _migrateFromV51ToV52AddMaxMasteredWords(m);
-          }
-          if (from < 53) {
-            await _migrateFromV52ToV53AddLearningWordIsExtra(m);
-          }
-          if (from < 54) {
-            await _migrateFromV53ToV54AddWordCoreImages(m);
-          }
-          // 从版本 54 升级到版本 55：cigen 增加词根拼写变形字段（词根卡片表头提示）
-          if (from < 55) {
-            await m.addColumn(cigens, cigens.spellVariants);
-          }
-          // 从版本 55 升级到版本 56：words 增加「深度讲解」的中文译文列
-          if (from < 56) {
-            await m.addColumn(words, words.shortDescCn);
-          }
-          // 从版本 56 升级到版本 57：一次性清理"同一次作答被重复计分"的历史脏数据
-          // （learning_logs 去重 + 派生计数回滚 + learning_words 记忆字段回填，幂等）
-          //
-          // 单次删除量有上限（避免 DELETE 同步日志把 5MB 的同步请求撑爆）；未清完时由本方法
-          // 内部置 Prefs 待续跑标记，App 启动钩子 LearningLogRepair.resumePendingIfNeeded 续跑。
-          //
-          // 这里必须单独吃掉异常：外层 catch 的兜底是"删库重建"，而本步只是清理历史脏数据，
-          // 修复失败最多损失这一次清理，绝不能让它把用户的本地数据整个抹掉。
-          // 取舍：失败也要把版本推进到 57（版本由 schemaVersion 统一推进），避免每次启动
-          // 重复执行同一个必失败的迁移；该修复是幂等纯清理，漏做不影响数据完整性。
-          if (from < 57) {
-            try {
-              await LearningLogRepair.repairDuplicateLearningLogs(this);
-            } catch (e, stackTrace) {
-              Global.logger.e(
-                '⚠️ [迁移 56→57] 重复计分修复失败，跳过本次清理并继续迁移: $e',
-                error: e,
-                stackTrace: stackTrace,
-              );
-              // 失败会静默跳过清理，必须上报，否则线上无从知道有多少设备没修上
-              AnalyticsUtil.trackEvent('learning_log_repair_failed', {
-                'stage': 'migration_56_57',
-                'error': '$e',
-              });
-              // 学习记录修复失败 = 该设备的重复计分没清掉，属于数据问题，要进告警体系
-              unawaited(reportClientFailure(
-                errorType: kClientDbErrorType,
-                scene: '重复计分修复失败(迁移 56→57)',
-                details: '$e',
-              ));
-            }
-          }
-          // 从版本 57 升级到版本 58：新建记忆守护兽养成状态表
-          if (from < 58) {
-            await m.createTable(userPetStates);
-          }
-          // 从版本 58 升级到版本 59：新建单词常用短语搭配表
-          if (from < 59) {
-            await m.createTable(wordPhrases);
-          }
-          // 从版本 59 升级到版本 60：订正 learning_words 中历史遗留的非法难度数据 (difficulty = 0)
-          if (from < 60) {
-            await _fixIllegalLearningWordDifficulty();
-          }
-          // 从版本 60 升级到版本 61：words 增加分词性简明英英释义列
-          if (from < 61) {
-            await m.addColumn(words, words.enDefinition);
-          }
-          // 从版本 61 升级到版本 62：user_wrong_words 增加累计做错次数与错题本留存状态
-          if (from < 62) {
-            await m.addColumn(userWrongWords, userWrongWords.wrongCount);
-            await m.addColumn(userWrongWords, userWrongWords.inWrongBook);
-          }
-          // 从版本 62 升级到版本 63：words 增加单词所有者列（区分系统词 15118 与用户私有自定义词）
-          if (from < 63) {
-            await m.addColumn(words, words.ownerId);
-          }
+          await migrateAtomically(to, () => _runUpgradeSteps(m, from));
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
           Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
@@ -584,6 +357,260 @@ class MyDatabase extends _$MyDatabase {
         await _fixIllegalLearningWordDifficulty();
       },
     );
+  }
+
+  /// 在同一个事务里执行迁移步骤并推进 schema 版本号，让两者原子生效。
+  ///
+  /// 不能依赖 drift 自己写版本号：它要等 onUpgrade 和整个 beforeOpen 都返回后才执行
+  /// `PRAGMA user_version = schemaVersion`（见 DelegatedDatabase._runMigrations）。
+  /// 中间还夹着 beforeOpen 里的全表回填；进程若在这个窗口内被杀（退出、热重启、崩溃），
+  /// 库里就会留下「新列已加、user_version 仍是旧值」的半迁移状态 —— 下次启动重跑同一句
+  /// ALTER 直接报 duplicate column，随后删库重建（2026-10-20 线上告警即此）。
+  /// SQLite 的 user_version 与 DDL 一样受事务保护，因此在事务内自己写一次即可闭合窗口：
+  /// 要么表结构和版本号一起提交，要么一起回滚、库仍停在旧版本等下次完整重来。
+  /// 仅供测试直接驱动迁移（生产路径只经由 [migration] 调用）。
+  /// 不用 @visibleForTesting 标注：它要先 import meta 的符号，而 meta 不是本包的直接依赖，
+  /// 直接引用会触发 depend_on_referenced_packages 告警；对编译期注解来说，一句注释足够。
+  Future<void> migrateAtomically(int targetVersion, Future<void> Function() steps) {
+    return transaction(() async {
+      await steps();
+      await customStatement('PRAGMA user_version = $targetVersion');
+    });
+  }
+
+  /// 版本 1 → 63 的逐级迁移步骤，由 [migration] 在事务中调用。
+  ///
+  /// 单独抽出来是为了让「表结构变更」和「schema 版本号推进」落在同一个事务里：
+  /// 迁移中途被打断时整体回滚，库仍停在旧版本，下次启动可重新完整迁移。
+  Future<void> _runUpgradeSteps(Migrator m, int from) async {
+    // 从版本 1 升级到版本 2：更新 studyStep 字段值
+    if (from < 2) {
+      await _migrateStudyStepFromV1ToV2();
+    }
+    // 从版本 2 升级到版本 3：修复 dicts 表中 popularityLimit 的 0 值
+    if (from < 3) {
+      await _migratePopularityLimitFromV2ToV3();
+    }
+    // 从版本 3 升级到版本 4：创建本地异常记录表
+    if (from < 4) {
+      await _migrateFromV3ToV4(m);
+    }
+    // 从版本 4 升级到版本 5：添加订阅相关字段（按平台区分）
+    if (from < 5) {
+      await _migrateFromV4ToV5(m);
+    }
+    // 从版本 5 升级到版本 6：修复订阅字段列名（历史版本曾误用驼峰列名）
+    if (from < 6) {
+      await _migrateFromV5ToV6FixIosSubscriptionColumns();
+    }
+    // 从版本 6 升级到版本 7：添加“强制视为会员”字段
+    if (from < 7) {
+      await _migrateFromV6ToV7AddPremiumOverrideFields(m);
+    }
+    // 从版本 7 升级到版本 8：删除levels表
+    if (from < 8) {
+      await _migrateFromV7ToV8RemoveLevelsTable(m);
+    }
+    if (from < 9) {
+      await _migrateFromV8ToV9RemoveLevelId();
+    }
+    if (from < 10) {
+      await _migrateFromV9ToV10RemoveTodayLearningFields();
+    }
+    if (from < 11) {
+      await _migrateFromV10ToV11RemoveTotalScoreField();
+    }
+    if (from < 12) {
+      await _migrateFromV11ToV12RemoveVotedChinesesTable(m);
+    }
+    if (from < 13) {
+      await _migrateFromV12ToV13RemoveLearningPositionFields();
+    }
+    if (from < 14) {
+      await _migrateFromV13ToV14(m);
+    }
+    if (from < 15) {
+      await _migrateFromV14ToV15(m);
+    }
+    if (from < 16) {
+      await _migrateFromV15ToV16();
+    }
+    if (from < 17) {
+      await _migrateFromV16ToV17FixDateTimeFormat();
+    }
+    if (from < 18) {
+      await _migrateFromV17ToV18AddTodayStudyStarted(m);
+    }
+    if (from < 19) {
+      await _migrateFromV18ToV19AddEditable(m);
+    }
+    if (from < 20) {
+      await _migrateFromV19ToV20DropMasteredWordsTable(m);
+    }
+    if (from < 21) {
+      await _migrateFromV20ToV21AddDeletable(m);
+    }
+    if (from < 22) {
+      await _migrateFromV21ToV22AddLearningSeconds(m);
+    }
+    if (from < 23) {
+      await _migrateFromV22ToV23(m);
+    }
+    if (from < 24) {
+      await _migrateFromV23ToV24(m);
+    }
+    if (from < 25) {
+      await _migrateFromV24ToV25(m);
+    }
+    if (from < 26) {
+      await _migrateFromV25ToV26AddWalkmanConfig(m);
+    }
+    if (from < 27) {
+      await _migrateFromV26ToV27SwapWalkmanConfigToStudyConfig(m);
+    }
+    if (from < 28) {
+      await _migrateFromV27ToV28(m);
+    }
+    if (from < 29) {
+      await _migrateFromV28ToV29(m);
+    }
+    if (from < 30) {
+      await _migrateFromV29ToV30AddDomain(m);
+    }
+    if (from < 31) {
+      await _migrateFromV30ToV31(m);
+    }
+    if (from < 32) {
+      await _migrateFromV31ToV32(m);
+    }
+    if (from < 33) {
+      await _migrateFromV32ToV33(m);
+    }
+    if (from < 34) {
+      await _migrateFromV33ToV34(m);
+    }
+    if (from < 35) {
+      await _migrateFromV34ToV35DropWordShortDescChineses(m);
+    }
+    if (from < 36) {
+      await _migrateFromV35ToV36AddCoverUrl(m);
+    }
+    if (from < 37) {
+      await _migrateFromV36ToV37AddUnitToDictWords(m);
+    }
+    if (from < 38) {
+      await _migrateFromV37ToV38AddDescriptionToDicts();
+    }
+    if (from < 39) {
+      await _migrateFromV38ToV39DropSentenceRawFields();
+    }
+    if (from < 40) {
+      await _migrateFromV39ToV40AddUserStudyDailyStats(m);
+    }
+    if (from < 41) {
+      await _migrateFromV40ToV41AddAuditColumns(m);
+    }
+    if (from < 42) {
+      await _migrateFromV41ToV42AddMissingAuditColumns(m);
+    }
+    if (from < 43) {
+      await _migrateFromV42ToV43AddPopularityPercent(m);
+    }
+    if (from < 44) {
+      await _migrateFromV43ToV44AddWordCoordinates(m);
+    }
+    if (from < 45) {
+      await _migrateFromV44ToV45AddSortAlg(m);
+    }
+    if (from < 46) {
+      await _migrateFromV45ToV46(m);
+    }
+    if (from < 47) {
+      await _migrateFromV46ToV47(m);
+    }
+    if (from < 48) {
+      await _migrateFromV47ToV48(m);
+    }
+    if (from < 50) {
+      await _migrateFromV48ToV49UserStudyStepsThreeGroup(m);
+    }
+    if (from < 51) {
+      await _migrateFromV50ToV51AddUserBadges(m);
+    }
+    if (from < 52) {
+      await _migrateFromV51ToV52AddMaxMasteredWords(m);
+    }
+    if (from < 53) {
+      await _migrateFromV52ToV53AddLearningWordIsExtra(m);
+    }
+    if (from < 54) {
+      await _migrateFromV53ToV54AddWordCoreImages(m);
+    }
+    // 从版本 54 升级到版本 55：cigen 增加词根拼写变形字段（词根卡片表头提示）
+    if (from < 55) {
+      await m.addColumn(cigens, cigens.spellVariants);
+    }
+    // 从版本 55 升级到版本 56：words 增加「深度讲解」的中文译文列
+    if (from < 56) {
+      await m.addColumn(words, words.shortDescCn);
+    }
+    // 从版本 56 升级到版本 57：一次性清理"同一次作答被重复计分"的历史脏数据
+    // （learning_logs 去重 + 派生计数回滚 + learning_words 记忆字段回填，幂等）
+    //
+    // 单次删除量有上限（避免 DELETE 同步日志把 5MB 的同步请求撑爆）；未清完时由本方法
+    // 内部置 Prefs 待续跑标记，App 启动钩子 LearningLogRepair.resumePendingIfNeeded 续跑。
+    //
+    // 这里必须单独吃掉异常：外层 catch 的兜底是"删库重建"，而本步只是清理历史脏数据，
+    // 修复失败最多损失这一次清理，绝不能让它把用户的本地数据整个抹掉。
+    // 取舍：失败也要把版本推进到 57（版本由 schemaVersion 统一推进），避免每次启动
+    // 重复执行同一个必失败的迁移；该修复是幂等纯清理，漏做不影响数据完整性。
+    if (from < 57) {
+      try {
+        await LearningLogRepair.repairDuplicateLearningLogs(this);
+      } catch (e, stackTrace) {
+        Global.logger.e(
+          '⚠️ [迁移 56→57] 重复计分修复失败，跳过本次清理并继续迁移: $e',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        // 失败会静默跳过清理，必须上报，否则线上无从知道有多少设备没修上
+        AnalyticsUtil.trackEvent('learning_log_repair_failed', {
+          'stage': 'migration_56_57',
+          'error': '$e',
+        });
+        // 学习记录修复失败 = 该设备的重复计分没清掉，属于数据问题，要进告警体系
+        unawaited(reportClientFailure(
+          errorType: kClientDbErrorType,
+          scene: '重复计分修复失败(迁移 56→57)',
+          details: '$e',
+        ));
+      }
+    }
+    // 从版本 57 升级到版本 58：新建记忆守护兽养成状态表
+    if (from < 58) {
+      await m.createTable(userPetStates);
+    }
+    // 从版本 58 升级到版本 59：新建单词常用短语搭配表
+    if (from < 59) {
+      await m.createTable(wordPhrases);
+    }
+    // 从版本 59 升级到版本 60：订正 learning_words 中历史遗留的非法难度数据 (difficulty = 0)
+    if (from < 60) {
+      await _fixIllegalLearningWordDifficulty();
+    }
+    // 从版本 60 升级到版本 61：words 增加分词性简明英英释义列
+    if (from < 61) {
+      await m.addColumn(words, words.enDefinition);
+    }
+    // 从版本 61 升级到版本 62：user_wrong_words 增加累计做错次数与错题本留存状态
+    if (from < 62) {
+      await m.addColumn(userWrongWords, userWrongWords.wrongCount);
+      await m.addColumn(userWrongWords, userWrongWords.inWrongBook);
+    }
+    // 从版本 62 升级到版本 63：words 增加单词所有者列（区分系统词 15118 与用户私有自定义词）
+    if (from < 63) {
+      await m.addColumn(words, words.ownerId);
+    }
   }
 
   /// 从版本 6 升级到版本 7：添加“强制视为会员”字段
@@ -1743,11 +1770,15 @@ class MyDatabase extends _$MyDatabase {
     Global.logger.i('🔄 开始重建数据库...');
 
     try {
-      // 1. 删除所有表
-      await _dropAllTables();
+      // 删表和按新表结构重建必须和版本号一起提交：否则重建中途被杀会留下
+      // 「表是新的、版本号还是旧的」的库，下次启动重跑旧迁移又会失败。
+      await migrateAtomically(schemaVersion, () async {
+        // 1. 删除所有表
+        await _dropAllTables();
 
-      // 2. 重新创建表、索引和初始化数据
-      await _recreateAllTablesWithMigrator(m);
+        // 2. 重新创建表、索引和初始化数据
+        await _recreateAllTablesWithMigrator(m);
+      });
 
       Global.logger.i('🎉 数据库重建完成');
     } catch (e, stackTrace) {

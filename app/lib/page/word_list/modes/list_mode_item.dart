@@ -22,6 +22,10 @@ class ListModeItem extends StatelessWidget {
   final List<Widget> slidableActions;
   final GroupCardPosition groupPosition;
 
+  /// 多选模式：左侧序号位显示勾选圈
+  final bool selectionMode;
+  final bool selected;
+
   const ListModeItem({
     super.key,
     required this.word,
@@ -34,6 +38,8 @@ class ListModeItem extends StatelessWidget {
     required this.actions,
     required this.slidableActions,
     this.groupPosition = GroupCardPosition.single,
+    this.selectionMode = false,
+    this.selected = false,
   });
 
   @override
@@ -53,6 +59,8 @@ class ListModeItem extends StatelessWidget {
       actions: actions,
       slidableActions: slidableActions,
       groupPosition: groupPosition,
+      selectionMode: selectionMode,
+      selected: selected,
       centerContent: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => actions.onWordTap(word, index),

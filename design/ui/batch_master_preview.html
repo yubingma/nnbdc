@@ -424,6 +424,8 @@
       <button class="toolbar-btn" onclick="setState('browse')">浏览态</button>
       <button class="toolbar-btn" onclick="setState('multi')">多选态</button>
       <button class="toolbar-btn" onclick="setState('confirm')">确认</button>
+      <button class="toolbar-btn" onclick="setVariant('mastered')">已掌握页</button>
+      <button class="toolbar-btn" onclick="setVariant('normal')">普通页</button>
     </div>
   </div>
 
@@ -598,13 +600,9 @@
     <div class="bottom-bar">
       <div class="bar-summary">
         <span class="bar-summary-num">已选 3 个</span>
-        <span class="bar-summary-sub">今日学习任务会同步更新</span>
+        <span class="bar-summary-sub">标记后不再出现在今日任务</span>
       </div>
-      <div class="bar-btn ghost">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M6 7l1 13h10l1-13"/></svg>
-        移出
-      </div>
-      <div class="bar-btn primary" onclick="setState('confirm')">
+      <div class="bar-btn primary" id="batch-primary" style="padding: 0 22px;" onclick="setState('confirm')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         标记掌握
       </div>
@@ -613,7 +611,7 @@
     <!-- 确认弹窗 -->
     <div class="confirm-overlay" onclick="setState('multi')">
       <div class="confirm-card" onclick="event.stopPropagation()">
-        <div class="confirm-title">将 <em>3</em> 个词标记为已掌握？</div>
+        <div class="confirm-title" id="confirm-title">将 <em>3</em> 个词标记为已掌握？</div>
         <div class="confirm-body">
           它们会立即进入「已掌握」词表，不再出现在今天的学习任务里；<span>当天已开始的学习进度不会倒退</span>。
           之后想重新背，需要到「已掌握」里逐个点「重学」。
@@ -629,6 +627,17 @@
   <script>
     function setState(state) {
       document.body.dataset.state = state;
+    }
+    function setVariant(variant) {
+      var mastered = variant === 'mastered';
+      document.getElementById('batch-primary').innerHTML =
+        mastered
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg>重学'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>标记掌握';
+      document.querySelector('.bar-summary-sub').textContent =
+        mastered ? '重学后按新词重新安排' : '标记后不再出现在今日任务';
+      document.getElementById('confirm-title').innerHTML =
+        mastered ? '将 <em>3</em> 个词重新学习？' : '将 <em>3</em> 个词标记为已掌握？';
     }
     function toggle(row) {
       row.classList.toggle('selected');

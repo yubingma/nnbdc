@@ -26,6 +26,10 @@ class TranslateSentenceModeItem extends StatelessWidget {
   final Widget? audioLevelBar;
   final GroupCardPosition groupPosition;
 
+  /// 多选模式：左侧序号位显示勾选圈
+  final bool selectionMode;
+  final bool selected;
+
   const TranslateSentenceModeItem({
     super.key,
     required this.word,
@@ -39,6 +43,8 @@ class TranslateSentenceModeItem extends StatelessWidget {
     required this.slidableActions,
     this.audioLevelBar,
     this.groupPosition = GroupCardPosition.single,
+    this.selectionMode = false,
+    this.selected = false,
   });
 
   @override
@@ -58,6 +64,8 @@ class TranslateSentenceModeItem extends StatelessWidget {
       actions: actions,
       slidableActions: slidableActions,
       groupPosition: groupPosition,
+      selectionMode: selectionMode,
+      selected: selected,
       audioIndicator: null,
       centerContent: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

@@ -199,6 +199,10 @@ class ConfusableWordsProvider with WordsProvider {
   @override
   Future<bool> deleteWord(WordWrapper wordWrapper) async => false;
 
+  /// 仅浏览：批量掌握/取消掌握与单条同一条约束，一律不提供
+  @override
+  bool get supportsMastery => false;
+
   /// 仅浏览：不进入学习轨道。"掌握"按钮点击后提示并返回 false，
   /// 控制器视为未成功，不做移除列表/更新学习状态等任何变更。
   @override

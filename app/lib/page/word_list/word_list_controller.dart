@@ -747,6 +747,188 @@ class WordListController extends ChangeNotifier {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // 多选模式：一次处理一批单词（标记掌握 / 重学）
+  // ---------------------------------------------------------------------------
+
+  /// 是否处于多选模式
+  bool selectionMode = false;
+
+  /// 已勾选的词 ID（可能包含当前还没加载出来的词，例如全选出来的几千个）
+  final Set<String> selectedWordIds = {};
+
+  /// 批量写入进行中：期间锁住主按钮，避免连点重复提交
+  bool batchBusy = false;
+
+  /// 当前筛选下可被全选的全部词 ID；null = 该数据源不支持全选
+  List<String>? _selectableWordIds;
+
+  bool get canSelectAll => _selectableWordIds?.isNotEmpty ?? false;
+
+  int get selectableCount => _selectableWordIds?.length ?? 0;
+
+  int get selectedCount => selectedWordIds.length;
+
+  /// 当前词表的主操作是「重学」而不是「标记掌握」（只有「已掌握」词表如此）
+  bool get batchActionIsUnmaster => args.appBarTitle == '已掌握';
+
+  bool isWordSelected(WordWrapper word) {
+    final id = word.word.id;
+    return id != null && selectedWordIds.contains(id);
+  }
+
+  void enterSelection([WordWrapper? first]) {
+    if (selectionMode) return;
+    selectionMode = true;
+    selectedWordIds.clear();
+    final firstId = first?.word.id;
+    if (firstId != null) selectedWordIds.add(firstId);
+    notifyListeners();
+    unawaited(_loadSelectableWordIds());
+  }
+
+  Future<void> _loadSelectableWordIds() async {
+    List<String>? ids;
+    try {
+      ids = await args.wordsProvider.getSelectableWordIds();
+    } catch (e) {
+      Global.logger.w('取全选词失败: $e');
+    }
+    if (_disposed || !selectionMode) return;
+    _selectableWordIds = ids;
+    notifyListeners();
+  }
+
+  void toggleSelection(WordWrapper word) {
+    if (!selectionMode) return;
+    final id = word.word.id;
+    if (id == null) return;
+    if (!selectedWordIds.remove(id)) selectedWordIds.add(id);
+    notifyListeners();
+  }
+
+  void exitSelection() {
+    if (!selectionMode) return;
+    selectionMode = false;
+    batchBusy = false;
+    selectedWordIds.clear();
+    _selectableWordIds = null;
+    notifyListeners();
+  }
+
+  /// 全选当前筛选下的全部未掌握词。返回 false 表示该数据源不支持全选。
+  Future<bool> selectAll() async {
+    if (!selectionMode) return false;
+    _selectableWordIds ??= await args.wordsProvider.getSelectableWordIds();
+    final ids = _selectableWordIds;
+    if (ids == null) return false;
+    selectedWordIds
+      ..clear()
+      ..addAll(ids);
+    notifyListeners();
+    return true;
+  }
+
+  void clearSelection() {
+    selectedWordIds.clear();
+    notifyListeners();
+  }
+
+  /// 批量执行勾选词的掌握（「已掌握」词表里是重学）。返回真正处理成功的词数。
+  Future<int> applySelection() async {
+    if (batchBusy || selectedWordIds.isEmpty) return 0;
+    batchBusy = true;
+    notifyListeners();
+
+    final ids = selectedWordIds.toList(growable: false);
+    final bool unmaster = batchActionIsUnmaster;
+    try {
+      final int changed = unmaster
+          ? await args.wordsProvider.unmasterWords(ids)
+          : await args.wordsProvider.masterWords(ids);
+      if (changed <= 0) return 0;
+
+      if (unmaster) {
+        EventBus.publishWordUnMastered(WordUnMasteredEvent());
+      } else {
+        EventBus.publishWordMastered(WordMasteredEvent());
+      }
+      await _applyBatchResult(ids, changed: changed, mastered: !unmaster);
+      return changed;
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '批量处理单词');
+      return 0;
+    } finally {
+      batchBusy = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  /// 批量写入成功后收尾列表：与单条 [masterWord]、[unmasterWord] 同一套展示规则。
+  Future<void> _applyBatchResult(List<String> ids, {required int changed, required bool mastered}) async {
+    final idSet = ids.toSet();
+
+    for (final word in words) {
+      final id = word.word.id;
+      if (id == null || !idSet.contains(id)) continue;
+      if (mastered) {
+        word.currentLearningStatus = true;
+        word.currentProgress = word.maxProgress;
+      } else {
+        _applyCancelledMasteryDisplay(word, null);
+      }
+    }
+
+    // 当前视图还容不容得下这批词：与单条掌握同一判据
+    final bool keepInView =
+        args.wordsProvider.keepWordsOnMaster && args.wordsProvider.isStatusVisible(mastered ? true : null);
+
+    if (!keepInView) {
+      final int bookMarkPosition = getBookMarkRawPosition(bookMark);
+      var removedBeforeBookMark = 0;
+      var bookMarkWordRemoved = false;
+      for (var i = 0; i < words.length; i++) {
+        final id = words[i].word.id;
+        if (id == null || !idSet.contains(id)) continue;
+        if (bookMarkPosition < 0) continue;
+        final globalPosition = (baseIndex ?? 0) + i;
+        if (globalPosition < bookMarkPosition) {
+          removedBeforeBookMark++;
+        } else if (globalPosition == bookMarkPosition) {
+          bookMarkWordRemoved = true;
+        }
+      }
+
+      words.removeWhere((w) {
+        final id = w.word.id;
+        return id != null && idSet.contains(id);
+      });
+      totalWordCount = max(0, totalWordCount - changed);
+
+      // 书签：被移除的词里排在书签词之前的有几个，位置就前移几位（与单条掌握同一规则）
+      if (bookMark != null && bookMarkPosition >= 0 && (removedBeforeBookMark > 0 || bookMarkWordRemoved)) {
+        final newPosition = bookMarkPosition - removedBeforeBookMark;
+        final uiIndex = newPosition - (baseIndex ?? 0);
+        final newSpell =
+            (uiIndex >= 0 && uiIndex < words.length) ? words[uiIndex].word.spell : bookMark!.spell;
+        bookMark = BookMarkVo(newPosition, newSpell, bookMark!.sortAlg);
+        await args.bookMarkProvider.saveBookMark(bookMark!);
+      }
+    }
+
+    selectionMode = false;
+    batchBusy = false;
+    selectedWordIds.clear();
+    _selectableWordIds = null;
+
+    await refreshStatusCounts();
+    if (words.length < minWordCount &&
+        (totalWordCount < 0 || (baseIndex ?? 0) + words.length < totalWordCount)) {
+      await doQuery(false, (baseIndex ?? 0) + words.length, pageSize, false);
+    }
+    notifyListeners();
+  }
+
   /// 获取当前词表所有且排好序的单词列表 (用于 PDF 导出)
   Future<List<WordWrapper>> getAllSortedWords() async {
     final sortAlg = await getCurrentSortAlg();
