@@ -72,12 +72,19 @@ void main() {
     expect(healLabelIdx, greaterThan(0), reason: '治疗按钮必须存在');
     expect(attackLabelIdx, greaterThan(healLabelIdx), reason: '治疗在我方左侧，攻击在对手右侧');
 
-    // 13. 已出词数：自己用本地进度，对手用服务端广播；
+    // 13. 题号：自己用本地进度，对手用服务端广播；
     //     线上服务端没升级时用既有 wordB 事件累加，收到 wordCountSync 后自动停用避免双计
-    expect(source, contains("socket.on('wordCountSync'"), reason: '必须接收对手已出词数');
-    expect(source, contains("socket.on('wordB'"), reason: '旧服务端要用 wordB 累计对手词数');
+    expect(source, contains("socket.on('wordCountSync'"), reason: '必须接收对手进度');
+    expect(source, contains("socket.on('wordB'"), reason: '旧服务端要用 wordB 累计对手进度');
     expect(source, contains('_serverSendsWordCount'), reason: '绝对计数到达后必须停用 wordB 累加');
-    expect(source, contains('myWordCount: myWordIndex'), reason: '我方词数用本地 myWordIndex');
-    expect(source, contains('opponentWordCount: opponentWordCount'), reason: '对手词数来自广播');
+    expect(source, contains('myWordOrdinal: myWordIndex + 1'), reason: '我方题号用本地索引 +1');
+    expect(source, contains('opponentWordOrdinal: opponentWordCount + 1'), reason: '对手题号来自广播 +1');
+
+    // 14. 双方当前单词：都从共享词序按索引取，显示在名字上方
+    expect(source, contains('_spellByIndex'), reason: '必须按索引缓存共享词序里的单词');
+    expect(source, contains('myCurrentWord: myCurrentWord'), reason: '我方当前词传给画布');
+    expect(source, contains('opponentCurrentWord: opponentCurrentWord'), reason: '对手当前词传给画布');
+    expect(source, contains('word: myCurrentWord'), reason: '名字上方必须绘制当前单词');
+    expect(source, contains(r'第$ordinal词'), reason: '题号以"第N词"展示');
   });
 }

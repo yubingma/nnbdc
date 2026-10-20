@@ -60,20 +60,6 @@ class WordPackQueue {
     return null;
   }
 
-  /// 只查看第 index 题是什么，不切换当前包。
-  /// 用于显示"对手当前单词"这种旁路信息：它能看预取的下一包，但不能推进自己的出题游标。
-  dynamic peekWordAt(int index) {
-    final int currentOffset = index - _currentStart;
-    if (currentOffset >= 0 && currentOffset < _current.length) {
-      return _current[currentOffset];
-    }
-    final int nextOffset = index - _nextStart;
-    if (_next.isNotEmpty && nextOffset >= 0 && nextOffset < _next.length) {
-      return _next[nextOffset];
-    }
-    return null;
-  }
-
   /// 现在需要向服务端补包时返回请求的起始索引，不需要补时返回 null。
   /// 同一段只会要一次，避免包尾每题都重复要一整包词。
   int? packRequestFor(int index) {

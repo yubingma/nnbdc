@@ -220,6 +220,9 @@ class BrickPageState extends State<BrickPage>
   ];
 
   final WordPackQueue _wordPack = WordPackQueue();
+  /// 共享词序的索引 → 单词拼写。收到词包时顺手记下来，
+  /// 这样对手进度落后（索引落在已经换掉的旧包）时也能显示他当前那道题。
+  final Map<int, String> _spellByIndex = {};
   final List<Map<String, dynamic>> _pendingUserCmds = [];
   final Tts _tts = Tts();
   late final _BrickSocketStatusListener _socketStatusListener;
@@ -562,6 +565,7 @@ class BrickPageState extends State<BrickPage>
     });
 
     _wordPack.reset();
+    _spellByIndex.clear();
     _requestWordPack(0);
   }
 
@@ -572,20 +576,24 @@ class BrickPageState extends State<BrickPage>
 
   void _handleWordPack(dynamic data) {
     if (data is! List || data.length < 2) return;
-    _wordPack.accept((data[0] as num).toInt(), List<dynamic>.from(data[1] as List));
+    final int fromIndex = (data[0] as num).toInt();
+    final entries = List<dynamic>.from(data[1] as List);
+    // 把这一包词的索引→拼写记下来，供"对手当前单词"按索引回查
+    for (int i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      if (entry is List && entry.isNotEmpty && entry[0] is Map) {
+        final spell = (entry[0] as Map)['spell']?.toString();
+        if (spell != null && spell.isNotEmpty) {
+          _spellByIndex[fromIndex + i] = spell;
+        }
+      }
+    }
+    _wordPack.accept(fromIndex, entries);
     _playNextWordFromPack();
   }
 
   /// 从共享词序里取出第 index 个词的拼写；本地还没收到这一段时返回 null。
-  /// 只读预览，不会推进自己的出题游标（对手当前词就靠它显示）。
-  String? _spellAt(int index) {
-    final entry = _wordPack.peekWordAt(index);
-    if (entry is List && entry.isNotEmpty && entry[0] is Map) {
-      final spell = (entry[0] as Map)['spell']?.toString();
-      if (spell != null && spell.isNotEmpty) return spell;
-    }
-    return null;
-  }
+  String? _spellAt(int index) => _spellByIndex[index];
 
   void _playNextWordFromPack() {
     if (!mounted || !isPlaying || isIntroPlaying) return;
@@ -1115,6 +1123,9 @@ class BrickPageState extends State<BrickPage>
       bricks.clear();
       currWord = null;
       currentOptions.clear();
+      // 结算后 ticker 不再更新特效；不清掉的话最后一击的爆破微粒和飘字会永远定格在弹窗后面
+      particles.clear();
+      _floatingTexts.clear();
     });
 
     showDialog(
@@ -1178,6 +1189,8 @@ class BrickPageState extends State<BrickPage>
       bricks.clear();
       currWord = null;
       currentOptions.clear();
+      particles.clear();
+      _floatingTexts.clear();
     });
     ToastUtil.error(message);
     if (mounted) context.pop();
@@ -1211,7 +1224,8 @@ class BrickPageState extends State<BrickPage>
     final topPadding = max(mediaQuery.padding.top, 16.0);
     final double barrierBottomY = _arenaBottomY(mediaQuery.size.height, mediaQuery.padding.bottom);
     final double stackRowHeight = _stackRowHeight(barrierBottomY, topPadding);
-    // 双方当前词都从同一份共享词序里按索引取，直接对照就能看出有没有被区别出题
+    // 双方当前词都从同一份共享词序里按索引取，直接对照就能看出有没有被区别出题。
+    // 对手已答 N 题时，他当前正在做的正是共享词序里索引 N 的那道题。
     final String myCurrentWord = _spellAt(myWordIndex) ?? currWord?.spell ?? '…';
     final String opponentCurrentWord = _spellAt(opponentWordCount) ?? '…';
 
@@ -1240,8 +1254,8 @@ class BrickPageState extends State<BrickPage>
                 myStackRows: stackRows.length,
                 opponentStackRows: min(maxHp, max(0, maxHp - opponentHp)),
                 opponentName: opponentNickName,
-                myWordCount: myWordIndex,
-                opponentWordCount: opponentWordCount,
+                myWordOrdinal: myWordIndex + 1,
+                opponentWordOrdinal: opponentWordCount + 1,
                 myCurrentWord: myCurrentWord,
                 opponentCurrentWord: opponentCurrentWord,
               ),
@@ -1494,8 +1508,8 @@ class _BrickScenePainter extends CustomPainter {
   final int myStackRows;
   final int opponentStackRows;
   final String opponentName;
-  final int myWordCount;
-  final int opponentWordCount;
+  final int myWordOrdinal;
+  final int opponentWordOrdinal;
   final String myCurrentWord;
   final String opponentCurrentWord;
 
@@ -1511,8 +1525,8 @@ class _BrickScenePainter extends CustomPainter {
     required this.myStackRows,
     required this.opponentStackRows,
     required this.opponentName,
-    required this.myWordCount,
-    required this.opponentWordCount,
+    required this.myWordOrdinal,
+    required this.opponentWordOrdinal,
     required this.myCurrentWord,
     required this.opponentCurrentWord,
   });
@@ -1563,7 +1577,7 @@ class _BrickScenePainter extends CustomPainter {
       left: true,
       name: '我',
       word: myCurrentWord,
-      words: myWordCount,
+      ordinal: myWordOrdinal,
       color: const Color(0xFF34D399),
     );
     _drawHpRailLabel(
@@ -1572,7 +1586,7 @@ class _BrickScenePainter extends CustomPainter {
       left: false,
       name: opponentName.isEmpty ? '对手' : opponentName,
       word: opponentCurrentWord,
-      words: opponentWordCount,
+      ordinal: opponentWordOrdinal,
       color: const Color(0xFFF59E0B),
     );
 
@@ -1711,7 +1725,7 @@ class _BrickScenePainter extends CustomPainter {
     }
   }
 
-  /// 竖排防线顶部的三段信息：最上面是当前单词，下面是已出词数和名字。
+  /// 竖排防线顶部的三段信息：最上面是当前单词，下面是"第几个词"和名字。
   /// 双方都从同一份共享词序里按各自进度取词，摆在一起就能直接对照。
   /// 生命值不再显示数字，直接看竖排亮了多少格即可。
   void _drawHpRailLabel(
@@ -1720,7 +1734,7 @@ class _BrickScenePainter extends CustomPainter {
     required bool left,
     required String name,
     required String word,
-    required int words,
+    required int ordinal,
     required Color color,
   }) {
     final double railHeight = maxStackRows * stackRowHeight;
@@ -1738,7 +1752,7 @@ class _BrickScenePainter extends CustomPainter {
 
     final countTp = TextPainter(
       text: TextSpan(
-        text: '$words词',
+        text: '第$ordinal词',
         style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.w700),
       ),
       textDirection: TextDirection.ltr,
@@ -1786,7 +1800,7 @@ class _BrickScenePainter extends CustomPainter {
     final double currentX = left ? contentLeft : contentRight - currentTp.width;
     currentTp.paint(canvas, Offset(currentX, currentY));
 
-    // 词数贴外侧，名字在内侧
+    // 题号贴外侧，名字在内侧
     final double countX = left ? contentLeft : contentRight - countTp.width;
     final double nameX = left ? countX + countTp.width + 5 : countX - 5 - nameTp.width;
     countTp.paint(canvas, Offset(countX, metaY + (metaHeight - countTp.height) / 2));
