@@ -877,8 +877,12 @@ class TodayPlanPageState extends State<TodayPlanPage>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 左上角：今日单词总数 · 每组词数 · 当前状态
-        Flexible(
+        // 左上角：今日单词总数 · 每组词数 · 当前状态。
+        // 必须用 Expanded 拿满「整行减去设置按钮」的宽度：Flexible + Spacer 会把剩余空间
+        // 对半分，状态行只剩一半可用，FittedBox 就会把设计字号等比压到一半左右 ——
+        // 那才是"首页顶部字太小"的真正原因，只调 fontSize 是徒劳的。只有真的放不下
+        //（窄屏 + 大字号 + 加量进度）时才由 FittedBox 缩一点，正常手机不会触发。
+        Expanded(
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -889,7 +893,6 @@ class TodayPlanPageState extends State<TodayPlanPage>
             ),
           ),
         ),
-        const Spacer(),
         if (_isSyncingFromCloud) ...[
           SizedBox(
             width: 14,
@@ -3978,7 +3981,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
           child: Text(
             '·',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
               color: ink.muted.withValues(alpha: 0.45),
               shadows: shadows,
@@ -4013,7 +4016,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 Text(
                   totalLabel,
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: ink.muted,
                     letterSpacing: 0.3,
@@ -4023,7 +4026,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 const SizedBox(width: 3),
                 Icon(
                   isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
-                  size: isStarted ? 13.5 : 15.5,
+                  size: isStarted ? 12.5 : 14.5,
                   color: ink.muted,
                   shadows: shadows,
                 ),
@@ -4052,7 +4055,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 Text(
                   '每组 $batchSize 词',
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: ink.muted,
                     letterSpacing: 0.3,
@@ -4062,7 +4065,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 const SizedBox(width: 3),
                 Icon(
                   isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
-                  size: isStarted ? 13.5 : 15.5,
+                  size: isStarted ? 12.5 : 14.5,
                   color: ink.muted,
                   shadows: shadows,
                 ),
@@ -4089,7 +4092,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
             child: Text(
               '加量中 $extraProgress%',
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w500,
                 color: ink.muted,
                 letterSpacing: 0.3,
@@ -4116,13 +4119,13 @@ class TodayPlanPageState extends State<TodayPlanPage>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.check_rounded, size: 14.5, color: sealColor, shadows: shadows),
+            Icon(Icons.check_rounded, size: 13.5, color: sealColor, shadows: shadows),
             const SizedBox(width: 3),
             Text(
               '已打卡',
               key: const Key('today_plan_daka_seal_text'),
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: sealColor,
                 letterSpacing: 0.3,
@@ -4143,7 +4146,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
         child: Text(
           '学习中 $planProgress%',
           style: TextStyle(
-            fontSize: 13.5,
+            fontSize: 12.5,
             fontWeight: FontWeight.w500,
             color: ink.muted,
             letterSpacing: 0.3,
@@ -4158,7 +4161,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
       child: Text(
         '未开始',
         style: TextStyle(
-          fontSize: 13.5,
+          fontSize: 12.5,
           fontWeight: FontWeight.w500,
           color: ink.faint,
           letterSpacing: 0.3,

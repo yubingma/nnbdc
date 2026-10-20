@@ -1,6 +1,10 @@
 {
     "dart.debugSdkLibraries": false,
     "dart.debugExternalPackageLibraries": false,
+    // 让外部工具（AI 助手 / 脚本）改完 Dart 源码后也自动热重载：
+    // 默认只监听编辑器里的保存动作，从命令行改文件不会触发，改完等于没生效。
+    "dart.flutterHotReloadOnSave": "all",
+    "dart.previewHotReloadOnSaveWatcher": true,
     "dart.analysisExcludedFolders": [
         "${workspaceFolder}/tmp"
     ],

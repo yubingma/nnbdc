@@ -393,5 +393,38 @@ void main() {
 
     await tester.pump(const Duration(seconds: 60));
   });
+
+  testWidgets('顶部状态流水线独占右上角设置按钮之外的整行宽度，屏幕放得下时不被压小', (tester) async {
+    // 这一行只和右上角的设置按钮分宽度。原先 Flexible + Spacer 把剩余宽度对半分，
+    // 状态行只拿到一半，FittedBox 只好把设计字号等比压到一半左右 —— 调 fontSize 也不会变大。
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(430, 900);
+    addTearDown(tester.view.reset);
+
+    await seedTodayPlan(dakaed: false);
+    await pumpTodayPlan(tester);
+
+    final totalLabel = find.text('今日 5 词');
+    await pumpUntil(tester, totalLabel);
+    expect(totalLabel, findsOneWidget);
+
+    final fitted = find.ancestor(of: totalLabel, matching: find.byType(FittedBox)).first;
+    final fittedRect = tester.getRect(fitted);
+    // 430dp 宽、左右各 20dp 内边距、右侧 38dp 设置按钮：状态行应拿到 352dp。
+    // 这里断言的是**分配到的宽度**，与字体无关：被 Spacer 抢走一半时只有 176dp。
+    expect(fittedRect.width, closeTo(430 - 20 * 2 - 38, 0.5),
+        reason: '状态行必须拿满设置按钮之外的整行宽度，不能和 Spacer 五五分');
+    expect(fittedRect.right, lessThanOrEqualTo(430 - 20 - 38 + 0.5),
+        reason: '状态行不能压到右上角设置按钮上');
+
+    final layoutSize = tester.getSize(totalLabel);
+    final paintedRect = tester.getRect(totalLabel);
+    // 测试字体的字宽比真机系统字体大（真机 360dp 下这一行只要约 281dp），
+    // 所以 430dp 下允许不到一成的等比收缩；被 Spacer 压到一半时这个比值只有 0.47。
+    expect(paintedRect.height / layoutSize.height, greaterThan(0.9),
+        reason: '整行放得下时，状态行必须基本按设计字号画出来，不能被 FittedBox 等比压小');
+
+    await tester.pump(const Duration(seconds: 60));
+  });
 }
 
