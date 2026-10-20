@@ -1,9 +1,34 @@
+import 'package:drift/drift.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/api/vo.dart';
 
+import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/level_util.dart';
 import 'package:nnbdc/services/user_privilege_manager.dart';
+
+/// 把云端的整行 User 快照合并到本地时，保证「最近学习业务日」只进不退。
+///
+/// `lastLearningDate` 是跨天重置的唯一判据（见 StudyBo.getWord 的 isCrossDay）：
+/// 云端的整行快照常由"根本不关心这个字段"的写入产生（例如对局结算只改 gameScore / cowDung），
+/// 它携带的仍是客户端上传前的旧值。若照单全收，客户端刚完成的跨天重置会被打回昨天，
+/// 用户当天每次点「开始学习」都会被判成 NEW_DAY，一整天进不了学习页。
+///
+/// 业务日按定义单调不减（时间只会往前走），所以取两者中较晚的一天即可；
+/// 只有云端确实推进了业务日（多设备场景）时才采信云端值。
+User mergeLatestLearningDay(User? local, User incoming) {
+  if (local == null || local.lastLearningDate == null) return incoming;
+
+  final localDay = DateUtils.businessDate(local.lastLearningDate!);
+  final incomingDate = incoming.lastLearningDate;
+  if (incomingDate == null) {
+    return incoming.copyWith(lastLearningDate: Value(local.lastLearningDate));
+  }
+
+  final incomingDay = DateUtils.businessDate(incomingDate);
+  if (!incomingDay.isBefore(localDay)) return incoming;
+  return incoming.copyWith(lastLearningDate: Value(local.lastLearningDate));
+}
 
 /// User类的扩展方法
 extension UserExtensions on User {

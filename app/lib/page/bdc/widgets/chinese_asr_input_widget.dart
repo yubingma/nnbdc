@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:math';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
-import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 
 class ChineseAsrInputWidget extends StatefulWidget {
@@ -16,9 +15,6 @@ class ChineseAsrInputWidget extends StatefulWidget {
   final bool isScorePassed; // 当前得分是否满足通过条件（含核心词匹配）
   final bool isSentenceStep; // 是否是例句练习步骤
   final bool isAiEvaluating; // 是否正在进行大模型裁判
-  /// 本轮开口的结论回显：空字符串＝没听清，非空＝听到的是这句但不对，null＝暂无结论。
-  /// 由 [BdcState.asrRoundHeardText] 提供，只用于展示。
-  final String? roundHeardText;
 
   const ChineseAsrInputWidget({
     super.key,
@@ -31,7 +27,6 @@ class ChineseAsrInputWidget extends StatefulWidget {
     this.isScorePassed = false,
     this.isSentenceStep = false,
     this.isAiEvaluating = false,
-    this.roundHeardText,
   });
 
   @override
@@ -168,16 +163,11 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     final bool isPassed = widget.isScorePassed;
 
     // 状态驱动反馈文字
-    final String? roundVerdict = asrRoundVerdictText(widget.roundHeardText);
     String statusText;
     if (isPassed) {
       statusText = "回答正确";
     } else if (widget.isAiEvaluating) {
       statusText = "AI裁判裁决中...";
-    } else if (roundVerdict != null) {
-      // 这一轮说完了：必须让用户看见结局。此前判错与没听清都是一片死寂，
-      // 用户无法区分"程序没反应"与"我说得不对"。回显原话还能回答"是不是没识别出来"。
-      statusText = roundVerdict;
     } else {
       switch (widget.asrState) {
         case AsrState.started:
@@ -297,16 +287,11 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     );
 
     // 波形与状态文字同行排布：与右侧「拼写/提示/清除」处于同一行，避免波形独占一行留下大片空高
-    // 判错/没听清的结论必须比"请说中文释义"这种常态提示更醒目，否则用户扫一眼就滑过去了。
-    final bool showsRoundVerdict =
-        !isPassed && !widget.isAiEvaluating && widget.roundHeardText != null;
     final statusColor = isPassed
         ? Colors.green
-        : showsRoundVerdict
-            ? Colors.orange
-            : (widget.isSentenceStep
-                ? (isDarkMode ? Colors.white38 : Colors.black26)
-                : (isDarkMode ? Colors.white54 : Colors.black45));
+        : (widget.isSentenceStep
+            ? (isDarkMode ? Colors.white38 : Colors.black26)
+            : (isDarkMode ? Colors.white54 : Colors.black45));
 
     return RepaintBoundary(
       child: Container(

@@ -10,6 +10,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/db/user_extensions.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'dart:math';
 
@@ -121,6 +122,11 @@ class LearningService {
         // 刷新缓存
         Global.clearUserCache();
         await Global.loadUserFromDb();
+
+        // 跨天重置必须立刻上传：它是一天只发生一次、且一旦被云端旧快照盖掉就整天进不了学习页的
+        // 本地事实。若和普通变更一样等 10 分钟节流，期间云端任何一次整行 user 写入（如对局结算）
+        // 都会在同步合并里把它挤掉，last_learning_date 就会永久停在昨天。
+        ThrottledDbSyncService().requestSync(immediate: true);
         Global.logger.d('用户每日数据重置成功');
       }
 

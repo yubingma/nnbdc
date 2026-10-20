@@ -8,6 +8,7 @@ import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/db/user_extensions.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:nnbdc/services/sync_progress.dart';
@@ -525,8 +526,19 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                 'totalLearning={${entity.totalLearningSeconds}}, todayLearning={${entity.todayLearningSeconds}}');
                 
             if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              // 云端整行快照不得把「最近学习业务日」拽回更早的一天：
+              // 对局结算等后台写入会带着旧值整行回写，若照单全收，客户端刚做完的跨天重置
+              // 会被打回昨天（见 mergeLatestLearningDay）。
+              final localUser = await db.usersDao.getUserById(entity.id);
+              final mergedUser = mergeLatestLearningDay(localUser, entity);
+              if (!identical(mergedUser, entity)) {
+                Global.logger.w('⚠️ [Sync-User] 云端快照的最近学习日 ${entity.lastLearningDate} 早于本地 '
+                    '${localUser?.lastLearningDate}，保留本地业务日（整行快照不得回退跨天重置）');
+                entity = mergedUser;
+              }
+
               await db.usersDao.saveUser(entity, false);
-              
+
               // 只要同步到当前用户的修改，立即应用到内存缓存
               if (Global.currentUserId == entity.id) {
                 Global.logger.d('📥 [Sync-User] 更新内存缓存: ${entity.userName}');

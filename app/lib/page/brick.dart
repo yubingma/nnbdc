@@ -168,7 +168,8 @@ class BrickPageState extends State<BrickPage>
   /// 方块高度与"0 层堆叠时一题的下落时间"。
   /// 这两个值同时决定客户端速度和上报给服务端的节奏，改动后服务端会自动跟随。
   static const double brickHeight = 58.0;
-  static const double baseFallSeconds = 6.2;
+  /// 0 层堆叠时一题从出生到触底的时间；调大就是整体放慢。
+  static const double baseFallSeconds = 7.2;
 
   /// 我方生命值由底部死词层数唯一决定：堆满 10 层即防线失守。
   /// 这样"堆叠高度 / 血条 / 服务端 stackRows"三者天然是同一个事实，不会再各算一套。
@@ -463,6 +464,15 @@ class BrickPageState extends State<BrickPage>
       _handleForceClose(data?.toString() ?? '');
     });
 
+    // 智慧果不够时 START_GAME 不会真正开始；把“已就绪”退回可再次点开始的状态
+    socket.off('noEnoughCowDung');
+    socket.on('noEnoughCowDung', (data) {
+      if (!mounted) return;
+      setState(() => myStarted = false);
+      final int need = (data is num) ? data.toInt() : 10;
+      ToastUtil.error('智慧果不足，无法开始游戏！\n至少需要: $need');
+    });
+
     socket.off('leaveRoom');
     socket.on('leaveRoom', (data) {
       if (!mounted || isPlaying) return;
@@ -494,6 +504,7 @@ class BrickPageState extends State<BrickPage>
       'propsUsed',
       'gameNotInProgress',
       'forceClose',
+      'noEnoughCowDung',
       'leaveRoom',
     ]) {
       socket.off(event);
@@ -1137,6 +1148,7 @@ class BrickPageState extends State<BrickPage>
     );
     setState(() {
       isPlaying = false;
+      myStarted = false;
       if (isWin) {
         opponentHp = 0;
       } else {
@@ -1207,6 +1219,7 @@ class BrickPageState extends State<BrickPage>
     _tts.stop();
     setState(() {
       isPlaying = false;
+      myStarted = false;
       stackRows.clear();
       bricks.clear();
       currWord = null;
@@ -1250,6 +1263,8 @@ class BrickPageState extends State<BrickPage>
     // 对手已答 N 题时，他当前正在做的正是共享词序里索引 N 的那道题。
     final String myCurrentWord = _spellAt(myWordIndex) ?? currWord?.spell ?? '…';
     final String opponentCurrentWord = _spellAt(opponentWordCount) ?? '…';
+    // 开局前 / 开场动画中还没有正在下落的词：名字上方不显示题号和当前单词
+    final bool showBattleInfo = isPlaying && !isIntroPlaying && bricks.isNotEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -1280,6 +1295,7 @@ class BrickPageState extends State<BrickPage>
                 opponentWordOrdinal: opponentWordCount + 1,
                 myCurrentWord: myCurrentWord,
                 opponentCurrentWord: opponentCurrentWord,
+                showBattleInfo: showBattleInfo,
               ),
             ),
           ),
@@ -1323,17 +1339,38 @@ class BrickPageState extends State<BrickPage>
                 const Spacer(),
                 if (!isPlaying) ...[
                   const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      sendUserCmd('START_GAME', []);
-                      setState(() => myStarted = true);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF59E0B),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  if (myStarted)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.65), width: 1.0),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF34D399)),
+                          SizedBox(width: 4),
+                          Text(
+                            '已就绪',
+                            style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: () {
+                        sendUserCmd('START_GAME', []);
+                        setState(() => myStarted = true);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('开始对战', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
                     ),
-                    child: Text(myStarted ? '等待对手...' : '开始对战', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-                  ),
                 ],
               ],
             ),
@@ -1534,6 +1571,7 @@ class _BrickScenePainter extends CustomPainter {
   final int opponentWordOrdinal;
   final String myCurrentWord;
   final String opponentCurrentWord;
+  final bool showBattleInfo;
 
   _BrickScenePainter({
     required this.bricks,
@@ -1551,6 +1589,7 @@ class _BrickScenePainter extends CustomPainter {
     required this.opponentWordOrdinal,
     required this.myCurrentWord,
     required this.opponentCurrentWord,
+    required this.showBattleInfo,
   });
 
   double get _stackTopY => barrierBottomY - stackRows.length * stackRowHeight;
@@ -1600,6 +1639,7 @@ class _BrickScenePainter extends CustomPainter {
       name: '我',
       word: myCurrentWord,
       ordinal: myWordOrdinal,
+      showProgress: showBattleInfo,
       color: const Color(0xFF34D399),
     );
     _drawHpRailLabel(
@@ -1609,6 +1649,7 @@ class _BrickScenePainter extends CustomPainter {
       name: opponentName.isEmpty ? '对手' : opponentName,
       word: opponentCurrentWord,
       ordinal: opponentWordOrdinal,
+      showProgress: showBattleInfo,
       color: const Color(0xFFF59E0B),
     );
 
@@ -1749,6 +1790,7 @@ class _BrickScenePainter extends CustomPainter {
 
   /// 竖排防线顶部的三段信息：最上面是当前单词，下面是"第几个词"和名字。
   /// 双方都从同一份共享词序里按各自进度取词，摆在一起就能直接对照。
+  /// 开局前 / 开场动画中还没有正在下落的词，此时只显示名字，不显示题号和单词。
   /// 生命值不再显示数字，直接看竖排亮了多少格即可。
   void _drawHpRailLabel(
     Canvas canvas,
@@ -1757,10 +1799,40 @@ class _BrickScenePainter extends CustomPainter {
     required String name,
     required String word,
     required int ordinal,
+    required bool showProgress,
     required Color color,
   }) {
     final double railHeight = maxStackRows * stackRowHeight;
     final double railTop = barrierBottomY - railHeight;
+
+    if (!showProgress) {
+      final nameOnlyTp = TextPainter(
+        text: TextSpan(
+          text: name,
+          style: const TextStyle(color: Colors.white70, fontSize: 10.5, fontWeight: FontWeight.w600),
+        ),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+        ellipsis: '…',
+      )..layout(maxWidth: 110);
+      final double height = nameOnlyTp.height;
+      final double bgTop = railTop - height - 14;
+      final double bgLeft = left ? 2.0 : size.width - 2.0 - (nameOnlyTp.width + 10);
+      final RRect bg = RRect.fromRectAndRadius(
+        Rect.fromLTWH(bgLeft, bgTop, nameOnlyTp.width + 10, height + 6),
+        const Radius.circular(8),
+      );
+      canvas.drawRRect(bg, Paint()..color = Colors.black.withValues(alpha: 0.42));
+      canvas.drawRRect(
+        bg,
+        Paint()
+          ..color = color.withValues(alpha: 0.35)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.8,
+      );
+      nameOnlyTp.paint(canvas, Offset(bgLeft + 5, bgTop + 3));
+      return;
+    }
 
     final currentTp = TextPainter(
       text: TextSpan(

@@ -19,18 +19,27 @@ void main() {
     });
   });
 
-  group('词表页行内结论', () {
+  group('本轮开口结论的渲染', () {
     Widget wrap(Widget child) =>
         MaterialApp(home: Scaffold(body: Center(child: child)));
 
-    testWidgets('判错时把回显显示成醒目的一行小字', (tester) async {
+    testWidgets('判错时把回显显示成醒目的橙字', (tester) async {
       await tester.pumpWidget(wrap(buildAsrRoundVerdict('露水')));
 
       expect(find.text('听到的是「露水」，不对'), findsOneWidget);
 
       final textWidget = tester.widget<Text>(find.text('听到的是「露水」，不对'));
       expect(textWidget.style?.color, Colors.orange);
-      expect(textWidget.style?.fontSize, 10);
+      expect(textWidget.style?.fontSize, 10, reason: '词表页行内默认 10px');
+      expect(textWidget.maxLines, 2,
+          reason: '说了一长句时宁可折行，也不能被缩成几像素的小字');
+    });
+
+    testWidgets('背单词页用更大的字号单独占一行', (tester) async {
+      await tester.pumpWidget(wrap(buildAsrRoundVerdict('露水', fontSize: 11.5)));
+
+      final textWidget = tester.widget<Text>(find.text('听到的是「露水」，不对'));
+      expect(textWidget.style?.fontSize, 11.5);
     });
 
     testWidgets('没听清时显示"没听清，再说一遍"', (tester) async {

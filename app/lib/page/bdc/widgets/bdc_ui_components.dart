@@ -1862,10 +1862,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                         bdcNotifierProvider.select((s) => s.isScorePassed));
                     final isAiEvaluating = ref.watch(
                         bdcNotifierProvider.select((s) => s.isAiEvaluating));
-                    // 本轮开口的结论：用户说完后必须看见"听到了什么、对不对"，
-                    // 否则判错与"程序没反应"在界面上完全一样。
-                    final roundHeardText = ref.watch(
-                        bdcNotifierProvider.select((s) => s.asrRoundHeardText));
 
                     final bool isChineseInput =
                         state.studyStep == StudyStep.en2Ch.json ||
@@ -1885,7 +1881,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                             isScorePassed: isScorePassed,
                             isSentenceStep: isSentence,
                             isAiEvaluating: isAiEvaluating,
-                            roundHeardText: roundHeardText,
                           )
                         : EnglishAsrInputWidget(
                             controller: notifier.meaningController,
@@ -1898,7 +1893,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                             isScorePassed: isScorePassed,
                             isSentenceStep: isSentence,
                             isAiEvaluating: isAiEvaluating,
-                            roundHeardText: roundHeardText,
                           );
                   },
                 ),
@@ -1946,6 +1940,25 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
             ],
           ),
+        ),
+
+        // 本轮开口结论：单独占一整行，绝不塞进波形那一行。
+        // 波形那一行只有 10px 字且被 FittedBox 等比缩放，说了一长句时会被缩到几像素、
+        // 几乎看不见（线上实况："波形那里冒出一堆黄色小字"）。整行 + 允许折行才读得出来。
+        Consumer(
+          builder: (context, ref, child) {
+            final roundHeardText = ref.watch(
+                bdcNotifierProvider.select((s) => s.asrRoundHeardText));
+            final passed = ref.watch(
+                bdcNotifierProvider.select((s) => s.isScorePassed));
+            if (roundHeardText == null || passed) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: buildAsrRoundVerdict(roundHeardText, fontSize: 11.5),
+            );
+          },
         ),
 
         // 微柔光分割线

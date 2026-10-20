@@ -343,20 +343,24 @@ String? asrRoundVerdictText(String? heardText) {
   return heardText.isEmpty ? '没听清，再说一遍' : '听到的是「$heardText」，不对';
 }
 
-/// 词表页「说中文/说英文」行内的本轮开口结论。
+/// 本轮开口结论（背单词页整行一条、词表页行内小字，两处共用同一套文案与配色）。
 ///
-/// 这一行是这个模式下唯一能告诉用户"我听到了什么、对不对"的地方：
+/// 这一行是用户唯一能看见"我听到了什么、对不对"的地方：
 /// 没有它，答错与程序卡死在界面上完全一样。
-Widget buildAsrRoundVerdict(String? heardText) {
+///
+/// 允许折行（[maxLines] 默认 2）：用户说了很长一句时回显本身就长，
+/// 折行比把这一行等比缩成几像素的小字可读得多。
+Widget buildAsrRoundVerdict(String? heardText,
+    {double fontSize = 10, int maxLines = 2}) {
   final text = asrRoundVerdictText(heardText);
   if (text == null) return const SizedBox.shrink();
   return Text(
     text,
-    maxLines: 1,
+    maxLines: maxLines,
     overflow: TextOverflow.ellipsis,
-    style: const TextStyle(
-      fontSize: 10,
-      height: 1.3,
+    style: TextStyle(
+      fontSize: fontSize,
+      height: 1.35,
       color: Colors.orange,
       fontWeight: FontWeight.w500,
     ),

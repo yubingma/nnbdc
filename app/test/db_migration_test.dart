@@ -208,11 +208,17 @@ void main() {
         wordColumns.map((row) => row.read<String>('name')),
         contains('en_definition'),
       );
+      // v62 → v63: words 补上单词所有者列
+      expect(
+        wordColumns.map((row) => row.read<String>('name')),
+        contains('owner_id'),
+      );
       final word = await (db.select(db.words)..where((w) => w.id.equals('w1'))).getSingleOrNull();
       expect(word, isNotNull, reason: '迁移不得丢失已有单词行');
       expect(word!.shortDesc, 'A flaw in something is a defect.');
       expect(word.shortDescCn, isNull, reason: '新列对老数据应为空，等待服务端下发译文');
       expect(word.enDefinition, isNull, reason: '新列对老数据应为空，等待服务端下发');
+      expect(word.ownerId, '15118', reason: '历史单词迁移后应归属系统词，等待服务端下发真实所有者');
 
       // v61 → v62: user_wrong_words 补上累计做错次数与错题本留存状态列
       final userWrongWordColumns = await db.customSelect("PRAGMA table_info('user_wrong_words')").get();
@@ -291,4 +297,98 @@ void main() {
       MyDatabase.setInstanceForTesting(null);
     }
   });
+
+  test('迁移事务: 中途被打断时表结构与版本号一起回滚, 不留半迁移库', () async {
+    // 事故现场（2026-10-20 macOS 告警）：迁移已经加了 words.owner_id，但进程在 drift
+    // 写 user_version 之前被杀（drift 要等 beforeOpen 全部跑完才写版本号），库停在
+    // 「列已加、版本还是 62」。下次启动重跑同一句 ALTER，duplicate column → 删库重建。
+    const wordsDdl = 'CREATE TABLE "words" ("id" TEXT NOT NULL, "spell" TEXT NOT NULL, '
+        '"popularity" INTEGER NOT NULL, '
+        '"create_time" INTEGER NOT NULL, '
+        '"update_time" INTEGER NOT NULL DEFAULT (CAST(strftime(\'%s\', CURRENT_TIMESTAMP) AS INTEGER)), '
+        'PRIMARY KEY ("id"))';
+
+    final raw = sqlite3.open(dbFile.path);
+    raw.execute(wordsDdl);
+    raw.execute("INSERT INTO words (id, spell, popularity, create_time) VALUES ('w1', 'defect', 5, 1)");
+    raw.execute('PRAGMA user_version = 62');
+    raw.dispose();
+
+    // 用 62 版的 schemaVersion 打开, 让 drift 不跑迁移, 停在真实的 v62 库状态
+    final db = _V62ProbeDatabase(NativeDatabase(dbFile));
+    try {
+      await db.customSelect('SELECT 1').get();
+
+      await expectLater(
+        db.migrateAtomically(63, () async {
+          await db.customStatement(
+            'ALTER TABLE "words" ADD COLUMN "owner_id" TEXT NULL DEFAULT \'15118\'',
+          );
+          // 模拟进程在「加完列、还没写版本号」时被杀
+          throw StateError('迁移中途被打断');
+        }),
+        throwsStateError,
+      );
+
+      final version = (await db.customSelect('PRAGMA user_version').getSingle()).data.values.first;
+      expect(version, 62, reason: '版本号必须随表结构一起回滚, 否则下次启动会重跑已生效的 ALTER');
+      final columns = await db.customSelect("PRAGMA table_info('words')").get();
+      expect(
+        columns.map((row) => row.read<String>('name')),
+        isNot(contains('owner_id')),
+        reason: '半迁移库会让下次启动报 duplicate column, 进而删库重建',
+      );
+      final word = await (db.select(db.words)..where((w) => w.id.equals('w1'))).getSingle();
+      expect(word.spell, 'defect', reason: '回滚不得动老数据');
+
+      // 同一个事务方式重跑一次完整迁移：列与版本号一起生效
+      await db.migrateAtomically(63, () async {
+        await db.customStatement(
+          'ALTER TABLE "words" ADD COLUMN "owner_id" TEXT NULL DEFAULT \'15118\'',
+        );
+      });
+      expect(
+        (await db.customSelect('PRAGMA user_version').getSingle()).data.values.first,
+        63,
+      );
+      expect(
+        (await db.customSelect("PRAGMA table_info('words')").get())
+            .map((row) => row.read<String>('name')),
+        contains('owner_id'),
+      );
+    } finally {
+      await db.close();
+    }
+  });
+  test('审计字段回填标记必须落库: 否则每次启动都要全表扫描 36 张表', () async {
+    final raw = sqlite3.open(dbFile.path);
+    raw.execute('CREATE TABLE "local_params" ("name" TEXT NOT NULL, "value" TEXT NOT NULL, '
+        '"description" TEXT NULL, '
+        '"create_time" INTEGER NOT NULL DEFAULT (CAST(strftime(\'%s\', CURRENT_TIMESTAMP) AS INTEGER)), '
+        '"update_time" INTEGER NOT NULL DEFAULT (CAST(strftime(\'%s\', CURRENT_TIMESTAMP) AS INTEGER)), '
+        'PRIMARY KEY ("name"))');
+    raw.execute('PRAGMA user_version = 63');
+    raw.dispose();
+
+    final db = MyDatabase(NativeDatabase(dbFile));
+    try {
+      await db.customSelect('SELECT 1').get();
+      // 以前只做 UPDATE，行不存在时既不报错也不插入，标记永远写不进去
+      final flag = await (db.select(db.localParams)
+            ..where((p) => p.name.equals('audit_columns_backfilled_v42')))
+          .getSingleOrNull();
+      expect(flag?.value, 'true', reason: '标记写不进去 → 每次启动都要全表扫描 36 张表');
+    } finally {
+      await db.close();
+    }
+  });
+}
+
+/// 停在 v62 的探针库：schemaVersion 与库里的 user_version 一致，drift 打开时不会触发迁移，
+/// 便于单独验证 [MyDatabase.migrateAtomically] 的事务语义。
+class _V62ProbeDatabase extends MyDatabase {
+  _V62ProbeDatabase(super.e);
+
+  @override
+  int get schemaVersion => 62;
 }

@@ -91,5 +91,10 @@ void main() {
     expect(source, contains("sendUserCmd('GAME_PACING'"), reason: '每局必须上报初始下落时间与每层行程比例');
     expect(source, contains('baseFallSeconds'), reason: '初始下落时间必须是可上报的具名常量');
     expect(source, contains('brickHeight'), reason: '方块高度必须是可上报的具名常量');
+
+    // 16. 开局前不显示当前词/题号；点击开始后显示“已就绪”
+    expect(source, contains('showBattleInfo'), reason: '必须有开局前隐藏战斗信息的开关');
+    expect(source, contains('showProgress: showBattleInfo'), reason: '画布必须按开局状态决定是否显示题号/当前词');
+    expect(source, contains("'已就绪'"), reason: '点击开始后必须显示已就绪状态');
   });
 }

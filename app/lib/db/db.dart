@@ -1878,21 +1878,18 @@ class MyDatabase extends _$MyDatabase {
       Global.logger.i('✅ 已修复全局 $fixedCount 条审计字段异常值');
     }
 
-    // 标记为已完成
+    // 标记为已完成：必须用 upsert。只 UPDATE 一个还不存在的行既不报错也不插入，
+    // 标记永远写不进去，于是每次启动都要把 36 张表全表扫描一遍回填审计字段 ——
+    // 这也是升级时「加完列还没写版本号」那个窗口被拉长的原因之一。
     try {
-      await (update(localParams)..where((p) => p.name.equals(backfillDoneKey))).write(LocalParamsCompanion(
-        value: const Value('true'),
+      await into(localParams).insertOnConflictUpdate(LocalParamsCompanion.insert(
+        name: backfillDoneKey,
+        value: 'true',
         updateTime: Value(AppClock.now()),
       ));
-    } catch (_) {
-      // 如果写入失败，可能是表不存在或被锁定，下次打开会重试
-      try {
-        await into(localParams).insert(LocalParamsCompanion.insert(
-          name: backfillDoneKey,
-          value: 'true',
-          updateTime: Value(AppClock.now()),
-        ));
-      } catch (_) {}
+    } catch (e) {
+      // 写标记失败只影响下次启动多扫一遍，不影响数据正确性
+      Global.logger.w('写入审计字段回填标记失败: $e');
     }
   }
 
