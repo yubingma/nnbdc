@@ -739,16 +739,18 @@ class _MonsterSpriteState extends State<MonsterSprite>
               ));
             }
 
-            // ---- 左下就是整块摇杆热区：底盘跟着手指按下点出现（王者荣耀那套浮动摇杆）。
-            // 热区给得比底盘大得多，左手拇指落在左下任意位置都能直接推；右下角先留空，
-            // 将来要加右摇杆/道具时直接摆进去。
+            // ---- 全屏都是摇杆热区：底盘跟着手指按下点出现（王者荣耀那套浮动摇杆）。
+            // 不做「只在左下角一小块能按」——横屏大屏上手指很容易落偏，按到热区外
+            // 就表现为「摇杆没反应」。顶部返回按钮、输掉后的「再来一次」都在更上层，
+            // 会先命中，不会被这层挡住。
             final EdgeInsets safe = MediaQuery.paddingOf(context);
             final double joyRadius = (c.maxHeight * 0.17).clamp(44.0, 68.0);
-            children.add(Positioned(
-              left: safe.left,
-              bottom: safe.bottom,
-              width: c.maxWidth * 0.46,
-              height: c.maxHeight * 0.68,
+            // key 不是可选项：这个 Stack 里排在摇杆前面的子项数量每帧都在变
+            // （怪群进出场、哭/逃跑姿势、答题 UI 出现消失），没有 key 时 Flutter 只按
+            // 位置顺序匹配 Element，摇杆的 State（手指 id、底盘中心、杆偏移）会被反复
+            // 错位复用/重建——真机表现就是「按住往旁边拖，杆头立刻弹回中心」。
+            children.add(Positioned.fill(
+              key: const ValueKey<String>('monster-joystick'),
               child: GameJoystick(
                 radius: joyRadius,
                 onChanged: (dir, mag) {

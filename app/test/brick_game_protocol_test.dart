@@ -71,5 +71,13 @@ void main() {
     final int attackLabelIdx = source.indexOf("label: '攻击'");
     expect(healLabelIdx, greaterThan(0), reason: '治疗按钮必须存在');
     expect(attackLabelIdx, greaterThan(healLabelIdx), reason: '治疗在我方左侧，攻击在对手右侧');
+
+    // 13. 已出词数：自己用本地进度，对手用服务端广播；
+    //     线上服务端没升级时用既有 wordB 事件累加，收到 wordCountSync 后自动停用避免双计
+    expect(source, contains("socket.on('wordCountSync'"), reason: '必须接收对手已出词数');
+    expect(source, contains("socket.on('wordB'"), reason: '旧服务端要用 wordB 累计对手词数');
+    expect(source, contains('_serverSendsWordCount'), reason: '绝对计数到达后必须停用 wordB 累加');
+    expect(source, contains('myWordCount: myWordIndex'), reason: '我方词数用本地 myWordIndex');
+    expect(source, contains('opponentWordCount: opponentWordCount'), reason: '对手词数来自广播');
   });
 }

@@ -10,6 +10,7 @@ import 'package:nnbdc/util/tts.dart';
 import '../api/vo.dart';
 import '../global.dart';
 import '../util/study_audio_session_controller.dart';
+import '../util/platform_util.dart';
 import '../util/prefs.dart';
 import '../util/word_pack_queue.dart';
 
@@ -193,6 +194,12 @@ class BrickPageState extends State<BrickPage>
   final Random rand = Random();
   int nextBrickId = 1;
   int myWordIndex = 0;
+  /// 对手已经作答的题目数量。
+  int opponentWordCount = 0;
+  /// 当前服务端是否会推 wordCountSync 绝对计数。
+  /// 线上服务端还没升级时没有这个事件，退回到用既有的 wordB 一条条累加；
+  /// 一旦收到 wordCountSync，就改用服务端绝对数，避免两套计数重复累加。
+  bool _serverSendsWordCount = false;
 
   double _hitFlash = 0.0;
   double _healFlash = 0.0;
@@ -228,6 +235,8 @@ class BrickPageState extends State<BrickPage>
     // 削砖块是纵向堆叠玩法，锁定竖屏，避免横屏把下落行程和答题区一起压扁
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     _tts.init();
+    // 提前装载音效池和答对音，避免第一题答对时因首次解码而听不到声音
+    StudyAudioSessionController.instance.prewarm();
     LoadingUtils.disableApiLoading();
 
     for (int i = 0; i < 24; i++) {
@@ -345,6 +354,8 @@ class BrickPageState extends State<BrickPage>
           opponentStarted = false;
           gameState = 'ready';
         });
+        StudyAudioSessionController.instance.playSoundEffect('door.mp3', volume: 0.65);
+        HapticFeedback.lightImpact();
       }
     });
 
@@ -385,6 +396,25 @@ class BrickPageState extends State<BrickPage>
     socket.on('stackSync', (data) {
       if (!mounted || !isPlaying) return;
       _handleStackSync(data);
+    });
+
+    socket.off('wordCountSync');
+    socket.on('wordCountSync', (data) {
+      if (!mounted || data is! List || data.length < 2) return;
+      // 只要收到过任意一条，就说明服务端支持绝对计数，后续不再用 wordB 累加
+      _serverSendsWordCount = true;
+      final String userId = data[0]?.toString() ?? '';
+      if (userId == myUserId) return; // 我方进度直接用本地 myWordIndex，避免两套计数
+      final int count = (data[1] is num) ? (data[1] as num).toInt() : 0;
+      setState(() => opponentWordCount = count);
+    });
+
+    // 旧服务端的兼容路径：它没有 wordCountSync，但每答一题都会给对手推一条 wordB。
+    // 收到第一条 wordCountSync 后这个累加自动停用，不会和新协议重复计数。
+    socket.off('wordB');
+    socket.on('wordB', (data) {
+      if (!mounted || !isPlaying || _serverSendsWordCount) return;
+      setState(() => opponentWordCount++);
     });
 
     socket.off('gameResultNotice');
@@ -448,6 +478,8 @@ class BrickPageState extends State<BrickPage>
       'sysCmd',
       'wordPack',
       'stackSync',
+      'wordCountSync',
+      'wordB',
       'gameResultNotice',
       'loser',
       'giveProps',
@@ -517,6 +549,7 @@ class BrickPageState extends State<BrickPage>
       propsMine = 0;
       propsStarfish = 0;
       myWordIndex = 0;
+      opponentWordCount = 0;
       isIntroPlaying = true;
       introProgress = 0.0;
       _resultShown = false;
@@ -541,6 +574,17 @@ class BrickPageState extends State<BrickPage>
     if (data is! List || data.length < 2) return;
     _wordPack.accept((data[0] as num).toInt(), List<dynamic>.from(data[1] as List));
     _playNextWordFromPack();
+  }
+
+  /// 从共享词序里取出第 index 个词的拼写；本地还没收到这一段时返回 null。
+  /// 只读预览，不会推进自己的出题游标（对手当前词就靠它显示）。
+  String? _spellAt(int index) {
+    final entry = _wordPack.peekWordAt(index);
+    if (entry is List && entry.isNotEmpty && entry[0] is Map) {
+      final spell = (entry[0] as Map)['spell']?.toString();
+      if (spell != null && spell.isNotEmpty) return spell;
+    }
+    return null;
   }
 
   void _playNextWordFromPack() {
@@ -693,13 +737,20 @@ class BrickPageState extends State<BrickPage>
     final b = bricks.first;
     if (b.isPopping || b.isDoomed) return;
 
+    // 玩家已经作答，停止正在朗读的单词，避免和答对/答错音效叠在一起
+    _tts.stop();
+
     if (opt.isCorrect) {
       setState(() {
         opt.isSelected = true;
       });
       b.isPopping = true;
       _spawnBrickExplosion(b.x, b.y, b.baseColor);
-      StudyAudioSessionController.instance.playSoundEffect('correct.mp3', volume: 0.7);
+      final bool ios = PlatformUtils.isIOS;
+      StudyAudioSessionController.instance.playSoundEffect(
+        ios ? 'correct_ios.wav' : 'correct.wav',
+        volume: ios ? 0.35 : 0.6,
+      );
       HapticFeedback.mediumImpact();
 
       myCombo++;
@@ -727,6 +778,7 @@ class BrickPageState extends State<BrickPage>
         b.isDoomed = true;
       });
       HapticFeedback.heavyImpact();
+      StudyAudioSessionController.instance.playSoundEffect('bubble-wrong.wav', volume: 0.55);
       _floatingTexts.add(BrickFloatingText(
         x: b.x,
         y: b.y - 30,
@@ -906,6 +958,11 @@ class BrickPageState extends State<BrickPage>
       text: reason,
       color: const Color(0xFFEF4444),
     ));
+    // 方块砸进堆叠层 / 挨了对手攻击：一记沉重闷响。
+    // 最后一击不播，交给结算的 failed/victory 音效，避免两个低频音叠在一起发闷。
+    if (myHp > 0) {
+      StudyAudioSessionController.instance.playSoundEffect('thud.mp3', speed: 0.9, volume: 0.65);
+    }
 
     sendUserCmd('REPORT_STACK_ROWS', [stackRows.length]);
     if (myHp <= 0) {
@@ -919,28 +976,44 @@ class BrickPageState extends State<BrickPage>
     if (propsIdx == 0 && propsMine > 0) {
       propsMine--;
       sendUserCmd('USE_PROPS', [propsIdx]);
+      StudyAudioSessionController.instance.playSoundEffect('monster/throw_whoosh.wav', volume: 0.35);
       _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '🚀 攻击 -1 HP!', color: const Color(0xFFEF4444)));
       setState(() => opponentHp = max(0, opponentHp - 1));
     } else if (propsIdx == 1 && propsStarfish > 0) {
       if (myHp >= maxHp) {
         _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '防线已满格，无需治疗', color: const Color(0xFF38BDF8)));
+        StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 0.9, volume: 0.2);
         return;
       }
       propsStarfish--;
       setState(() => stackRows.removeLast());
       sendUserCmd('USE_PROPS', [propsIdx]);
+      StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.25, volume: 0.4);
       _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '✨ 治疗 +1 HP!', color: const Color(0xFF10B981)));
       sendUserCmd('REPORT_STACK_ROWS', [stackRows.length]);
     }
   }
 
   /// 服务端按时间推演出的权威堆叠行数：客户端挂后台、方块停在原地的那段时间会被补扣。
-  /// 载荷为 [userId, 堆叠行数, 原因]；对手的行数也广播过来了，右侧竖排血条据此显示对方堆叠高度。
+  /// 新协议载荷为 [userId, 堆叠行数, 原因]，广播给双方，对手的竖排血条据此更新；
+  /// 旧服务端只发 [堆叠行数, 原因] 且只发给本人，这里兼容两种形态，避免升级服务端前血条失效。
   void _handleStackSync(dynamic data) {
-    if (!mounted || !isPlaying || data is! List || data.length < 2) return;
-    final String userId = data[0]?.toString() ?? '';
-    final int rows = (data[1] is num) ? (data[1] as num).toInt() : 0;
-    final String reason = data.length > 2 ? data[2].toString() : '';
+    if (!mounted || !isPlaying || data is! List || data.isEmpty) return;
+
+    final String userId;
+    final int rows;
+    final String reason;
+    if (data.length >= 2 && data[1] is num) {
+      userId = data[0]?.toString() ?? '';
+      rows = (data[1] as num).toInt();
+      reason = data.length > 2 ? data[2].toString() : '';
+    } else if (data[0] is num) {
+      userId = myUserId;
+      rows = (data[0] as num).toInt();
+      reason = data.length > 1 ? data[1].toString() : '';
+    } else {
+      return;
+    }
 
     if (userId != myUserId) {
       setState(() {
@@ -969,6 +1042,9 @@ class BrickPageState extends State<BrickPage>
     if (myHp <= 0) {
       sendUserCmd('GAME_OVER', ['A']);
       _endGame(isWin: false);
+    } else {
+      // 服务端补扣（挂后台漏答）：用一记闷响提醒，最后一击交给结算音效
+      StudyAudioSessionController.instance.playSoundEffect('thud.mp3', speed: 0.9, volume: 0.45);
     }
   }
 
@@ -987,6 +1063,7 @@ class BrickPageState extends State<BrickPage>
       text: propsType == 0 ? '💣 获得攻击 ×$count' : '⭐ 获得治疗 ×$count',
       color: propsType == 0 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
     ));
+    StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.2, volume: 0.3);
   }
 
   /// 对手使用道具：攻击扣我方 1 点防线，治疗给对手回 1 点。
@@ -996,12 +1073,16 @@ class BrickPageState extends State<BrickPage>
       _applyDamage(1, reason: '💥 遭受对手攻击！-1 HP');
     } else {
       setState(() => opponentHp = min(maxHp, opponentHp + 1));
+      // 提示贴到右侧对手防线附近，让"对手把自己治回去了"这件事一眼可见
+      final double screenWidth = MediaQuery.maybeOf(context)?.size.width ?? 390;
       _floatingTexts.add(BrickFloatingText(
-        x: 200,
-        y: 260,
+        x: screenWidth * 0.72,
+        y: 220,
         text: '💚 对手治疗 +1 HP',
         color: const Color(0xFFFBBF24),
       ));
+      // 对手治疗只给一个很远、很轻的魔法音，提示"对面把血回上去了"
+      StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.35, volume: 0.15);
     }
   }
 
@@ -1020,6 +1101,10 @@ class BrickPageState extends State<BrickPage>
     if (!mounted || _resultShown) return;
     _resultShown = true;
     _tts.stop();
+    StudyAudioSessionController.instance.playBlockingSound(
+      isWin ? 'victory.mp3' : 'failed.mp3',
+      timeoutMs: 2000,
+    );
     setState(() {
       isPlaying = false;
       if (isWin) {
@@ -1126,6 +1211,9 @@ class BrickPageState extends State<BrickPage>
     final topPadding = max(mediaQuery.padding.top, 16.0);
     final double barrierBottomY = _arenaBottomY(mediaQuery.size.height, mediaQuery.padding.bottom);
     final double stackRowHeight = _stackRowHeight(barrierBottomY, topPadding);
+    // 双方当前词都从同一份共享词序里按索引取，直接对照就能看出有没有被区别出题
+    final String myCurrentWord = _spellAt(myWordIndex) ?? currWord?.spell ?? '…';
+    final String opponentCurrentWord = _spellAt(opponentWordCount) ?? '…';
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -1151,9 +1239,11 @@ class BrickPageState extends State<BrickPage>
                 maxStackRows: maxHp,
                 myStackRows: stackRows.length,
                 opponentStackRows: min(maxHp, max(0, maxHp - opponentHp)),
-                myHp: myHp,
-                opponentHp: opponentHp,
                 opponentName: opponentNickName,
+                myWordCount: myWordIndex,
+                opponentWordCount: opponentWordCount,
+                myCurrentWord: myCurrentWord,
+                opponentCurrentWord: opponentCurrentWord,
               ),
             ),
           ),
@@ -1403,9 +1493,11 @@ class _BrickScenePainter extends CustomPainter {
   final int maxStackRows;
   final int myStackRows;
   final int opponentStackRows;
-  final int myHp;
-  final int opponentHp;
   final String opponentName;
+  final int myWordCount;
+  final int opponentWordCount;
+  final String myCurrentWord;
+  final String opponentCurrentWord;
 
   _BrickScenePainter({
     required this.bricks,
@@ -1418,9 +1510,11 @@ class _BrickScenePainter extends CustomPainter {
     required this.maxStackRows,
     required this.myStackRows,
     required this.opponentStackRows,
-    required this.myHp,
-    required this.opponentHp,
     required this.opponentName,
+    required this.myWordCount,
+    required this.opponentWordCount,
+    required this.myCurrentWord,
+    required this.opponentCurrentWord,
   });
 
   double get _stackTopY => barrierBottomY - stackRows.length * stackRowHeight;
@@ -1468,7 +1562,8 @@ class _BrickScenePainter extends CustomPainter {
       size,
       left: true,
       name: '我',
-      hp: myHp,
+      word: myCurrentWord,
+      words: myWordCount,
       color: const Color(0xFF34D399),
     );
     _drawHpRailLabel(
@@ -1476,7 +1571,8 @@ class _BrickScenePainter extends CustomPainter {
       size,
       left: false,
       name: opponentName.isEmpty ? '对手' : opponentName,
-      hp: opponentHp,
+      word: opponentCurrentWord,
+      words: opponentWordCount,
       color: const Color(0xFFF59E0B),
     );
 
@@ -1615,22 +1711,35 @@ class _BrickScenePainter extends CustomPainter {
     }
   }
 
-  /// 竖排防线顶部的名字与剩余格数：数字永远贴外侧，不会被中间下落的方块挡住。
+  /// 竖排防线顶部的三段信息：最上面是当前单词，下面是已出词数和名字。
+  /// 双方都从同一份共享词序里按各自进度取词，摆在一起就能直接对照。
+  /// 生命值不再显示数字，直接看竖排亮了多少格即可。
   void _drawHpRailLabel(
     Canvas canvas,
     Size size, {
     required bool left,
     required String name,
-    required int hp,
+    required String word,
+    required int words,
     required Color color,
   }) {
     final double railHeight = maxStackRows * stackRowHeight;
     final double railTop = barrierBottomY - railHeight;
 
-    final hpTp = TextPainter(
+    final currentTp = TextPainter(
       text: TextSpan(
-        text: '$hp',
-        style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w800),
+        text: word,
+        style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      ellipsis: '…',
+    )..layout(maxWidth: 110);
+
+    final countTp = TextPainter(
+      text: TextSpan(
+        text: '$words词',
+        style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.w700),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -1645,19 +1754,26 @@ class _BrickScenePainter extends CustomPainter {
       ellipsis: '…',
     )..layout(maxWidth: 62);
 
-    // 数字贴外侧（远离中间下落的方块），名字在内侧
-    final double hpX = left ? 7.0 : size.width - 7.0 - hpTp.width;
-    final double nameX = left ? hpX + hpTp.width + 4.0 : hpX - 4.0 - nameTp.width;
-    final double lineHeight = max(hpTp.height, nameTp.height);
-    final double textY = railTop - lineHeight - 8;
+    final double currentHeight = currentTp.height;
+    final double metaHeight = max(countTp.height, nameTp.height);
+    const double pad = 3;
+    const double lineGap = 1;
+    final double totalHeight = currentHeight + lineGap + metaHeight + pad * 2;
+    final double bgTop = railTop - totalHeight - 8;
+    final double currentY = bgTop + pad;
+    final double metaY = currentY + currentHeight + lineGap;
 
-    final double bgLeft = min(hpX, nameX) - 5;
-    final double bgRight = max(hpX + hpTp.width, nameX + nameTp.width) + 5;
+    final double metaWidth = countTp.width + 5 + nameTp.width;
+    final double contentWidth = max(currentTp.width, metaWidth);
+    final double bgLeft = left ? 2.0 : size.width - 2.0 - (contentWidth + 10);
+    final double contentLeft = bgLeft + 5;
+    final double contentRight = contentLeft + contentWidth;
+
     final RRect bg = RRect.fromRectAndRadius(
-      Rect.fromLTWH(bgLeft, textY - 3, bgRight - bgLeft, lineHeight + 6),
+      Rect.fromLTWH(bgLeft, bgTop, contentWidth + 10, totalHeight),
       const Radius.circular(8),
     );
-    canvas.drawRRect(bg, Paint()..color = Colors.black.withValues(alpha: 0.36));
+    canvas.drawRRect(bg, Paint()..color = Colors.black.withValues(alpha: 0.42));
     canvas.drawRRect(
       bg,
       Paint()
@@ -1665,8 +1781,16 @@ class _BrickScenePainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.8,
     );
-    hpTp.paint(canvas, Offset(hpX, textY + (lineHeight - hpTp.height) / 2));
-    nameTp.paint(canvas, Offset(nameX, textY + (lineHeight - nameTp.height) / 2));
+
+    // 当前单词在上：左侧靠左、右侧靠右，尽量贴近外侧避免被中间的下落方块挡住
+    final double currentX = left ? contentLeft : contentRight - currentTp.width;
+    currentTp.paint(canvas, Offset(currentX, currentY));
+
+    // 词数贴外侧，名字在内侧
+    final double countX = left ? contentLeft : contentRight - countTp.width;
+    final double nameX = left ? countX + countTp.width + 5 : countX - 5 - nameTp.width;
+    countTp.paint(canvas, Offset(countX, metaY + (metaHeight - countTp.height) / 2));
+    nameTp.paint(canvas, Offset(nameX, metaY + (metaHeight - nameTp.height) / 2));
   }
 
   void _drawBrick(Canvas canvas, BrickItem b) {

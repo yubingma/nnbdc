@@ -156,8 +156,11 @@ public class ReadyState extends RoomState {
                 }, attackDelay);
             }
 
-            // 2. 自救逻辑（海星/减一行 - 索引1）：有就自救治愈，带点随机延迟
-            if (currentBotData.getPropsCounts()[1] > 0 && botPropsDelayTask == null) {
+            // 2. 自救逻辑（治疗/减一行 - 索引1）：自己确实堆了死词才用。
+            //    满血时用治疗不会改变堆叠行数，玩家在对面完全看不出效果，等于白白浪费一个道具。
+            if (currentBotData.getPropsCounts()[1] > 0
+                    && currentBotData.getStackRows() > 0
+                    && botPropsDelayTask == null) {
                 long delayMs = 500L + (long) (Math.random() * 1300L);
                 botPropsDelayTask = new TimerTask() {
                     @Override
@@ -167,17 +170,19 @@ public class ReadyState extends RoomState {
                                 cancel();
                                 return;
                             }
-                            if (currentBotData.getPropsCounts()[1] > 0) {
+                            if (currentBotData.getPropsCounts()[1] > 0 && currentBotData.getStackRows() > 0) {
                                 UserCmd propsCmd = new UserCmd(userBo);
                                 propsCmd.setUserId(botUserObj.getId());
                                 propsCmd.setSystem("russia");
                                 propsCmd.setCmd("USE_PROPS");
                                 propsCmd.setArgs(new String[] { "1" });
                                 room.processUserCmd(botUserObj, propsCmd);
-                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了海星道具(自救治愈)");
+                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了治疗道具(修复防线)");
                             }
-                            botPropsDelayTask = null;
                         } catch (Exception ignored) {
+                        } finally {
+                            // 不论正常执行、提前返回还是异常，都要放开这个槽位，否则后续整局都不会再治疗
+                            botPropsDelayTask = null;
                         }
                     }
                 };
@@ -236,6 +241,11 @@ public class ReadyState extends RoomState {
         if (args == null || args.length < 2) {
             return;
         }
+        // 每作答一题就累计一次进度，并广播给双方，供名字旁的"已出词数"显示
+        UserGameData playData = room.getUserPlayData(user);
+        playData.setAnsweredCount(playData.getAnsweredCount() + 1);
+        room.broadcastEvent("wordCountSync", new Object[]{user.getId(), playData.getAnsweredCount()});
+
         if (!"false".equals(args[1])) {
             // 本题答对：本词没有堆叠，清掉标记给下一题用
             stackAddedOnce.put(user.getId(), Boolean.FALSE);
@@ -797,6 +807,7 @@ public class ReadyState extends RoomState {
     private void resetUserGameData(UserGameData playData) {
         playData.setMatchStarted(false);
         playData.setCorrectCount(0);
+        playData.setAnsweredCount(0);
         playData.getPropsCounts()[0] = 0;
         playData.getPropsCounts()[1] = 0;
         playData.setStackRows(0);

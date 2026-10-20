@@ -1140,6 +1140,12 @@
                 <br/>
                 <strong style="color: var(--accent-blue);">摇杆手感返工：固定底盘 → 浮动底盘</strong>——第一版把底盘钉死在左下角，玩家按在盘子边上时，按下那一刻就按「手指相对底盘中心」算出一个满力方向、杆头还从中心跳到手指上，真机反馈是「一碰就走、非常不对」。照 <a href="https://www.gameres.com/forum/t/818593" style="color:var(--accent-blue)">GameRes 那篇还原王者荣耀摇杆的文章</a> 改成：<strong>底盘中心 = 手指按下点</strong>（只在本区域内夹一下，防止半个盘子出屏）、按下后滑过 10 逻辑像素才进入拖动、杆头行程上限 = 底盘半径 − 杆头半径。核心区别是「方向从手指落下的那一点算起」，所以按下去不会立刻有方向；整块左下区域都是热区，拇指落在哪都能推。
                 <br/>
+                <strong style="color: var(--accent-blue);">第二次返工：`Listener` + `localPosition` → `GestureDetector` + `globalPosition` 差值</strong>——改成浮动底盘后真机仍然反馈「根本不跟着手走」。去翻 <a href="https://github.com/pavelzaichyk/flutter_joystick/blob/master/lib/src/joystick.dart" style="color:var(--accent-blue)">flutter_joystick 的源码</a> 才发现成熟实现根本不看局部坐标：手势走 `GestureDetector` 的 `onPanStart/onPanUpdate`，偏移一律是 <code>currentDragPosition.globalPosition − startDragPosition.globalPosition</code>，再除以底盘半径；`JoystickArea` 也是拿 `onPanStart.localPosition` 只做「底盘放哪」，跟手靠全局差值。我前一版用 `Listener.onPointerMove` + `localPosition` 算偏移、热区又只给了左下 46%×68%，任何一层对不上都会表现成「按了不动」。现在改成：`onPanDown` 把底盘挪到手指处、`onPanUpdate` 用全局差值算方向和力度、热区放大到左 70%×下 82%（顶部留给返回按钮），并且第二根手指按下不夺杆。
+                <br/>
+                <strong style="color: var(--accent-blue);">第三次返工：`GestureDetector` 的 pan 不能拿来判断「有没有按着」</strong>——换成 pan 之后真机反馈「滑动两下就没反应」。根因很具体：`onPanDown` 在轻点（没拖动）时也会触发，但那种手势达不到 pan 的 slop，**抬起时 `onPanEnd` 不会来**，于是「已按下」的标志永远挂着，后面每一次按下都被它挡掉。改回 `Listener` 的 pointer 事件（DOWN / UP / CANCEL 一定成对），偏移仍然用 `PointerEvent.position` 的全局差值；同时把热区放大到**全屏**——横屏大屏上手指很容易落在左下那一小块之外，按到热区外同样会表现成「摇杆没反应」。为了防止复发，补了两条回归测试：**轻点一次之后还能推**、**连续滑动三次每次都有方向**。
+                <br/>
+                <strong style="color: var(--accent-blue);">第四次返工（真凶）：摇杆的 State 每帧都在被重建</strong>——「按住往旁边稍微一拖，杆头立刻弹回中心」不是手势问题，而是 **Stack 子项没有 key**：`MonsterSprite` 的 `children` 里排在摇杆前面的东西数量每帧都在变（小怪进出场、哭/逃跑姿势、答题 UI 出现消失），Flutter 对没有 key 的子项只按位置顺序匹配 Element，摇杆的 Element 被错位复用，它 State 里记的「手指 id / 底盘中心 / 杆偏移」全被清掉——于是杆弹回中心、后续移动也收不到。修法是给摇杆那个 `Positioned.fill` 一个固定的 `ValueKey('monster-joystick')`。<strong>这次不是靠猜：</strong>新增的两条测试（[monster_joystick_state_test.dart](app/test/monster_joystick_state_test.dart)）先断言「跑满一整轮动画后摇杆 State 不变」「按住拖动 90 帧期间 State 不变」，把 key 临时去掉会让两条都失败、加回来就通过，根因由此坐实。
+                <br/>
                 <strong style="color: var(--accent-blue);">已知待调：</strong>① 纵向走位当下只有「离小怪更近、弹丸更容易够到两侧靶子」这点收益，主要是给将来的道具/技能留出位置；② 演示词表还是内置的 5 个词，接真实词库要等单关原型收口；③ 右摇杆组件（<code>app/lib/widget/game_joystick.dart</code>）留着没删，将来加道具/技能时直接复用。
               </p>
 

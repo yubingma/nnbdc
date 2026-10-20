@@ -2643,12 +2643,24 @@ class RussiaPageState extends State<RussiaPage>
 
   /// 服务端按时间推演出的权威堆叠行数：客户端挂了后台、气泡停在原地的那段时间
   /// 服务端会补扣，这里把血条校正过来并告诉用户为什么掉血。
-  /// 载荷为 [userId, 堆叠行数, 原因]；对手的行数也广播过来了，顺带把对手血条校准。
+  /// 新协议载荷为 [userId, 堆叠行数, 原因]，广播给双方；旧服务端只发 [堆叠行数, 原因] 给本人。
   void _handleStackSync(dynamic data) {
-    if (data is! List || data.length < 2) return;
-    final String userId = data[0]?.toString() ?? '';
-    final int rows = (data[1] is num) ? (data[1] as num).toInt() : 0;
-    final String reason = data.length > 2 ? data[2].toString() : '';
+    if (data is! List || data.isEmpty) return;
+
+    final String userId;
+    final int rows;
+    final String reason;
+    if (data.length >= 2 && data[1] is num) {
+      userId = data[0]?.toString() ?? '';
+      rows = (data[1] as num).toInt();
+      reason = data.length > 2 ? data[2].toString() : '';
+    } else if (data[0] is num) {
+      userId = myUserId;
+      rows = (data[0] as num).toInt();
+      reason = data.length > 1 ? data[1].toString() : '';
+    } else {
+      return;
+    }
 
     if (userId != myUserId) {
       setState(() {

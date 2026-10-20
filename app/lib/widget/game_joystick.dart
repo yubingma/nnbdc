@@ -2,32 +2,32 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// 虚拟摇杆（照王者荣耀那套「浮动底盘」做的）。
+/// 虚拟摇杆（照王者荣耀的浮动底盘 + `flutter_joystick` 的全局坐标差值）。
 ///
-/// 状态机：闲置 → 按下（**底盘中心 = 手指按下点**）→ 准备（移动超过 [startThreshold]
-/// 才转拖动）→ 拖动（方向 = 手指相对底盘中心）→ 抬起（回中、归零）。
+/// 两个坑都踩过，这里一次说清：
 ///
-/// 三条必须守住的：
-/// 1. **底盘中心跟着按下点走**，不是钉死在左下角。固定底盘时，玩家按在盘子边上，
-///    按下那一刻就算出一个满力方向、杆头还会从中心跳到手指上——真机手感就是「一碰就走」。
-/// 2. 方向只由「手指相对中心的位移」决定，不看「这一帧滑了多少」：触屏在手指静止时
-///    不发移动事件，用增量判定会把「按住不动」误判成停下。
-/// 3. 不加缓动/惯性，松手即停。
+/// 1. **手势必须用 [Listener] 的 pointer 事件，不能用 `GestureDetector` 的 pan**。
+///    pan 的 `onPanDown` 在「轻点、没拖动」时也会触发，但那种手势达不到 pan 的 slop，
+///    抬起时 `onPanEnd` 不会来——用来判断「有没有手指按着」的标志就会永远挂着，
+///    表现就是「滑动两下之后摇杆彻底没反应」。pointer 的 DOWN / UP / CANCEL 是一定成对的。
+/// 2. **偏移必须用 `PointerEvent.position`（全局）的差值算**，不要用 `localPosition`：
+///    全局差值与组件怎么嵌套、屏幕怎么旋转无关。`flutter_joystick` 的
+///    `CircleStickOffsetCalculator` 就是 `current.globalPosition − start.globalPosition`。
+///    `localPosition` 只用来决定「底盘画在哪」。
+///
+/// 状态：闲置 → 按下（底盘中心 = 手指落点）→ 拖动（方向 = 手指相对落点）→ 松手归零。
+/// **按下不产生方向**，杆只在手指真的移动之后才偏。
 class GameJoystick extends StatefulWidget {
   const GameJoystick({
     super.key,
     required this.radius,
     required this.onChanged,
     this.onEnd,
-    this.startThreshold = 10,
     this.color = Colors.white,
   });
 
-  /// 底盘半径（逻辑像素）。杆头半径是它的 0.38，杆头拖到最远也只会贴着盘边。
+  /// 底盘半径（逻辑像素）。杆头半径是它的 0.32，杆头拖到最远正好贴着盘边。
   final double radius;
-
-  /// 按下后至少移动这么远才进入拖动（逻辑像素）。低于它的抖动不产生方向。
-  final double startThreshold;
 
   /// 方向（单位向量，屏幕坐标、y 向下为正）与推杆量（0~1）。
   final void Function(Offset direction, double magnitude) onChanged;
@@ -44,17 +44,17 @@ class _GameJoystickState extends State<GameJoystick> {
   /// 正在操作这块摇杆的手指；null = 闲置。同一时刻只认一根手指。
   int? _pointer;
 
-  /// 本次按下的底盘中心（本组件坐标）。null = 闲置。
+  /// 本次按下的底盘中心（本组件坐标，只用于绘制）。null = 闲置。
   Offset? _center;
+
+  /// 按下那一刻的全局坐标。拖动偏移一律用「当前全局坐标 − 它」来算。
+  Offset? _downGlobal;
 
   /// 杆相对底盘中心的位移，已夹在最大拖动半径内。
   Offset _knob = Offset.zero;
 
-  /// 是否已越过准备阈值、进入拖动。
-  bool _dragging = false;
-
-  /// 杆能拖到的最大半径 = 底盘半径 − 杆头半径（0.38r），杆头才不会甩出盘子。
-  double get _maxTravel => widget.radius * 0.62;
+  /// 杆能拖到的最大半径 = 底盘半径 − 杆头半径（0.32r）。
+  double get _maxTravel => widget.radius * 0.68;
 
   @override
   Widget build(BuildContext context) {
@@ -92,33 +92,31 @@ class _GameJoystickState extends State<GameJoystick> {
     _pointer = e.pointer;
     setState(() {
       _center = _clampCenter(e.localPosition, size);
+      _downGlobal = e.position;
       _knob = Offset.zero;
-      _dragging = false;
     });
-    // 按下这一帧不产生方向：手指可能只是搭在上面。
+    // 按下这一帧不产生方向：手指只是搭在上面。
     widget.onChanged(Offset.zero, 0);
   }
 
   void _onMove(PointerMoveEvent e) {
     if (e.pointer != _pointer) return;
-    final Offset center = _center!;
-    final Offset delta = e.localPosition - center;
+    final Offset down = _downGlobal!;
+    // 关键：全局坐标差值。横屏、嵌套布局、组件被 transform 时都不会错位。
+    final Offset delta = e.position - down;
     final double dist = delta.distance;
-    if (!_dragging) {
-      if (dist < widget.startThreshold) return;
-      _dragging = true;
-    }
+    if (dist < 1) return;
     final double magnitude = math.min(1.0, dist / _maxTravel);
-    _setKnob(delta / dist * math.min(dist, _maxTravel));
+    setState(() => _knob = delta / dist * math.min(dist, _maxTravel));
     widget.onChanged(delta / dist, magnitude);
   }
 
   void _onUp(PointerEvent e) {
     if (e.pointer != _pointer) return;
     _pointer = null;
-    _dragging = false;
     setState(() {
       _center = null;
+      _downGlobal = null;
       _knob = Offset.zero;
     });
     widget.onChanged(Offset.zero, 0);
@@ -134,11 +132,6 @@ class _GameJoystickState extends State<GameJoystick> {
     final double minY = r + margin;
     final double maxY = math.max(minY, size.height - r - margin);
     return Offset(p.dx.clamp(minX, maxX), p.dy.clamp(minY, maxY));
-  }
-
-  void _setKnob(Offset value) {
-    if (_knob == value) return;
-    setState(() => _knob = value);
   }
 }
 
@@ -165,12 +158,13 @@ class _JoystickPainter extends CustomPainter {
     canvas.drawCircle(
         center, radius, Paint()..color = color.withValues(alpha: face));
     canvas.drawCircle(
-        center,
-        radius,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = active ? 2.0 : 1.4
-          ..color = color.withValues(alpha: edge));
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = active ? 2.0 : 1.4
+        ..color = color.withValues(alpha: edge),
+    );
 
     // 四向小刻度：推到底有个参照，也给「这是方向杆」一个视觉暗示
     for (int i = 0; i < 4; i++) {
@@ -182,7 +176,7 @@ class _JoystickPainter extends CustomPainter {
       );
     }
 
-    final double headR = radius * 0.38;
+    final double headR = radius * 0.32;
     final Offset head = center + knob;
     canvas.drawCircle(head, headR,
         Paint()..color = color.withValues(alpha: active ? 0.58 : 0.26));

@@ -70,5 +70,18 @@ void main() {
       expect(queue.wordAt(0), isNull);
       expect(queue.packRequestFor(0), 0);
     });
+
+    test('peekWordAt 可预览当前包和预取包，且不推进自己的出题游标', () {
+      final queue = WordPackQueue()..accept(0, _pack(0, 50));
+      queue.accept(50, _pack(50, 50));
+
+      expect(queue.peekWordAt(3), 'w3');
+      expect(queue.peekWordAt(53), 'w53', reason: '预取的下一包也能被旁路预览');
+      expect(queue.peekWordAt(120), isNull);
+
+      // 关键：预览对手的词不能把自己的当前包换掉
+      expect(queue.wordAt(0), 'w0');
+      expect(queue.wordAt(50), 'w50');
+    });
   });
 }

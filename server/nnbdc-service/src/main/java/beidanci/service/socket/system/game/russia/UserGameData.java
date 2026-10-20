@@ -48,6 +48,11 @@ public class UserGameData {
     private int correctCount;
 
     /**
+     * 本局已经作答的题目数量，用于在双方名字旁展示进度。
+     */
+    private int answeredCount;
+
+    /**
      * 近似的已堆积行数（用于估算剩余下落时间）。
      * 注意：这是服务端近似值，未考虑前端道具清行等情况，仅作机器人思考时间的上界估计。
      */
@@ -120,6 +125,14 @@ public class UserGameData {
 
     public void setCorrectCount(int correctCount) {
         this.correctCount = correctCount;
+    }
+
+    public int getAnsweredCount() {
+        return answeredCount;
+    }
+
+    public void setAnsweredCount(int answeredCount) {
+        this.answeredCount = Math.max(0, answeredCount);
     }
 
     public int getStackRows() {
