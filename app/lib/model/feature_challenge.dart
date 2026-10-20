@@ -84,7 +84,8 @@ class FeatureChallengeRepository {
         '连续多天没有打开 App',
       ],
       correctIndex: 0,
-      explanation: '小馋宝情绪与今日进度同步：未开始时困倦（sleepy），学习中开心（happy），打卡后最兴奋（excited），断更时难过（sad）。',
+      explanation:
+          '小馋宝情绪与今日进度同步：未开始时困倦（sleepy），学习中开心（happy），打卡后最兴奋（excited），断更时难过（sad）。',
     ),
     FeatureChallenge(
       id: 'tip_pet_interaction',
@@ -110,7 +111,8 @@ class FeatureChallengeRepository {
         '在手机系统的控制中心长按音量键',
       ],
       correctIndex: 0,
-      explanation: '随身听有两个入口：一是底栏常驻（或功能收纳）的全局快捷入口；二是进入任意单词列表页（如生词本、词书）后右上角的耳机图标。',
+      explanation:
+          '随身听有两个入口：一是底栏常驻（或功能收纳）的全局快捷入口；二是进入任意单词列表页（如生词本、词书）后右上角的耳机图标。',
     ),
     FeatureChallenge(
       id: 'tip_walkman_difference',
@@ -123,7 +125,8 @@ class FeatureChallengeRepository {
         '两者功能完全一样，没有区别',
       ],
       correctIndex: 0,
-      explanation: '从单词列表页右上角进入时，会直接播放当前浏览的这本词表，并记为最新数据源；底栏全局入口则用于一键续播上次收听的词表，若无记录则回落今日任务。',
+      explanation:
+          '从单词列表页右上角进入时，会直接播放当前浏览的这本词表，并记为最新数据源；底栏全局入口则用于一键续播上次收听的词表，若无记录则回落今日任务。',
     ),
     FeatureChallenge(
       id: 'tip_walkman_bookmark_sync',
@@ -162,7 +165,8 @@ class FeatureChallengeRepository {
         '在手机系统设置中关闭后台刷新权限',
       ],
       correctIndex: 0,
-      explanation: '随身听的环境音与单词发音是独立通道。在设置中选好自然场景（如闲时听雨、夏夜虫鸣）后，把发音栏的各项全部取消勾选，就能得到纯净的助眠白噪音，且支持熄屏后台持续播放。',
+      explanation:
+          '随身听的环境音与单词发音是独立通道。在设置中选好自然场景（如闲时听雨、夏夜虫鸣）后，把发音栏的各项全部取消勾选，就能得到纯净的助眠白噪音，且支持熄屏后台持续播放。',
     ),
     FeatureChallenge(
       id: 'tip_meaning_limit',
@@ -188,7 +192,8 @@ class FeatureChallengeRepository {
         '点击小圆圈可以隐藏或删除该释义',
       ],
       correctIndex: 0,
-      explanation: '小圆圈代表该释义的常用度。圆圈越大越明显，表示在真实语境中使用频率越高；圆圈越小则表示越次要或生僻，方便背词时优先抓住核心高频义项。',
+      explanation:
+          '小圆圈代表该释义的常用度。圆圈越大越明显，表示在真实语境中使用频率越高；圆圈越小则表示越次要或生僻，方便背词时优先抓住核心高频义项。',
     ),
     FeatureChallenge(
       id: 'tip_learning_pipeline',
@@ -201,7 +206,8 @@ class FeatureChallengeRepository {
         '只能在打卡完成后由系统自动调整',
       ],
       correctIndex: 0,
-      explanation: '在首页「今日计划」卡片中点击「学习轨道」，再点击下方的「编辑」，即可进入步骤编排态：可自由将底部的步骤卡片拖入测评、答对或答错分支中，定制适合自己的背词路径。',
+      explanation:
+          '在首页「今日计划」卡片中点击「学习轨道」，再点击下方的「编辑」，即可进入步骤编排态：可自由将底部的步骤卡片拖入测评、答对或答错分支中，定制适合自己的背词路径。',
     ),
     FeatureChallenge(
       id: 'tip_accent_switch',
@@ -214,7 +220,8 @@ class FeatureChallengeRepository {
         '必须通过修改手机系统的系统语言来切换',
       ],
       correctIndex: 0,
-      explanation: '发音支持多处便捷切换：在背词页面或单词详情页，轻点音标旁边的「英/美」小角标即可直接就地切换；也可以在「我」-「设置与工具」的「发音口音」或背词设置菜单中统一切换。',
+      explanation:
+          '发音支持多处便捷切换：在背词页面或单词详情页，轻点音标旁边的「英/美」小角标即可直接就地切换；也可以在「我」-「设置与工具」的「发音口音」或背词设置菜单中统一切换。',
     ),
     FeatureChallenge(
       id: 'tip_import_words',
@@ -253,7 +260,8 @@ class FeatureChallengeRepository {
         '只能通过重置整个 App 的数据来恢复默认底栏',
       ],
       correctIndex: 0,
-      explanation: '底栏定制支持多处入口：长按底栏任意图标即可唤起功能收纳弹窗并点击「定制底栏按钮」；也可在「我」页面的「功能收纳」卡片右上角点击「定制」，或进入「设置与工具」里的「底栏导航管理」。',
+      explanation:
+          '底栏定制支持多处入口：长按底栏任意图标即可唤起功能收纳弹窗并点击「定制底栏按钮」；也可在「我」页面的「功能收纳」卡片右上角点击「定制」，或进入「设置与工具」里的「底栏导航管理」。',
     ),
     FeatureChallenge(
       id: 'tip_feed_pet',
@@ -292,7 +300,8 @@ class FeatureChallengeRepository {
         '每天只允许最多增加 1 个已掌握单词',
       ],
       correctIndex: 0,
-      explanation: '学完今日单词代表完成了当天的学习任务。根据科学记忆遗忘规律，单词需要经过多轮周期复习巩固，记忆稳定性达标后，才会自动毕业移入「已掌握」库。',
+      explanation:
+          '学完今日单词代表完成了当天的学习任务。根据科学记忆遗忘规律，单词需要经过多轮周期复习巩固，记忆稳定性达标后，才会自动毕业移入「已掌握」库。',
     ),
     FeatureChallenge(
       id: 'tip_mastered_state_meaning',
@@ -305,7 +314,8 @@ class FeatureChallengeRepository {
         '代表当天背词环节中没有选错该词',
       ],
       correctIndex: 0,
-      explanation: '「已掌握」代表该词经过多轮科学复习后，记忆稳定性已达到长期抗遗忘门槛（可数月不忘）。它会从日常复习任务中毕业归档，不再每天弹出打扰，但仍可在「已掌握」词表中随时查阅或用随身听收听。',
+      explanation:
+          '「已掌握」代表该词经过多轮科学复习后，记忆稳定性已达到长期抗遗忘门槛（可数月不忘）。它会从日常复习任务中毕业归档，不再每天弹出打扰，但仍可在「已掌握」词表中随时查阅或用随身听收听。',
     ),
     FeatureChallenge(
       id: 'tip_fastest_graduation_days',
@@ -318,7 +328,8 @@ class FeatureChallengeRepository {
         '至少需要 100 天以上',
       ],
       correctIndex: 0,
-      explanation: '根据 FSRS-5 记忆算法与掌握线标准（稳定性 ≥ 120）：学新词选轻松初始稳定性约为 15.7；若连续每天复习测评全部给出「轻松」，记忆稳定性每天大幅递增，最快第 11 天即可突破 120 门槛正式毕业。',
+      explanation:
+          '根据 FSRS-5 记忆算法与掌握线标准（稳定性 ≥ 120）：学新词选轻松初始稳定性约为 15.7；若连续每天复习测评全部给出「轻松」，记忆稳定性每天大幅递增，最快第 11 天即可突破 120 门槛正式毕业。',
     ),
     FeatureChallenge(
       id: 'tip_mastered_stability_threshold',
@@ -331,7 +342,8 @@ class FeatureChallengeRepository {
         '达到 30 天',
       ],
       correctIndex: 0,
-      explanation: '根据系统设定的科学掌握线门槛，单词记忆稳定性需达到 120 天（约 4 个月抗遗忘）。当复习检验确认记忆牢固程度达到该指标后，即判定为「已掌握」并移出日常复习池。',
+      explanation:
+          '根据系统设定的科学掌握线门槛，单词记忆稳定性需达到 120 天（约 4 个月抗遗忘）。当复习检验确认记忆牢固程度达到该指标后，即判定为「已掌握」并移出日常复习池。',
     ),
     FeatureChallenge(
       id: 'tip_relearn_mastered_word',
@@ -344,7 +356,8 @@ class FeatureChallengeRepository {
         '只能在注销账号后重新注册才能再次学习',
       ],
       correctIndex: 0,
-      explanation: '可以随时重新学习。在「已掌握」词表中将该词移出，系统会清除其毕业记录并重置为待学状态，随后的学习计划会将其作为待学词重新安排学习与复习。',
+      explanation:
+          '可以随时重新学习。在「已掌握」词表中将该词移出，系统会清除其毕业记录并重置为待学状态，随后的学习计划会将其作为待学词重新安排学习与复习。',
     ),
     FeatureChallenge(
       id: 'tip_multi_dict_learning',
@@ -357,7 +370,8 @@ class FeatureChallengeRepository {
         '仅支持同时添加 1 本官方词书和 1 本自建词书',
       ],
       correctIndex: 0,
-      explanation: '完全支持。用户可在书桌上添加多本词书并存学习，且可为指定词书设置「优先取词」（新词优先从该书抽取，学完自动衔接下一本），多本词书的复习由系统统一科学排程。',
+      explanation:
+          '完全支持。用户可在书桌上添加多本词书并存学习，且可为指定词书设置「优先取词」（新词优先从该书抽取，学完自动衔接下一本），多本词书的复习由系统统一科学排程。',
     ),
     FeatureChallenge(
       id: 'tip_special_history_wrong',
@@ -370,7 +384,8 @@ class FeatureChallengeRepository {
         '系统词库里所有被其他用户标记为难词的词汇',
       ],
       correctIndex: 0,
-      explanation: '「历史错词」收录用户在背词过程中曾经答错过的所有词汇。即使后来答对，只要历史上曾出现过错题记录，就会沉淀在此，方便集中复盘与查漏补缺。',
+      explanation:
+          '「历史错词」收录用户在背词过程中曾经答错过的所有词汇。即使后来答对，只要历史上曾出现过错题记录，就会沉淀在此，方便集中复盘与查漏补缺。',
     ),
     FeatureChallenge(
       id: 'tip_special_difficult_words',
@@ -383,7 +398,8 @@ class FeatureChallengeRepository {
         '用户手动打五星标记的生僻单词',
       ],
       correctIndex: 0,
-      explanation: '「我的难词」专门筛选累计答错达到 3 次及以上的“顽固硬骨头”。区别于偶尔手误的一次性错词，难词列表聚焦反复卡壳的薄弱盲区，用于集中攻坚克难。',
+      explanation:
+          '「我的难词」专门筛选累计答错达到 3 次及以上的“顽固硬骨头”。区别于偶尔手误的一次性错词，难词列表聚焦反复卡壳的薄弱盲区，用于集中攻坚克难。',
     ),
     FeatureChallenge(
       id: 'tip_special_confusable_words',
@@ -396,7 +412,8 @@ class FeatureChallengeRepository {
         '由系统随机挑选首字母相同的单词列表',
       ],
       correctIndex: 0,
-      explanation: '在当前在学词书中，只要两个以上单词长度相同且编辑距离 ≤ 1（一字之差，如 adapt / adopt），就能结对成簇展示。成簇时，系统优先挑选用户「最近刚学过的词」作为锚点/簇头排在组内第一位，并将该簇排在列表最前列，方便趁热打铁对比辨析。',
+      explanation:
+          '在当前在学词书中，只要两个以上单词长度相同且编辑距离 ≤ 1（一字之差，如 adapt / adopt），就能结对成簇展示。成簇时，系统优先挑选用户「最近刚学过的词」作为锚点/簇头排在组内第一位，并将该簇排在列表最前列，方便趁热打铁对比辨析。',
     ),
     FeatureChallenge(
       id: 'tip_special_root_family',
@@ -409,7 +426,8 @@ class FeatureChallengeRepository {
         '按字母 A 到 Z 的正序排列所有派生词汇',
       ],
       correctIndex: 0,
-      explanation: '「同根词」自动提取当前学习词书范围内共享同一词根或词缀的词汇族群，每组展示词根含义及族内派生单词，帮助用户掌握构词逻辑，实现“记一个词根串记一串单词”。',
+      explanation:
+          '「同根词」自动提取当前学习词书范围内共享同一词根或词缀的词汇族群，每组展示词根含义及族内派生单词，帮助用户掌握构词逻辑，实现“记一个词根串记一串单词”。',
     ),
     FeatureChallenge(
       id: 'tip_remove_book_word_handling',
@@ -422,7 +440,8 @@ class FeatureChallengeRepository {
         '所有已抽取的单词会自动被标记为「已掌握」状态并从学习流移出',
       ],
       correctIndex: 0,
-      explanation: '移出词书时，系统会自动分析是否存在仅属于该词书的在学单词：若存在，会贴心弹窗询问，用户可自主决定是「仅停止学习」（保留单词后续继续排程复习）还是「连同记录彻底清除」；若该词在书桌其他在学词书中也存在，则自动保留无缝衔接。',
+      explanation:
+          '移出词书时，系统会自动分析是否存在仅属于该词书的在学单词：若存在，会贴心弹窗询问，用户可自主决定是「仅停止学习」（保留单词后续继续排程复习）还是「连同记录彻底清除」；若该词在书桌其他在学词书中也存在，则自动保留无缝衔接。',
     ),
     FeatureChallenge(
       id: 'tip_pet_talents',
@@ -435,7 +454,8 @@ class FeatureChallengeRepository {
         '一个是「连蒙带猜」，一个是「过目不忘」',
       ],
       correctIndex: 0,
-      explanation: '目前小馋宝的两大招牌技能就是「负责可爱」和「特别能吃」！你每天认真打卡赚来的智慧果，它都能嗷呜一口吃掉，陪伴你见证每一次坚持与成长（未来还会逐步解锁更多实用与陪伴技能哦）。',
+      explanation:
+          '目前小馋宝的两大招牌技能就是「负责可爱」和「特别能吃」！你每天认真打卡赚来的智慧果，它都能嗷呜一口吃掉，陪伴你见证每一次坚持与成长（未来还会逐步解锁更多实用与陪伴技能哦）。',
     ),
     FeatureChallenge(
       id: 'tip_pet_monster_kinship',
@@ -448,7 +468,8 @@ class FeatureChallengeRepository {
         '毫无血缘关系，小馋怪纯粹是隔壁果园溜达过来的野生蹭饭选手',
       ],
       correctIndex: 0,
-      explanation: '它们其实同属“贪吃灵兽”家族！小馋宝背着小书包陪伴主人踏实背词，每天都有智慧果大餐，主打一个「凭实力干饭」；而对岸的小馋怪不肯用功背词，整天迈着六亲不认的步伐妄图白嫖抢水果，结果每次都被小馋宝用知识的力量打到抹着眼泪跑路！',
+      explanation:
+          '它们其实同属“贪吃灵兽”家族！小馋宝背着小书包陪伴主人踏实背词，每天都有智慧果大餐，主打一个「凭实力干饭」；而对岸的小馋怪不肯用功背词，整天迈着六亲不认的步伐妄图白嫖抢水果，结果每次都被小馋宝用知识的力量打到抹着眼泪跑路！',
     ),
     FeatureChallenge(
       id: 'tip_brick_stack_pressure',
@@ -461,7 +482,22 @@ class FeatureChallengeRepository {
         '方块会飞回顶部重新下落，直到答对为止，不占用防线空间',
       ],
       correctIndex: 0,
-      explanation: '错词不会凭空消失：它会垒在防线前，每多一层，下一个方块可用的下落行程就更短，反应时间被一点点压缩。所以削砖块要尽量一次答对，别把空间让给错词。',
+      explanation:
+          '错词不会凭空消失：它会垒在防线前，每多一层，下一个方块可用的下落行程就更短，反应时间被一点点压缩。所以削砖块要尽量一次答对，别把空间让给错词。',
+    ),
+    FeatureChallenge(
+      id: 'tip_monster_joystick',
+      category: '功能技巧',
+      title: '打哭小馋怪：走位决定你打中哪块单词牌',
+      question: '打哭小馋怪时，顶部出了中文释义、桥两侧浮着两块单词牌，小宠物一直在自动投掷，为什么站着不动会一直答不上题？',
+      options: [
+        '小宠物只朝正前方投掷，得用左下摇杆把队伍挪到正确单词的正下方，坚果才会打中它',
+        '单词牌要等桥上小怪全部被打哭才会翻开，站着不动是在等它们哭完',
+        '必须先点一下屏幕中间的释义，自动投掷才会切换到答题模式',
+      ],
+      correctIndex: 0,
+      explanation:
+          '自动投掷只朝正前方，队伍的横向位置决定了坚果落在哪块牌上。左下摇杆是这一版唯一的手动操作：推左走左、推右走右、上下还能前压后撤。看懂释义后把队伍挪到正确单词下方，答对火力升级；打错或超时，火力都会下降。',
     ),
   ];
 }

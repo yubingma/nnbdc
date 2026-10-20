@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/game_sfx.dart';
+import 'package:nnbdc/widget/game_joystick.dart';
 
 /// 小馋怪的走路/被打哭/逃跑动画。
 ///
@@ -123,7 +124,11 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
   /// 我方小宠物当前该出哪一帧。投掷必须和坚果脱手对齐（_nutLaunch），
   /// 早了自己先动、晚了坚果凭空出现。
-  static const List<String> _allyPoses = ['ally_stand', 'ally_windup', 'ally_throw'];
+  static const List<String> _allyPoses = [
+    'ally_stand',
+    'ally_windup',
+    'ally_throw'
+  ];
 
   // ------------------------------------------------------ 怪群与宠物队
   //
@@ -134,11 +139,21 @@ class _MonsterSpriteState extends State<MonsterSprite>
   // 深度抖动给得很大（±150）：只给小抖动的话，十几只全挤在桥的上半段，
   // 桥头与怪群之间空出一大片，「压过来」的势头就没了。
   static const List<List<double>> _monsters = [
-    [0.00, -0.62, -60, 1.00], [0.05, 0.10, 130, 0.94], [0.09, 0.58, -100, 1.05],
-    [0.16, -0.30, 70, 0.97], [0.21, 0.44, -140, 1.02], [0.26, -0.72, 30, 0.92],
-    [0.33, 0.22, 100, 1.06], [0.38, -0.48, -80, 0.95], [0.44, 0.66, 150, 1.01],
-    [0.52, -0.12, -120, 0.98], [0.58, -0.66, 90, 1.04], [0.63, 0.36, -40, 0.93],
-    [0.71, -0.36, 120, 1.00], [0.77, 0.54, -110, 0.96], [0.84, -0.06, 50, 1.03],
+    [0.00, -0.62, -60, 1.00],
+    [0.05, 0.10, 130, 0.94],
+    [0.09, 0.58, -100, 1.05],
+    [0.16, -0.30, 70, 0.97],
+    [0.21, 0.44, -140, 1.02],
+    [0.26, -0.72, 30, 0.92],
+    [0.33, 0.22, 100, 1.06],
+    [0.38, -0.48, -80, 0.95],
+    [0.44, 0.66, 150, 1.01],
+    [0.52, -0.12, -120, 0.98],
+    [0.58, -0.66, 90, 1.04],
+    [0.63, 0.36, -40, 0.93],
+    [0.71, -0.36, 120, 1.00],
+    [0.77, 0.54, -110, 0.96],
+    [0.84, -0.06, 50, 1.03],
     [0.91, 0.28, -90, 0.99],
   ];
 
@@ -146,17 +161,34 @@ class _MonsterSpriteState extends State<MonsterSprite>
   /// 每项：(相对小队中心的横向偏移（占视口宽）, 深度偏移(px), 尺寸抖动)
   /// 后排更远、更高、略小；前排更近、更低、略大——这样两排才看得出纵深。
   static const List<List<List<double>>> _allyRows = [
-    [[-0.034, -58, 0.97], [0.034, -50, 1.03]],                    // 后排 2 只
-    [[-0.055, 20, 1.04], [0.000, 28, 0.98], [0.055, 14, 1.06]],    // 前排 3 只
+    [
+      [-0.034, -58, 0.97],
+      [0.034, -50, 1.03]
+    ], // 后排 2 只
+    [
+      [-0.055, 20, 1.04],
+      [0.000, 28, 0.98],
+      [0.055, 14, 1.06]
+    ], // 前排 3 只
   ];
 
-  /// 小队中心能移到的最大偏移（占视口宽的比例）。
-  /// 0.24 的来历：小队所在深度上桥面横向约占 17.8%~82.2%，而小队本身约 ±9% 宽，
-  /// 所以中心最多挪到 74%/26% —— 再往外就从桥边掉下去了（第一版给了 0.34，会露半边）。
+  /// 小队中心能移到的最大偏移（占画布宽的比例）。
+  ///
+  /// 这个值同时决定「走位答题」能不能生效：单词靶在桥两侧 1.45 倍半宽处，弹丸朝正前方飞，
+  /// 玩家必须把小队推到最边上、让弹丸在靶子那一行正好落到靶子上。推得太近（例如 0.24）
+  /// 弹丸到靶子那一行时会差出两百多画布像素，永远打不中。
   static const double _squadLimit = 0.40;
 
+  /// 推满杆的走位速度（画布像素/秒）。
+  static const double _squadSpeed = 520;
 
-
+  /// 纵向能走到的两端（画布像素，相对 _allyGround）。
+  ///
+  /// 近端 0 = 就站桥头；远端 −170 停在水果线之前——再往前队伍就踩到水果、
+  /// 和压上来的小怪叠在一起了。纵向走位还有个暗收益：站得越靠前，桥面半宽越小，
+  /// 弹丸到达靶子那一行时横向落点越靠外，更容易够到两侧的单词靶。
+  static const double _squadDepthNear = 0;
+  static const double _squadDepthFar = -170;
 
   /// 我方小宠物脚底所在的行（不贴画布最底：App 侧背景走 BoxFit.cover，
   /// 在比 16:9 更宽的屏幕上会上下各裁掉约 9%，贴底的话脚会被切掉）。
@@ -168,13 +200,14 @@ class _MonsterSpriteState extends State<MonsterSprite>
   static const double _tTotal = 6.80;
   static const double _walkHz = 1.05;
 
-
-  /// 小队全部成员：(画布横向x, 脚底行, 身高, 第几排)。整体跟着 [squadX] 左右平移。
-  static List<({double x, double ground, double h, int row})> _squadMembers(double squadX) {
+  /// 小队全部成员：(画布横向x, 脚底行, 身高, 第几排)。
+  /// 整队跟着 [squadX] 左右平移、跟着 [depthOffset] 前后挪（正 = 朝镜头走）。
+  static List<({double x, double ground, double h, int row})> _squadMembers(
+      double squadX, double depthOffset) {
     final out = <({double x, double ground, double h, int row})>[];
     for (int ri = 0; ri < _allyRows.length; ri++) {
       for (final a in _allyRows[ri]) {
-        final double gy = _allyGround + a[1];
+        final double gy = _allyGround + depthOffset + a[1];
         out.add((
           x: _canvasW / 2 + _canvasW * (squadX + a[0]),
           ground: gy,
@@ -206,11 +239,12 @@ class _MonsterSpriteState extends State<MonsterSprite>
   final List<_Star> _stars = [];
   // ---- 答题状态
   int _questionIndex = 0;
-  bool _asking = false;          // true = 正在提问（有倒计时）；false = 问歇
-  double _askDeadline = 0;       // 倒计时截止时刻
+  bool _asking = false; // true = 正在提问（有倒计时）；false = 问歇
+  double _askDeadline = 0; // 倒计时截止时刻
   final List<_WordTarget> _words = [];
-  String? _flash;                // 判定结果提示
+  String? _flash; // 判定结果提示
   double _flashUntil = 0;
+
   /// 增益等级：答对 +1、答错 −1。持久累积，只在重开时归零。
   int _buffLevel = 0;
   final List<_Fruit> _fruits = [];
@@ -218,7 +252,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
   double _shotT = 0;
   int _shotIdx = 0;
   int _simClockMs = 0;
-  double _simTime = 0;                      // 模拟累计时间（姿势与出手必须共用它）
+  double _simTime = 0; // 模拟累计时间（姿势与出手必须共用它）
   List<double> _petLastFire = List<double>.filled(5, -99);
 
   void _resetSim() {
@@ -242,12 +276,16 @@ class _MonsterSpriteState extends State<MonsterSprite>
     _shotT = 0;
     _shotIdx = 0;
     _petLastFire = List<double>.filled(5, -99);
+    _squadX = 0;
+    _squadDepth = 0;
+    _moveX = 0;
+    _moveY = 0;
   }
 
   /// 结算一题：答对随机奖励、答错罚火力；随后空一段再出下一题。
   void _answer(bool correct) {
     _asking = false;
-    _askDeadline = _simTime + _gapSeconds;     // 空一段，避免一题接一题
+    _askDeadline = _simTime + _gapSeconds; // 空一段，避免一题接一题
     _words.clear();
     if (correct) {
       _buffLevel++;
@@ -264,7 +302,8 @@ class _MonsterSpriteState extends State<MonsterSprite>
   double _fireFactor() =>
       math.pow(_buffStep, _buffLevel).toDouble().clamp(_fireMin, _fireMax);
 
-  static double _nearnessOfMob(_Mob m) => ((m.ground - 40) / 690).clamp(0.0, 1.0);
+  static double _nearnessOfMob(_Mob m) =>
+      ((m.ground - 40) / 690).clamp(0.0, 1.0);
 
   /// 弹丸竖直向前飞；撞到**最靠前且没在哭**的那只就停（不穿透）。
   void _tickSim() {
@@ -275,29 +314,30 @@ class _MonsterSpriteState extends State<MonsterSprite>
     final double dt = dtMs / 1000;
     _simTime += dt;
 
-    if (_lost) return;      // 已经输了就不再开火
+    _moveSquad(dt); // 左摇杆走位：按住持续走、松手停
+    if (_lost) return; // 已经输了就不再开火
     _shotT += dt;
     final double interval = _shotInterval * _fireFactor();
     if (_shotT >= interval) {
       _shotT -= interval;
-      final squad = _squadMembers(_squadX);
+      final squad = _squadMembers(_squadX, _squadDepth);
       final int shooter = _shotIdx % squad.length;
       final s = squad[shooter];
       final double handX = s.x + s.h * _handOffsetX;
-      final double handH = s.h * _handOffsetY;   // 手在 ally_windup 里的实际高度
+      final double handH = s.h * _handOffsetY; // 手在 ally_windup 里的实际高度
       _nuts.add(_Nut(
-        s.ground,                                       // 深度＝出手那一刻站的地面行
-        handH,                                          // 离地高度＝手的高度，飞行中不变
+        s.ground, // 深度＝出手那一刻站的地面行
+        handH, // 离地高度＝手的高度，飞行中不变
         (handX - _canvasW / 2) / _bridgeHalf(s.ground), // 横向比例，飞行中保持不变
         _scaleAtGround(s.ground),
       ));
-      _petLastFire[shooter] = _simTime;                  // 记下这只的出手时刻，供姿势使用
+      _petLastFire[shooter] = _simTime; // 记下这只的出手时刻，供姿势使用
       _shotIdx++;
       GameSfx.instance.play(SfxKind.throwWhoosh, nearness: 1.0);
     }
 
     _nuts.removeWhere((n) {
-      n.depth -= _nutForward * dt;      // 向前推进（画面里向上、朝消失点收拢）
+      n.depth -= _nutForward * dt; // 向前推进（画面里向上、朝消失点收拢）
       final double sy = n.screenY;
       _Mob? hit;
       for (final m in _mobs) {
@@ -312,7 +352,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
         if ((n.x - w.x).abs() > 70) continue;
         if (sy <= _WordTarget.depth + 50 && sy >= _WordTarget.depth - 70) {
           _answer(w.correct);
-          return true;                         // 弹丸命中即消失
+          return true; // 弹丸命中即消失
         }
       }
       if (hit == null) return n.depth < 40;
@@ -331,10 +371,12 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
     // ---- 出题循环：空一段 → 提问并倒计时 → 判定 → 再空一段
     if (!_asking) {
-      if (_simTime >= _askDeadline) {          // 这里 _askDeadline 当「下次出题时刻」用
+      if (_simTime >= _askDeadline) {
+        // 这里 _askDeadline 当「下次出题时刻」用
         _asking = true;
         _askDeadline = _simTime + _askSeconds;
-        final _Question q = _demoQuestions[_questionIndex % _demoQuestions.length];
+        final _Question q =
+            _demoQuestions[_questionIndex % _demoQuestions.length];
         final bool rightCorrect = math.Random().nextBool();
         final double hw = _bridgeHalf(_wordDepth);
         _words
@@ -345,9 +387,8 @@ class _MonsterSpriteState extends State<MonsterSprite>
               _canvasW / 2 + _wordLane * hw));
       }
     } else if (_simTime >= _askDeadline) {
-      _answer(false);                          // 倒计时内没作答 = 答错
+      _answer(false); // 倒计时内没作答 = 答错
     }
-
 
     // 水果全被抢走 → 判负。这里只是把状态标出来，画面由 build 输出。
     if (!_lost && _fruits.every((f) => f.taken)) _lost = true;
@@ -374,31 +415,19 @@ class _MonsterSpriteState extends State<MonsterSprite>
     return 'ally_stand';
   }
 
-  // ---- 小队左右移动：手指直接拖着队伍走（不用摇杆）
-  double _squadX = 0.0;        // 小队中心（占视口宽的比例）
-  double _squadTarget = 0.0;
+  // ---- 小队走位：左下摇杆给出方向与推杆量，按住持续走、松手停
+  double _squadX = 0.0; // 横向（占画布宽的比例）
+  double _squadDepth = 0.0; // 纵向（画布像素，正 = 朝镜头走）
+  double _moveX = 0.0, _moveY = 0.0; // 左摇杆：方向 × 推杆量（屏幕坐标）
 
-  /// 手指与小队中心的横向偏移（屏幕逻辑像素）。
-  /// 按下瞬间记录、拖动全程保持，所以小队**不会跳到手指底下**——
-  /// 手掌遮住队伍时也照样能拖。
-  double? _dragGrabDx;
-
-  /// 由 build 算出，供拖拽换算「屏幕坐标 → 画布坐标」。
-  double _viewCover = 1;
-  double _viewOffX = 0;
-
-  /// 把手指的屏幕横坐标换算成小队中心，直接跟手（不做缓动，缓动会有拖影感）。
-  void _dragSquadTo(double screenX) {
-    final double canvasX = (screenX - _viewOffX) / _viewCover;
-    final double v = (canvasX - _canvasW / 2) / _canvasW;
-    _squadTarget = v.clamp(-_squadLimit, _squadLimit);
-    _squadX = _squadTarget;
+  /// 每帧按摇杆推杆量积分，不做缓动：摇杆给的是方向和力度，不是目标位置。
+  void _moveSquad(double dt) {
+    if (_moveX == 0 && _moveY == 0) return;
+    _squadX = (_squadX + _moveX * _squadSpeed / _canvasW * dt)
+        .clamp(-_squadLimit, _squadLimit);
+    _squadDepth = (_squadDepth + _moveY * _squadSpeed * dt)
+        .clamp(_squadDepthFar, _squadDepthNear);
   }
-
-  /// 小队中心此刻的屏幕横坐标，用来算按下瞬间的抓取偏移。
-  double _squadScreenX() =>
-      _viewOffX + (_canvasW / 2 + _canvasW * _squadX) * _viewCover;
-
 
   @override
   void initState() {
@@ -426,7 +455,13 @@ class _MonsterSpriteState extends State<MonsterSprite>
     // 角色会整个消失一下（截图里 t=3.55 / t=4.4 / t=7.4 就是这么空掉的）。
     // 这些姿势要等到 3.4 秒后才用得上，而 14 张小图预解码只要几毫秒，所以进页面
     // 提前点火就足够，不必卡住动画等它完成。
-    final frames = <String>{..._walkFront, ..._walkBack, ..._allyPoses, 'pout', 'cry'};
+    final frames = <String>{
+      ..._walkFront,
+      ..._walkBack,
+      ..._allyPoses,
+      'pout',
+      'cry'
+    };
     for (final name in frames) {
       precacheImage(AssetImage('$_dir$name.png'), context);
     }
@@ -450,10 +485,14 @@ class _MonsterSpriteState extends State<MonsterSprite>
     return t * t * ((s + 1) * t + s) + 1;
   }
 
-  static double _easeOutElastic(double x, {double amp = 0.5, double period = 0.32}) {
+  static double _easeOutElastic(double x,
+      {double amp = 0.5, double period = 0.32}) {
     if (x <= 0) return 0;
     if (x >= 1) return 1;
-    return 1 + amp * math.pow(2, -10 * x) * math.sin((x - period / 4) * (2 * math.pi) / period);
+    return 1 +
+        amp *
+            math.pow(2, -10 * x) *
+            math.sin((x - period / 4) * (2 * math.pi) / period);
   }
 
   /// 透视：越靠下（离镜头越近）越大。与 Python 的 scale_at_ground 一致。
@@ -503,7 +542,8 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
             // 落地影：程序单独画在地面上，不跟着角色缩放变形。长宽比与柔度照 Python 侧对齐
             // （宽 = 角色高×0.62、高 = 宽×0.20、中心落在脚底那条线上），否则会读成一根黑杠。
-            Widget groundShadow(double cx, double feetY, double imgH) => Positioned(
+            Widget groundShadow(double cx, double feetY, double imgH) =>
+                Positioned(
                   left: cx - imgH * 0.28,
                   top: feetY - imgH * 0.0575,
                   width: imgH * 0.56,
@@ -512,20 +552,25 @@ class _MonsterSpriteState extends State<MonsterSprite>
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5C483A).withValues(alpha: 0.30),
+                          color:
+                              const Color(0xFF5C483A).withValues(alpha: 0.30),
                           blurRadius: imgH * 0.10,
                         ),
                       ],
-                      borderRadius:
-                          BorderRadius.all(Radius.elliptical(imgH * 0.28, imgH * 0.0575)),
+                      borderRadius: BorderRadius.all(
+                          Radius.elliptical(imgH * 0.28, imgH * 0.0575)),
                     ),
                   ),
                 );
 
             // 注意：Positioned 必须是 Stack 的直接子节点，不能再包一层 Opacity
             // （实测会抛 Incorrect use of ParentDataWidget），所以透明度放在 Positioned 内部。
-            Widget unitImage(({double cx, double imgH, double imgW, double top}) pl,
-                    String asset, double sqX, double sqY, double rot,
+            Widget unitImage(
+                    ({double cx, double imgH, double imgW, double top}) pl,
+                    String asset,
+                    double sqX,
+                    double sqY,
+                    double rot,
                     [double opacity = 1.0]) =>
                 Positioned(
                   left: pl.cx - pl.imgW / 2,
@@ -547,7 +592,8 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
             final children = <Widget>[
               Positioned.fill(
-                child: Image.asset(_bg, fit: BoxFit.cover, filterQuality: FilterQuality.medium),
+                child: Image.asset(_bg,
+                    fit: BoxFit.cover, filterQuality: FilterQuality.medium),
               ),
             ];
 
@@ -555,27 +601,32 @@ class _MonsterSpriteState extends State<MonsterSprite>
             final ordered = List<_Mob>.from(_mobs)
               ..sort((a, b) => a.ground.compareTo(b.ground));
             for (final mb in ordered) {
-              if (mb.waiting) continue;      // 还没上桥
+              if (mb.waiting) continue; // 还没上桥
               final (double sqX, double sqY) = mb.squash();
               final double cx = mb.x +
-                  (mb.state == 'cry' ? math.sin(mb.timer * math.pi * 2 * 19) * 3.2 : 0);
+                  (mb.state == 'cry'
+                      ? math.sin(mb.timer * math.pi * 2 * 19) * 3.2
+                      : 0);
               final pl = place(cx, mb.ground, mb.h);
               children.add(groundShadow(pl.cx, toScreenY(mb.ground), pl.imgH));
               for (final _PoseLayer pose in mb.poses()) {
                 if (pose.opacity <= 0.001) continue;
-                children.add(unitImage(pl, pose.asset, sqX, sqY, 0, pose.opacity));
+                children
+                    .add(unitImage(pl, pose.asset, sqX, sqY, 0, pose.opacity));
               }
             }
 
             // ---- 我方小队：前后两排，整体随 _squadX 左右移动
-            final squad = _MonsterSpriteState._squadMembers(_squadX);
+            final squad =
+                _MonsterSpriteState._squadMembers(_squadX, _squadDepth);
             for (int ai = 0; ai < squad.length; ai++) {
               final m2 = squad[ai];
-              final double bob = -0.022 * math.cos(2 * math.pi * 0.9 * t + ai * 1.3);
+              final double bob =
+                  -0.022 * math.cos(2 * math.pi * 0.9 * t + ai * 1.3);
               final pl = place(m2.x, m2.ground, m2.h);
               children.add(groundShadow(pl.cx, toScreenY(m2.ground), pl.imgH));
-              children.add(unitImage(pl, _allyPoseFromShot(ai),
-                  1 - bob * 0.55, 1 + bob, 0));
+              children.add(unitImage(
+                  pl, _allyPoseFromShot(ai), 1 - bob * 0.55, 1 + bob, 0));
             }
 
             children.add(Positioned.fill(
@@ -595,8 +646,10 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
             // ---- 答题 UI：顶部释义 + 倒计时；单词靶画在平台**前方**（可射击）
             if (_asking) {
-              final _Question q = _demoQuestions[_questionIndex % _demoQuestions.length];
-              final double left = (_askDeadline - _simTime).clamp(0.0, _askSeconds);
+              final _Question q =
+                  _demoQuestions[_questionIndex % _demoQuestions.length];
+              final double left =
+                  (_askDeadline - _simTime).clamp(0.0, _askSeconds);
               final double wy = offY + _WordTarget.depth * cover;
               for (final w in _words) {
                 final double wx = offX + w.x * cover;
@@ -611,7 +664,8 @@ class _MonsterSpriteState extends State<MonsterSprite>
                       color: const Color(0xFF23303F).withValues(alpha: 0.80),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.60), width: 1.6),
+                          color: Colors.white.withValues(alpha: 0.60),
+                          width: 1.6),
                     ),
                     child: Text(w.text,
                         style: const TextStyle(
@@ -632,10 +686,11 @@ class _MonsterSpriteState extends State<MonsterSprite>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 22, vertical: 7),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 22, vertical: 7),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1C2230).withValues(alpha: 0.74),
+                          color:
+                              const Color(0xFF1C2230).withValues(alpha: 0.74),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(q.meaning,
@@ -654,9 +709,11 @@ class _MonsterSpriteState extends State<MonsterSprite>
                           child: LinearProgressIndicator(
                             value: left / _askSeconds,
                             minHeight: 6,
-                            backgroundColor: Colors.white.withValues(alpha: 0.25),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                left < 2 ? const Color(0xFFFF7A7A) : const Color(0xFF7BE38B)),
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.25),
+                            valueColor: AlwaysStoppedAnimation<Color>(left < 2
+                                ? const Color(0xFFFF7A7A)
+                                : const Color(0xFF7BE38B)),
                           ),
                         ),
                       ),
@@ -682,23 +739,47 @@ class _MonsterSpriteState extends State<MonsterSprite>
               ));
             }
 
-            // 手指直接拖队伍：屏幕任意位置按下都行，右下角仍留给将来的道具
-            _viewCover = cover;
-            _viewOffX = offX;
-            children.add(Positioned.fill(
-              child: Listener(
-                behavior: HitTestBehavior.translucent,
-                onPointerDown: (PointerDownEvent e) =>
-                    _dragGrabDx = e.position.dx - _squadScreenX(),
-                onPointerMove: (PointerMoveEvent e) {
-                  final double? grab = _dragGrabDx;
-                  if (grab == null) return;
-                  _dragSquadTo(e.position.dx - grab);
+            // ---- 左下虚拟摇杆：小队走位（按住持续走、松手停）
+            // 右下角先留空，将来要加右摇杆/道具时直接摆进去。
+            final EdgeInsets safe = MediaQuery.paddingOf(context);
+            final double joyRadius = (c.maxHeight * 0.17).clamp(44.0, 72.0);
+            children.add(Positioned(
+              left: 6 + safe.left,
+              bottom: 4 + safe.bottom,
+              child: GameJoystick(
+                radius: joyRadius,
+                onChanged: (dir, mag) {
+                  _moveX = dir.dx * mag;
+                  _moveY = dir.dy * mag;
                 },
-                onPointerUp: (_) => _dragGrabDx = null,
-                onPointerCancel: (_) => _dragGrabDx = null,
+                onEnd: () {
+                  _moveX = 0;
+                  _moveY = 0;
+                },
               ),
             ));
+
+            // 开局提示：这一版只有走位是手动操作，得先说清楚答题靠什么
+            if (_simTime < 9) {
+              children.add(Positioned(
+                top: safe.top + 12,
+                left: safe.left + 58,
+                child: IgnorePointer(
+                  child: Text(
+                    '左摇杆走位 · 小宠物自动投掷\n把队伍挪到正确单词的下方',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.5,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.90),
+                      shadows: const [
+                        Shadow(color: Color(0x99000000), blurRadius: 8)
+                      ],
+                    ),
+                  ),
+                ),
+              ));
+            }
 
             // 水果被抢光：压一层提示 + 重新开始
             if (_lost) {
@@ -721,9 +802,11 @@ class _MonsterSpriteState extends State<MonsterSprite>
                       FilledButton(
                         onPressed: () => setState(_resetSim),
                         style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 28, vertical: 12),
                         ),
-                        child: const Text('再来一次', style: TextStyle(fontSize: 17)),
+                        child:
+                            const Text('再来一次', style: TextStyle(fontSize: 17)),
                       ),
                     ],
                   ),
@@ -764,16 +847,18 @@ const double _nutForward = 420;
 // 平衡口径：到达率 16 只 / 15 秒 ≈ 1.1 只/秒；火力 1/0.20 = 5 发/秒 ÷ 每只 3 发
 // ≈ 1.7 只/秒，留出余量。原来进场只跨 9 秒（1.8 只/秒）而火力只够 1.4 只/秒，必然崩。
 const double _shotInterval = 0.20;
-const double _mobWalkSpeed = 50;    // 小怪的移动速度（96→58→50，逐步放慢给玩家时间）
-const double _mobFleeSpeed = 215;   // 逃跑速度
-const double _recoilTime = 0.34;    // 被打退一下的时长
-const double _cryTime = 0.80;       // 原地哭的时长
-const int _hitsToCry = 3;           // 挨几下会哭
+const double _mobWalkSpeed = 50; // 小怪的移动速度（96→58→50，逐步放慢给玩家时间）
+const double _mobFleeSpeed = 215; // 逃跑速度
+const double _recoilTime = 0.34; // 被打退一下的时长
+const double _cryTime = 0.80; // 原地哭的时长
+const int _hitsToCry = 3; // 挨几下会哭
 
 /// 水果摆在「小怪」与「投手」之间那一排的深度。
 const double _fruitDepth = 700;
+
 /// 水果的横向位置（占该处桥面半宽的比例）。
 const List<double> _fruitLanes = [-0.62, -0.31, 0.0, 0.31, 0.62];
+
 /// 小怪走到离水果这么近（画布像素）就算拿到了。
 const double _stealRadius = 46;
 
@@ -789,8 +874,8 @@ const double _seekRadius = 300;
 // 桥两侧贴着岸边的加宽平台（「桥肩」），从水果那一行一直延伸到镜头前。
 // 为什么不做成「深处那一小块」：队伍只能左右移动，深处它够不着。
 // 做成从水果行延伸到近处，队伍**只靠左右移动就能滑上去**，不必新增前后移动的操作。
-const double _platDepthFar = _fruitDepth;   // 平台的最深处（＝水果那一行）
-const double _platDepthNear = 1020;         // 延伸到队伍脚下再往前一点
+const double _platDepthFar = _fruitDepth; // 平台的最深处（＝水果那一行）
+const double _platDepthNear = 1020; // 延伸到队伍脚下再往前一点
 /// 平台外沿（占该处桥面半宽的比例）；>1 表示伸出桥面之外。
 const double _platOuter = 1.90;
 
@@ -809,8 +894,8 @@ const double _wordLane = 1.45;
 // 而等级为负时 0.8^n 会越乘越大也会失控。与其让它自己崩掉，
 // 不如显式设上下限并写清楚原因。
 const double _buffStep = 0.8;
-const double _fireMin = 0.25;        // 最快：开火间隔缩到 25%
-const double _fireMax = 3.0;         // 最慢：拖到 3 倍
+const double _fireMin = 0.25; // 最快：开火间隔缩到 25%
+const double _fireMax = 3.0; // 最慢：拖到 3 倍
 
 /// 单词靶：给中文释义，左右各一个英文单词，打中哪个就是选哪个。
 class _WordTarget {
@@ -825,9 +910,9 @@ class _WordTarget {
 /// 先用内置的小词表跑通机制；将来接真实词典（dictWords）。
 class _Question {
   const _Question(this.word, this.wrongWord, this.meaning);
-  final String word;        // 正确答案（含释义）
-  final String wrongWord;   // 干扰项
-  final String meaning;     // 顶部显示的中文释义
+  final String word; // 正确答案（含释义）
+  final String wrongWord; // 干扰项
+  final String meaning; // 顶部显示的中文释义
 }
 
 const List<_Question> _demoQuestions = [
@@ -850,7 +935,8 @@ class _Fruit {
   bool taken = false;
   double get depth => _fruitDepth;
   double get x =>
-      _MonsterSpriteState._canvasW / 2 + lane * _MonsterSpriteState._bridgeHalf(depth);
+      _MonsterSpriteState._canvasW / 2 +
+      lane * _MonsterSpriteState._bridgeHalf(depth);
 }
 
 /// 一只小怪：`walk`（朝最近的水果走）→ 走到就 `flee`（拿着水果跑）。
@@ -866,19 +952,25 @@ class _Mob {
   /// 还没上桥：不画也不动。
   bool get waiting => entryDelay > 0;
 
-  double lane;                 // 可变：寻路时要横向修正
+  double lane; // 可变：寻路时要横向修正
   final double dj, sj;
   double gy;
+
   /// 还要等多久才上桥。>0 表示还没进场（不画、不动）。
   double entryDelay;
-  bool carrying = false;       // 是否已经抢到水果（拿着跑）
+  bool carrying = false; // 是否已经抢到水果（拿着跑）
   int hits = 0;
   String state = 'walk';
   double timer = 0, sinceHit = 99, walkT = 0;
 
   double get ground => gy + dj;
-  double get x => _MonsterSpriteState._canvasW / 2 + lane * _MonsterSpriteState._bridgeHalf(ground);
-  double get h => _MonsterSpriteState._charBase * _MonsterSpriteState._scaleAtGround(ground) * sj;
+  double get x =>
+      _MonsterSpriteState._canvasW / 2 +
+      lane * _MonsterSpriteState._bridgeHalf(ground);
+  double get h =>
+      _MonsterSpriteState._charBase *
+      _MonsterSpriteState._scaleAtGround(ground) *
+      sj;
 
   /// 正在哭或逃跑的小怪不挡弹丸——「除非正在哭，否则不要穿透」。
   bool get transparent => state == 'cry' || state == 'flee';
@@ -904,7 +996,7 @@ class _Mob {
     if (dist <= _stealRadius) {
       f.taken = true;
       carrying = true;
-      state = 'flee';          // 满足：拿着水果转身跑
+      state = 'flee'; // 满足：拿着水果转身跑
       timer = 0;
       return;
     }
@@ -938,15 +1030,15 @@ class _Mob {
             best = f;
           }
         }
-        if (best == null) return;        // 水果被抢光，没什么可抢了
+        if (best == null) return; // 水果被抢光，没什么可抢了
         // 门槛必须看**深度差**，不能看到水果的直线距离：
         // 直线距离的话，横向离得远的小怪（水果被抢剩几颗时很常见）永远进不了门槛，
         // 会径直走过水果线、再一路走到镜头前——表现就是「有的小怪直接从桥上走过去，
         // 也不往水果靠」。用深度差则所有小怪都在同一深度开始横向收拢。
         if (best.depth - ground <= _seekRadius) {
-          _seek(best, dt);               // 后半段：向水果集中
+          _seek(best, dt); // 后半段：向水果集中
         } else {
-          gy += _mobWalkSpeed * dt;      // 前半段：保持车道直行，均匀铺开
+          gy += _mobWalkSpeed * dt; // 前半段：保持车道直行，均匀铺开
         }
       case 'hold':
         break;
@@ -959,34 +1051,47 @@ class _Mob {
       case 'flee':
         gy -= _mobFleeSpeed * dt;
         if (ground < _MonsterSpriteState._groundFleeEnd - 60) {
-          gy = _MonsterSpriteState._groundFar;   // 跑远了，从桥那头重来
+          gy = _MonsterSpriteState._groundFar; // 跑远了，从桥那头重来
           hits = 0;
-          carrying = false;      // 新来一只，空手
+          carrying = false; // 新来一只，空手
           state = 'walk';
           timer = 0;
-          entryDelay = 1.2;      // 稍等一下再上桥，别刚从画面外回来就冒出来
+          entryDelay = 1.2; // 稍等一下再上桥，别刚从画面外回来就冒出来
         }
     }
   }
 
   /// 这一刻该出什么姿势。
   List<_PoseLayer> poses() {
-    if (state == 'cry') return const [(asset: _MonsterSpriteState._cry, opacity: 1.0)];
-    if (state == 'flee') {
-      return [_MonsterSpriteState._walkPose(_MonsterSpriteState._walkBack, walkT, _MonsterSpriteState._walkHz)];
+    if (state == 'cry') {
+      return const [(asset: _MonsterSpriteState._cry, opacity: 1.0)];
     }
-    if (state == 'recoil') return const [(asset: _MonsterSpriteState._pout, opacity: 1.0)];
-    return [_MonsterSpriteState._walkPose(_MonsterSpriteState._walkFront, walkT, _MonsterSpriteState._walkHz)];
+    if (state == 'flee') {
+      return [
+        _MonsterSpriteState._walkPose(
+            _MonsterSpriteState._walkBack, walkT, _MonsterSpriteState._walkHz)
+      ];
+    }
+    if (state == 'recoil') {
+      return const [(asset: _MonsterSpriteState._pout, opacity: 1.0)];
+    }
+    return [
+      _MonsterSpriteState._walkPose(
+          _MonsterSpriteState._walkFront, walkT, _MonsterSpriteState._walkHz)
+    ];
   }
 
   /// 挨打那一下的挤压回弹（弹性曲线，越往后越平）。
   (double, double) squash() {
     if (sinceHit > 0.62) return (1.0, 1.0);
     final double k = sinceHit / 0.62;
-    final double e = _MonsterSpriteState._easeOutElastic(k, amp: 0.55, period: 0.36);
+    final double e =
+        _MonsterSpriteState._easeOutElastic(k, amp: 0.55, period: 0.36);
     final double w = e * (1 - k) * 1.35 * (hits >= _hitsToCry ? 1.0 : 0.6);
-    return (_MonsterSpriteState._lerp(1.0, 1.16, w),
-        _MonsterSpriteState._lerp(1.0, 0.80, w));
+    return (
+      _MonsterSpriteState._lerp(1.0, 1.16, w),
+      _MonsterSpriteState._lerp(1.0, 0.80, w)
+    );
   }
 }
 
@@ -1005,7 +1110,8 @@ class _Nut {
   final double height;
   final double laneFrac;
   final double scale0;
-  double get x => _MonsterSpriteState._canvasW / 2 +
+  double get x =>
+      _MonsterSpriteState._canvasW / 2 +
       laneFrac * _MonsterSpriteState._bridgeHalf(depth);
   double get screenY => depth - height;
 }
@@ -1045,7 +1151,9 @@ class _MonsterFxPainter extends CustomPainter {
   void _fruit(Canvas canvas, double cx, double cy, double r) {
     final Paint body = Paint()..color = const Color(0xFFE8552F);
     canvas.drawCircle(Offset(cx, cy), r, body);
-    canvas.drawCircle(Offset(cx, cy), r,
+    canvas.drawCircle(
+        Offset(cx, cy),
+        r,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = math.max(1.2, r * 0.14)
@@ -1056,7 +1164,8 @@ class _MonsterFxPainter extends CustomPainter {
     // 叶子
     final Path leaf = Path()
       ..moveTo(cx, cy - r * 0.92)
-      ..quadraticBezierTo(cx + r * 0.78, cy - r * 1.66, cx + r * 0.30, cy - r * 1.86)
+      ..quadraticBezierTo(
+          cx + r * 0.78, cy - r * 1.66, cx + r * 0.30, cy - r * 1.86)
       ..quadraticBezierTo(cx + r * 0.05, cy - r * 1.52, cx, cy - r * 0.92)
       ..close();
     canvas.drawPath(leaf, Paint()..color = const Color(0xFF4E9B4A));
@@ -1075,7 +1184,9 @@ class _MonsterFxPainter extends CustomPainter {
     // ---- 水果：画在所有人下面（地面上的一排）
     for (final f in fruits) {
       if (f.taken) continue;
-      final double r = 26 * _MonsterSpriteState._fx * cover *
+      final double r = 26 *
+          _MonsterSpriteState._fx *
+          cover *
           (_MonsterSpriteState._scaleAtGround(f.depth) / 0.52).clamp(0.5, 1.4);
       _fruit(canvas, _x(f.x), _y(f.depth) - r * 1.05, r);
     }
@@ -1147,7 +1258,9 @@ class _MonsterFxPainter extends CustomPainter {
             width: 25 * _MonsterSpriteState._fx * cover,
             height: 35 * _MonsterSpriteState._fx * cover,
           ),
-          Paint()..color = const Color(0xFF9FD8F5).withValues(alpha: 0.9 * (1 - age / 0.7)),
+          Paint()
+            ..color = const Color(0xFF9FD8F5)
+                .withValues(alpha: 0.9 * (1 - age / 0.7)),
         );
       }
     }
@@ -1209,12 +1322,16 @@ class _MonsterFxPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = math.max(1.0, r * 0.18);
     canvas.drawOval(
-        Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 1.64), fill);
+        Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 1.64),
+        fill);
     canvas.drawOval(
-        Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 1.64), stroke);
+        Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 1.64),
+        stroke);
     canvas.drawArc(
         Rect.fromCenter(center: Offset.zero, width: r * 1.4, height: r * 1.2),
-        200 * math.pi / 180, 140 * math.pi / 180, false,
+        200 * math.pi / 180,
+        140 * math.pi / 180,
+        false,
         Paint()
           ..color = const Color(0xFF7E542E)
           ..style = PaintingStyle.stroke
@@ -1222,9 +1339,7 @@ class _MonsterFxPainter extends CustomPainter {
     canvas.restore();
   }
 
-
   @override
   // 每帧都要重画：弹丸、星芒、泪珠都是逐帧变化的
   bool shouldRepaint(_MonsterFxPainter old) => true;
 }
-

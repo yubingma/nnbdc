@@ -783,8 +783,8 @@
                   <span class="nav-item-id" style="color: var(--accent-aurora);">IDEA #010</span>
                   <span class="nav-dot dot-aurora"></span>
                 </div>
-                <div class="nav-item-title">打哭小馋怪 · 左右二选一守桥</div>
-                <div class="nav-item-cat">答对涨火力 · 答错被抢水果 · 当日榜</div>
+                <div class="nav-item-title">打哭小馋怪 · 左摇杆走位守桥</div>
+                <div class="nav-item-cat">左摇杆走位 · 自动投掷 · 走位答词</div>
               </a>
 
               <a href="#idea-009" class="nav-item" data-id="idea-009">
@@ -940,15 +940,16 @@
                   <span>•</span>
                   <span>游戏玩法与每日留存</span>
                 </div>
-                <h2 class="idea-title">打哭小馋怪：左右二选一守桥（答对涨火力 · 答错被抢水果）</h2>
+                <h2 class="idea-title">打哭小馋怪：左摇杆走位守桥（自动投掷 · 走位答词 · 超时扣火力）</h2>
               </div>
-              <span class="badge-status status-evaluating">设计定型 / 待排期实施</span>
+              <span class="badge-status status-completed">左摇杆走位版已落地 / 真机体验中</span>
             </div>
 
             <div class="tags-container">
               <span class="tag" style="color: var(--accent-aurora); border-color: rgba(110, 231, 183, 0.2);">#泡泡单词</span>
               <span class="tag">#打哭小馋怪</span>
-              <span class="tag">#左右二选一答题</span>
+              <span class="tag">#左摇杆走位</span>
+              <span class="tag">#走位答词</span>
               <span class="tag">#自动战斗</span>
               <span class="tag">#闯关制</span>
               <span class="tag">#当日排行榜</span>
@@ -1121,9 +1122,28 @@
                 <strong style="color: var(--accent-blue);">进安装包前还要做：</strong>这批图仍是美术<strong style="color: var(--accent-blue);">源料</strong>目录里的资产。将来真正接入游戏时，需复制到 <code>app/assets/images/</code> 并在 <code>app/pubspec.yaml</code> 里声明——资源目录声明只递归一层，第二层及更深的子目录必须单独声明，否则会被静默跳过。
               </div>
 
+              <div class="section-title">2026-10-20 操作升级：左下虚拟摇杆走位（只保留走位，投掷与答题维持原样）</div>
+              <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.7;">
+                用户要「操作做成摇杆式，就像王者荣耀那样，将来可玩性上限更高」。落地时先做了一版双摇杆（左下走位 + 右下瞄准投牌），真机体验后用户拍板砍掉右摇杆，只留下左侧走位：
+                <br/>
+                · <strong>投掷保持原来的「朝正前方」</strong>——小宠物自动朝正前方扔坚果，同一路弹丸既打小怪、也打桥两侧的单词牌；队伍的横向位置就是答题选择。<strong>自动锁怪不做，将来作为武器升级效果再加</strong>。
+                <br/>
+                · <strong>超时恢复「扣火力」</strong>，和原来一致。中途试过「超时每两次偷一颗水果」的双惩罚线，用户明确要回原来的口径。
+                <br/>
+                · <strong>右摇杆去掉</strong>，右下角留空，将来要加道具/技能时直接摆进去。
+                <br/>
+                <strong style="color: var(--accent-blue);">为什么最后只留左摇杆是对的：</strong>这一版真正缺的不是第二根杆，而是「手指直接拖队伍」在横屏大屏上不好按。摇杆把走位从一维拖拽变成二维（横向 + 纵深），又没有改变「投掷方向 = 正前方」这条已经定型的表现规则——改动面最小，手感升级最大。
+                <br/>
+                <strong style="color: var(--accent-blue);">一条容易被后续改动踩坏的前提：</strong>走位答题能成立，靠的是走位范围 <code>_squadLimit = 0.40</code> 与单词靶横向位置 <code>_wordLane = 1.45</code> 配平——队伍推到最边上时，弹丸到达靶子那一行正好落在靶子上。把走位范围收小（例如 0.24）会让弹丸差出两百多画布像素，<strong>答题就永远打不中</strong>。这两个数是绑定的。
+                <br/>
+                <strong style="color: var(--accent-blue);">摇杆本身守住了 ㊺/㊻ 那两条：</strong>方向只由「杆相对圆心的位移」决定、按住持续生效、松手即停，不加任何缓动/惯性。
+                <br/>
+                <strong style="color: var(--accent-blue);">已知待调：</strong>① 纵向走位当下只有「离小怪更近、弹丸更容易够到两侧靶子」这点收益，主要是给将来的道具/技能留出位置；② 演示词表还是内置的 5 个词，接真实词库要等单关原型收口；③ 右摇杆组件（<code>app/lib/widget/game_joystick.dart</code>）留着没删，将来加道具/技能时直接复用。
+              </p>
+
               <div class="section-title">下一步</div>
               <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.7;">
-                先做<strong>单关可玩原型</strong>：一关、固定 20 个词、纯左右二选一、自动战斗、无排行榜，只验证一件事——<strong>是否 3 秒看懂、且想再来一局</strong>。原型跑通后再接排行榜与分榜口径。<br/>
+                左摇杆版已经装进真机：先确认「推着杆走位、把队伍挪到正确单词下方」这一套在手上顺不顺；顺了之后再收口单关原型的真实词库与配平。<br/>
                 这个原型同时就是一条可以直接投的广告素材：<strong>广告里演的，就是游戏里玩的。</strong>
               </p>
 

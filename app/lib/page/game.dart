@@ -33,7 +33,8 @@ class _GamePageState extends State<GamePage> {
   /// 当前选中的游戏类型：'bubble'（戳泡泡）、'brick'（削砖块）、'monster'（打哭小馋怪）
   String _selectedGame = 'bubble';
 
-  String get _targetGameRoute => _selectedGame == 'brick' ? '/brick' : '/russia';
+  String get _targetGameRoute =>
+      _selectedGame == 'brick' ? '/brick' : '/russia';
 
   /// 用户当前选中的对战特训词书
   Dict? _selectedTrainingDict;
@@ -57,7 +58,8 @@ class _GamePageState extends State<GamePage> {
     try {
       final db = MyDatabase.instance;
       // 1. 获取当前用户正在学习的书桌词书
-      final learningRecords = await db.learningDictsDao.getLearningDictsOfUser(user.id);
+      final learningRecords =
+          await db.learningDictsDao.getLearningDictsOfUser(user.id);
       final dictIds = learningRecords.map((e) => e.dictId).toSet();
 
       final allDicts = await db.select(db.dicts).get();
@@ -83,15 +85,18 @@ class _GamePageState extends State<GamePage> {
       });
 
       // 3. 自定义分组排除已经在「在学列表」里的词书（确保上下两组绝不重复展示同一本词书）
-      final customRecords = userOwnedDicts.where((d) => !dictIds.contains(d.id)).toList();
+      final customRecords =
+          userOwnedDicts.where((d) => !dictIds.contains(d.id)).toList();
 
       if (mounted) {
         setState(() {
           _userLearningDicts = loadedLearningDicts;
           _userCustomDicts = customRecords;
           if (_selectedTrainingDict == null ||
-              (!_userLearningDicts.any((d) => d.id == _selectedTrainingDict!.id) &&
-               !_userCustomDicts.any((d) => d.id == _selectedTrainingDict!.id))) {
+              (!_userLearningDicts
+                      .any((d) => d.id == _selectedTrainingDict!.id) &&
+                  !_userCustomDicts
+                      .any((d) => d.id == _selectedTrainingDict!.id))) {
             if (_userLearningDicts.isNotEmpty) {
               _selectedTrainingDict = _userLearningDicts.first;
             } else if (_userCustomDicts.isNotEmpty) {
@@ -457,81 +462,84 @@ class _GamePageState extends State<GamePage> {
                 if (_selectedGame != 'monster')
                   SliverToBoxAdapter(
                     child: errorMessage != null
-                      ? Container(
-                          height: 360,
-                          alignment: Alignment.center,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.cloud_off_rounded,
-                                  size: 56,
-                                  color: textSubColor.withValues(alpha: 0.5)),
-                              const SizedBox(height: 14),
-                              Text(
-                                errorMessage!,
-                                style: TextStyle(
-                                    color: textSubColor,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                              const SizedBox(height: 20),
-                              ElevatedButton.icon(
-                                onPressed: loadData,
-                                icon:
-                                    const Icon(Icons.refresh_rounded, size: 16),
-                                label: const Text('重新加载',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w700)),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: accentColor,
-                                  foregroundColor: isDarkMode
-                                      ? const Color(0xFF0B1714)
-                                      : Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 10),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18)),
+                        ? Container(
+                            height: 360,
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.cloud_off_rounded,
+                                    size: 56,
+                                    color: textSubColor.withValues(alpha: 0.5)),
+                                const SizedBox(height: 14),
+                                Text(
+                                  errorMessage!,
+                                  style: TextStyle(
+                                      color: textSubColor,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
                                 ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : (_isLoading || gameHallDataResult == null
-                          ? SizedBox(
-                              height: 320,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          accentColor),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      '正在加载对战大厅...',
+                                const SizedBox(height: 20),
+                                ElevatedButton.icon(
+                                  onPressed: loadData,
+                                  icon: const Icon(Icons.refresh_rounded,
+                                      size: 16),
+                                  label: const Text('重新加载',
                                       style: TextStyle(
-                                          color: textSubColor,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500),
-                                    ),
+                                          fontWeight: FontWeight.w700)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: accentColor,
+                                    foregroundColor: isDarkMode
+                                        ? const Color(0xFF0B1714)
+                                        : Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(18)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : (_isLoading || gameHallDataResult == null
+                            ? SizedBox(
+                                height: 320,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                accentColor),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        '正在加载对战大厅...',
+                                        style: TextStyle(
+                                            color: textSubColor,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 4, 16, 32),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ...gameHallDataResult!.hallGroups.map(
+                                        (group) => _buildGroupCard(
+                                            group, themeConfig)),
                                   ],
                                 ),
-                              ),
-                            )
-                          : Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ...gameHallDataResult!.hallGroups.map(
-                                      (group) =>
-                                          _buildGroupCard(group, themeConfig)),
-                                ],
-                              ),
-                            )),
-                ),
+                              )),
+                  ),
               ],
             ),
           ),
@@ -539,7 +547,6 @@ class _GamePageState extends State<GamePage> {
       ),
     );
   }
-
 
   /// 游戏模式选择卡片栏（对标极简高级感规范，三款游戏平铺选择）
   Widget _buildGameShowcase(AppThemeConfig themeConfig) {
@@ -619,7 +626,9 @@ class _GamePageState extends State<GamePage> {
             border: Border.all(
               color: isSelected
                   ? accentColor.withValues(alpha: isDarkMode ? 0.8 : 0.6)
-                  : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05)),
+                  : (isDarkMode
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.05)),
               width: isSelected ? 1.5 : 0.5,
             ),
             color: isSelected
@@ -651,7 +660,9 @@ class _GamePageState extends State<GamePage> {
                   fontSize: 13.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   letterSpacing: -0.2,
-                  color: isSelected ? (isDarkMode ? Colors.white : accentColor) : textMain,
+                  color: isSelected
+                      ? (isDarkMode ? Colors.white : accentColor)
+                      : textMain,
                 ),
               ),
               const SizedBox(height: 3),
@@ -695,9 +706,9 @@ class _GamePageState extends State<GamePage> {
     if (isMonster) {
       icon = Icons.pets_rounded;
       title = '打哭小馋怪 · 守桥保卫战';
-      subtitle = '左右二选一答词 · 答对涨火力守卫水果';
+      subtitle = '左摇杆走位 · 自动投掷 · 走位答词';
       description =
-          '成群结队的小馋怪正迈着小短腿压过长桥，企图抢走桥头守护的水果！桥头小宠物全自动投掷坚果防守，你看准单词释义左右二选一走门：答对倍增队伍与火力，投掷坚果将小馋怪打到抹泪抱头逃跑；若连错让出桥面被小馋怪冲到桥头，水果就会被顺走哦！';
+          '成群结队的小馋怪正迈着小短腿压过长桥，企图抢走桥头守护的水果！左下摇杆带着小宠物在桥头前后左右走位，小宠物自动朝正前方投掷坚果：桥两侧悬着一对单词牌，把队伍挪到正确那个单词的正下方，坚果就会打中它——答对火力升级，打错或超时火力下降；小馋怪被打哭会抹着眼泪跑掉，水果被抢光就输啦！';
     } else if (_selectedGame == 'brick') {
       icon = Icons.dashboard_rounded;
       title = '削砖块 · 1v1 经典下落消除';
@@ -800,9 +811,8 @@ class _GamePageState extends State<GamePage> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accentColor,
-                      foregroundColor: isDarkMode
-                          ? const Color(0xFF0B1714)
-                          : Colors.white,
+                      foregroundColor:
+                          isDarkMode ? const Color(0xFF0B1714) : Colors.white,
                       elevation: 1,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
@@ -845,7 +855,19 @@ class _GamePageState extends State<GamePage> {
       }
     }
 
-    final keywords = ['考研', '四级', '六级', '专四', '专八', '雅思', '托福', '高考', '高中', '初中', '小学'];
+    final keywords = [
+      '考研',
+      '四级',
+      '六级',
+      '专四',
+      '专八',
+      '雅思',
+      '托福',
+      '高考',
+      '高中',
+      '初中',
+      '小学'
+    ];
     for (final kw in keywords) {
       if (dictName.contains(kw)) {
         for (final group in gameHallDataResult!.hallGroups) {
@@ -935,7 +957,8 @@ class _GamePageState extends State<GamePage> {
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.auto_stories_rounded, size: 15, color: Colors.white),
+                    child: const Icon(Icons.auto_stories_rounded,
+                        size: 15, color: Colors.white),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -956,9 +979,11 @@ class _GamePageState extends State<GamePage> {
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1.5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF9800).withValues(alpha: 0.15),
+                            color:
+                                const Color(0xFFFF9800).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -978,7 +1003,8 @@ class _GamePageState extends State<GamePage> {
                     borderRadius: BorderRadius.circular(10),
                     onTap: () => _showDictSelectorSheet(context, themeConfig),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: isDarkMode
                             ? Colors.white.withValues(alpha: 0.08)
@@ -992,7 +1018,8 @@ class _GamePageState extends State<GamePage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.swap_horiz_rounded, size: 13, color: textSub),
+                          Icon(Icons.swap_horiz_rounded,
+                              size: 13, color: textSub),
                           const SizedBox(width: 3),
                           Text(
                             hasDict ? '换词书' : '选词书',
@@ -1026,7 +1053,9 @@ class _GamePageState extends State<GamePage> {
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: hasDict
-                                  ? (isDarkMode ? const Color(0xFF38BDF8) : accentColor)
+                                  ? (isDarkMode
+                                      ? const Color(0xFF38BDF8)
+                                      : accentColor)
                                   : textSub,
                             ),
                             maxLines: 1,
@@ -1052,7 +1081,8 @@ class _GamePageState extends State<GamePage> {
                     borderRadius: BorderRadius.circular(12),
                     onTap: _startTrainingBattle,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7.5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 13, vertical: 7.5),
                       decoration: BoxDecoration(
                         color: accentColor,
                         borderRadius: BorderRadius.circular(12),
@@ -1068,9 +1098,13 @@ class _GamePageState extends State<GamePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _selectedGame == 'monster' ? Icons.play_arrow_rounded : Icons.bolt_rounded,
+                            _selectedGame == 'monster'
+                                ? Icons.play_arrow_rounded
+                                : Icons.bolt_rounded,
                             size: 15,
-                            color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                            color: isDarkMode
+                                ? const Color(0xFF0B1714)
+                                : Colors.white,
                           ),
                           const SizedBox(width: 2),
                           Text(
@@ -1078,7 +1112,9 @@ class _GamePageState extends State<GamePage> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                              color: isDarkMode
+                                  ? const Color(0xFF0B1714)
+                                  : Colors.white,
                             ),
                           ),
                         ],
@@ -1094,7 +1130,8 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  void _showDictSelectorSheet(BuildContext context, AppThemeConfig themeConfig) {
+  void _showDictSelectorSheet(
+      BuildContext context, AppThemeConfig themeConfig) {
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
@@ -1135,7 +1172,8 @@ class _GamePageState extends State<GamePage> {
                         color: accentColor.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Icons.menu_book_rounded, color: accentColor, size: 18),
+                      child: Icon(Icons.menu_book_rounded,
+                          color: accentColor, size: 18),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -1179,10 +1217,12 @@ class _GamePageState extends State<GamePage> {
                     // 分组 1：正在学习的词书
                     if (_userLearningDicts.isNotEmpty) ...[
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 6),
                         child: Row(
                           children: [
-                            Icon(Icons.school_rounded, size: 14, color: accentColor),
+                            Icon(Icons.school_rounded,
+                                size: 14, color: accentColor),
                             const SizedBox(width: 6),
                             Text(
                               '我正在学习的词书 (${_userLearningDicts.length})',
@@ -1195,17 +1235,20 @@ class _GamePageState extends State<GamePage> {
                           ],
                         ),
                       ),
-                      ..._userLearningDicts.map((d) => _buildDictItem(d, sheetContext, themeConfig)),
+                      ..._userLearningDicts.map(
+                          (d) => _buildDictItem(d, sheetContext, themeConfig)),
                       const SizedBox(height: 14),
                     ],
 
                     // 分组 2：自定义词单 / 导入词单
                     if (_userCustomDicts.isNotEmpty) ...[
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 6),
                         child: Row(
                           children: [
-                            const Icon(Icons.folder_special_rounded, size: 14, color: Color(0xFFFF9800)),
+                            const Icon(Icons.folder_special_rounded,
+                                size: 14, color: Color(0xFFFF9800)),
                             const SizedBox(width: 6),
                             Text(
                               '我的自定义词单 / 导入词书 (${_userCustomDicts.length})',
@@ -1218,17 +1261,22 @@ class _GamePageState extends State<GamePage> {
                           ],
                         ),
                       ),
-                      ..._userCustomDicts.map((d) => _buildDictItem(d, sheetContext, themeConfig, isCustom: true)),
+                      ..._userCustomDicts.map((d) => _buildDictItem(
+                          d, sheetContext, themeConfig,
+                          isCustom: true)),
                       const SizedBox(height: 14),
                     ],
 
                     // 若既无在学词书也无自定义词单
-                    if (_userLearningDicts.isEmpty && _userCustomDicts.isEmpty) ...[
+                    if (_userLearningDicts.isEmpty &&
+                        _userCustomDicts.isEmpty) ...[
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 28),
                         child: Column(
                           children: [
-                            Icon(Icons.library_books_outlined, size: 44, color: textSub.withValues(alpha: 0.4)),
+                            Icon(Icons.library_books_outlined,
+                                size: 44,
+                                color: textSub.withValues(alpha: 0.4)),
                             const SizedBox(height: 10),
                             Text(
                               '书桌上暂无在学词书，快去词库挑选一本吧',
@@ -1250,9 +1298,12 @@ class _GamePageState extends State<GamePage> {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
-                          color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.black.withValues(alpha: 0.03),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isDarkMode ? Colors.white12 : Colors.black12,
@@ -1262,7 +1313,8 @@ class _GamePageState extends State<GamePage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_rounded, size: 18, color: accentColor),
+                            Icon(Icons.add_rounded,
+                                size: 18, color: accentColor),
                             const SizedBox(width: 6),
                             Text(
                               '从完整词库挑选更多词书...',
@@ -1286,7 +1338,9 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  Widget _buildDictItem(Dict dict, BuildContext sheetContext, AppThemeConfig themeConfig, {bool isCustom = false}) {
+  Widget _buildDictItem(
+      Dict dict, BuildContext sheetContext, AppThemeConfig themeConfig,
+      {bool isCustom = false}) {
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
@@ -1318,10 +1372,14 @@ class _GamePageState extends State<GamePage> {
       decoration: BoxDecoration(
         color: isSelected
             ? accentColor.withValues(alpha: isDarkMode ? 0.16 : 0.08)
-            : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.02)),
+            : (isDarkMode
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.black.withValues(alpha: 0.02)),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isSelected ? accentColor.withValues(alpha: 0.6) : Colors.transparent,
+          color: isSelected
+              ? accentColor.withValues(alpha: 0.6)
+              : Colors.transparent,
           width: 1.2,
         ),
       ),
@@ -1365,8 +1423,14 @@ class _GamePageState extends State<GamePage> {
                               dict.name,
                               style: TextStyle(
                                 fontSize: 14,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                color: isSelected ? (isDarkMode ? const Color(0xFF38BDF8) : accentColor) : textMain,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                                color: isSelected
+                                    ? (isDarkMode
+                                        ? const Color(0xFF38BDF8)
+                                        : accentColor)
+                                    : textMain,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1375,40 +1439,55 @@ class _GamePageState extends State<GamePage> {
                           if (isMastered) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4.5, vertical: 1.5),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.14),
+                                color: const Color(0xFF10B981)
+                                    .withValues(alpha: 0.14),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
                                 '掌握',
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF10B981)),
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF10B981)),
                               ),
                             ),
                           ] else if (isRawDict) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4.5, vertical: 1.5),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF9800).withValues(alpha: 0.14),
+                                color: const Color(0xFFFF9800)
+                                    .withValues(alpha: 0.14),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
                                 '生词',
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFFFF9800)),
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFFF9800)),
                               ),
                             ),
                           ] else if (isCustom) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4.5, vertical: 1.5),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF9800).withValues(alpha: 0.14),
+                                color: const Color(0xFFFF9800)
+                                    .withValues(alpha: 0.14),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
                                 '自建',
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFFFF9800)),
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFFF9800)),
                               ),
                             ),
                           ],
@@ -1430,7 +1509,8 @@ class _GamePageState extends State<GamePage> {
                       color: accentColor,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                    child: const Icon(Icons.check_rounded,
+                        color: Colors.white, size: 16),
                   )
                 else
                   Icon(
@@ -1460,92 +1540,99 @@ class _GamePageState extends State<GamePage> {
       padding: const EdgeInsets.only(bottom: 14),
       child: FrostedGlassCard(
         borderRadius: 20,
-        child: _buildGroupCardContent(group, textMain, textSub, themeConfig, isExpanded, isDarkMode),
+        child: _buildGroupCardContent(
+            group, textMain, textSub, themeConfig, isExpanded, isDarkMode),
       ),
     );
   }
 
-  Widget _buildGroupCardContent(HallGroupVo group, Color textMain, Color textSub, AppThemeConfig themeConfig, bool isExpanded, bool isDarkMode) {
+  Widget _buildGroupCardContent(
+      HallGroupVo group,
+      Color textMain,
+      Color textSub,
+      AppThemeConfig themeConfig,
+      bool isExpanded,
+      bool isDarkMode) {
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 组标题行（点击可展开/折叠）
-          InkWell(
-            borderRadius: BorderRadius.vertical(
-              top: const Radius.circular(20),
-              bottom: Radius.circular(isExpanded ? 0 : 20),
-            ),
-            onTap: () {
-              setState(() {
-                _expandedGroups[group.groupName] = !isExpanded;
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        group.groupName,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.2,
-                          color: textMain,
-                        ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 组标题行（点击可展开/折叠）
+        InkWell(
+          borderRadius: BorderRadius.vertical(
+            top: const Radius.circular(20),
+            bottom: Radius.circular(isExpanded ? 0 : 20),
+          ),
+          onTap: () {
+            setState(() {
+              _expandedGroups[group.groupName] = !isExpanded;
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      group.groupName,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
+                        color: textMain,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${group.gameHalls.length} 个场次',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w400,
-                          color: textSub,
-                        ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${group.gameHalls.length} 个场次',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w400,
+                        color: textSub,
                       ),
-                    ],
-                  ),
-                  AnimatedRotation(
-                    turns: isExpanded ? 0.25 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(Icons.arrow_forward_ios_rounded,
-                        size: 13, color: textSub.withValues(alpha: 0.6)),
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+                AnimatedRotation(
+                  turns: isExpanded ? 0.25 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(Icons.arrow_forward_ios_rounded,
+                      size: 13, color: textSub.withValues(alpha: 0.6)),
+                ),
+              ],
             ),
           ),
+        ),
 
-          // 组内各场次（聚合为一行一行的发丝分割列表，不再每项独立浮卡）
-          if (isExpanded) ...[
-            Divider(
-              height: 1,
-              thickness: 0.5,
-              indent: 16,
-              endIndent: 16,
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.055),
-            ),
-            for (int i = 0; i < group.gameHalls.length; i++) ...[
-              if (i > 0)
-                Divider(
-                  height: 1,
-                  thickness: 0.5,
-                  indent: 16,
-                  endIndent: 16,
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.black.withValues(alpha: 0.055),
-                ),
-              _buildHallItem(group.gameHalls[i], themeConfig),
-            ],
-            const SizedBox(height: 8),
+        // 组内各场次（聚合为一行一行的发丝分割列表，不再每项独立浮卡）
+        if (isExpanded) ...[
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            indent: 16,
+            endIndent: 16,
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.055),
+          ),
+          for (int i = 0; i < group.gameHalls.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                thickness: 0.5,
+                indent: 16,
+                endIndent: 16,
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.055),
+              ),
+            _buildHallItem(group.gameHalls[i], themeConfig),
           ],
+          const SizedBox(height: 8),
         ],
-      );
+      ],
+    );
   }
 
   /// 单个大厅竞技场项目（聚合卡片内的一行，不再独立浮卡）
@@ -1752,28 +1839,41 @@ class GameRulesDialog extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            _buildRuleItem('1', '升腾答题', '底部显示中文释义，英文单词泡泡从海底升腾；在泡泡冒过顶部警戒线之前，点中拼写正确的那一个。',
-                textMain, textSub),
+            _buildRuleItem(
+                '1',
+                '升腾答题',
+                '底部显示中文释义，英文单词泡泡从海底升腾；在泡泡冒过顶部警戒线之前，点中拼写正确的那一个。',
+                textMain,
+                textSub),
             const SizedBox(height: 9),
             _buildRuleItem('2', '失误惩罚', '答错或漏答都会消耗 1 格生命，答错的单词会自动记入生词本。',
                 textMain, textSub),
             const SizedBox(height: 9),
-            _buildRuleItem('3', '连对道具', '每连续答对 3 题必得 1 个道具，水雷 2/3、海星 1/3：水雷轰掉对手 1 格生命，海星给自己补回 1 格。',
-                textMain, textSub),
+            _buildRuleItem(
+                '3',
+                '连对道具',
+                '每连续答对 3 题必得 1 个道具，水雷 2/3、海星 1/3：水雷轰掉对手 1 格生命，海星给自己补回 1 格。',
+                textMain,
+                textSub),
             const SizedBox(height: 9),
-            _buildRuleItem('4', '胜负判定', '双方各有 10 格生命，谁先被扣光谁就判负。',
-                textMain, textSub),
+            _buildRuleItem(
+                '4', '胜负判定', '双方各有 10 格生命，谁先被扣光谁就判负。', textMain, textSub),
             const SizedBox(height: 9),
-            _buildRuleItem('5', '匹配与开房', '【匹配】自动寻找在线学友快速对战；【开房/进房】房主开房生成房间号，好友输入房间号即可私密切磋。',
-                textMain, textSub),
+            _buildRuleItem(
+                '5',
+                '匹配与开房',
+                '【匹配】自动寻找在线学友快速对战；【开房/进房】房主开房生成房间号，好友输入房间号即可私密切磋。',
+                textMain,
+                textSub),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: accentColor,
-                  foregroundColor:
-                      themeStyle.isDark ? const Color(0xFF0B1714) : Colors.white,
+                  foregroundColor: themeStyle.isDark
+                      ? const Color(0xFF0B1714)
+                      : Colors.white,
                   elevation: 0,
                   // 只定下限、不写死高度：写死 44 时，系统字号调大后文字行高超过 44，
                   // 下半截会被容器裁掉（iPad 上就是这个表现）
@@ -1785,7 +1885,8 @@ class GameRulesDialog extends StatelessWidget {
                 ),
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('我知道了',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                    style:
+                        TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
               ),
             ),
           ],
