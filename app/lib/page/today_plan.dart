@@ -3974,11 +3974,11 @@ class TodayPlanPageState extends State<TodayPlanPage>
     final int batchSize = StudyBo.batchSize;
 
     Widget dot() => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
           child: Text(
             '·',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: ink.muted.withValues(alpha: 0.45),
               shadows: shadows,
@@ -4013,7 +4013,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 Text(
                   totalLabel,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                     color: ink.muted,
                     letterSpacing: 0.3,
@@ -4023,7 +4023,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 const SizedBox(width: 3),
                 Icon(
                   isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
-                  size: isStarted ? 11.5 : 13.5,
+                  size: isStarted ? 13.5 : 15.5,
                   color: ink.muted,
                   shadows: shadows,
                 ),
@@ -4052,7 +4052,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 Text(
                   '每组 $batchSize 词',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                     color: ink.muted,
                     letterSpacing: 0.3,
@@ -4062,7 +4062,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 const SizedBox(width: 3),
                 Icon(
                   isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
-                  size: isStarted ? 11.5 : 13.5,
+                  size: isStarted ? 13.5 : 15.5,
                   color: ink.muted,
                   shadows: shadows,
                 ),
@@ -4089,7 +4089,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
             child: Text(
               '加量中 $extraProgress%',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13.5,
                 fontWeight: FontWeight.w500,
                 color: ink.muted,
                 letterSpacing: 0.3,
@@ -4116,13 +4116,13 @@ class TodayPlanPageState extends State<TodayPlanPage>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.check_rounded, size: 12.5, color: sealColor, shadows: shadows),
-            const SizedBox(width: 2.5),
+            Icon(Icons.check_rounded, size: 14.5, color: sealColor, shadows: shadows),
+            const SizedBox(width: 3),
             Text(
               '已打卡',
               key: const Key('today_plan_daka_seal_text'),
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13.5,
                 fontWeight: FontWeight.w600,
                 color: sealColor,
                 letterSpacing: 0.3,
@@ -4143,7 +4143,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
         child: Text(
           '学习中 $planProgress%',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 13.5,
             fontWeight: FontWeight.w500,
             color: ink.muted,
             letterSpacing: 0.3,
@@ -4158,7 +4158,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
       child: Text(
         '未开始',
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 13.5,
           fontWeight: FontWeight.w500,
           color: ink.faint,
           letterSpacing: 0.3,

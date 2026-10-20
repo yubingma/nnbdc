@@ -188,7 +188,10 @@ jobs:
           # Flutter 版本只在 app/pubspec.yaml 的 environment.flutter 声明一处，
           # 动态提取作为唯一真相源，杜绝版本漂移；同时避免 subosito/flutter-action 在 Windows 运行器上
           # 因 flutter-version-file 依赖 yq 导致 "yq not found" 报错中断
-          FLUTTER_VERSION=$(python -c "import re, pathlib; m = re.search(r'^\s*flutter\s*:\s*[\"\'\']?([^\"\'\'\s#]+)', pathlib.Path('app/pubspec.yaml').read_text(), re.M); print(m.group(1).strip() if m else '')")
+          # app/pubspec.yaml 是 UTF-8（首行 description 就是中文），必须显式指定 encoding：
+          # read_text() 默认用「平台默认编码」，Windows 运行器上是 cp1252，遇到 UTF-8 中文
+          # 直接抛 UnicodeDecodeError（2026-10-20 Windows 作业失败原因）。
+          FLUTTER_VERSION=$(python -c "import re, pathlib; m = re.search(r'^\s*flutter\s*:\s*[\"\'\']?([^\"\'\'\s#]+)', pathlib.Path('app/pubspec.yaml').read_text(encoding='utf-8'), re.M); print(m.group(1).strip() if m else '')")
           if [ -z "$FLUTTER_VERSION" ]; then
             echo "app/pubspec.yaml 未声明 environment.flutter，无法确定 Flutter 版本" >&2
             exit 1
