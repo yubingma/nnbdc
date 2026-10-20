@@ -184,17 +184,24 @@ jobs:
           HASH=$(python -c "import hashlib, pathlib; print(hashlib.sha256(pathlib.Path('app/pubspec.lock').read_bytes()).hexdigest())")
           echo "hash=$HASH"
           echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+
+          # Flutter 版本只在 app/pubspec.yaml 的 environment.flutter 声明一处，
+          # 动态提取作为唯一真相源，杜绝版本漂移；同时避免 subosito/flutter-action 在 Windows 运行器上
+          # 因 flutter-version-file 依赖 yq 导致 "yq not found" 报错中断
+          FLUTTER_VERSION=$(python -c "import re, pathlib; m = re.search(r'^\s*flutter\s*:\s*[\"\'\']?([^\"\'\'\s#]+)', pathlib.Path('app/pubspec.yaml').read_text(), re.M); print(m.group(1).strip() if m else '')")
+          if [ -z "$FLUTTER_VERSION" ]; then
+            echo "app/pubspec.yaml 未声明 environment.flutter，无法确定 Flutter 版本" >&2
+            exit 1
+          fi
+          echo "flutter_version=$FLUTTER_VERSION"
+          echo "flutter_version=$FLUTTER_VERSION" >> "$GITHUB_OUTPUT"
         shell: bash
 
       # 设置 Flutter
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2.18.0
+        uses: subosito/flutter-action@v2
         with:
-          # Flutter 版本只在 app/pubspec.yaml 的 environment.flutter 声明一处，
-          # 开发者本机与 CI 共用同一个来源，杜绝"两处各写一个版本、互相漂移"。
-          # 历史事故：CI 钉 3.38.5、本机 3.44.0，两边 SDK 对 meta/characters/test_api/
-          # matcher/material_color_utilities 的钉版不同，pubspec.lock 必然对不上。
-          flutter-version-file: app/pubspec.yaml
+          flutter-version: ${{ steps.pubspec-hash.outputs.flutter_version }}
 
       # 仅缓存 pub 包，避免缓存 .dart_tool/build 造成旧插件残留
       - name: Cache Flutter Dependencies
