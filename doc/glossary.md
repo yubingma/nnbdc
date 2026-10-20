@@ -284,6 +284,7 @@
 | 本轮新增发音 | 整段累积减去已判过前缀 | 用户这一次说的到底是什么：本地音素判定与 AI 裁判都只看它 | 识别请求自然重启（新整段与基线没有公共前缀）时，新整段全部算作本轮新增；同一答案已判过错时只重讲上次说明，不再重复请教大模型 |
 | 音素词典 | `PhonemeUtil`（`app/lib/util/phoneme_util.dart`），随包资源 `assets/cmudict.pho` | 本地发音判定用的 cmudict（约 12.6 万词条）：把识别结果与目标词都转成音素序列再算相似分（≥ `Constants.phonemeMatchThreshold` 60 算通过） | 资源是**预编译的紧凑查表格式**（`app/lib/util/phoneme_asset.dart`），由 `app/tool/phoneme/cmudict.dict` 经 `dart run tool/phoneme/compile_cmudict.dart` 生成：运行时只读这一份二进制、查词走二分，真机加载几十毫秒、不起任何 isolate（早期版本是运行时把 3.6MB 文本解析成 13 万条嵌套 Map，要 4~5 秒、峰值内存上百 MB，一次停摆就让整条判定链路静默卡死）。它只是"锦上添花"：拿不到就按拼写相似度降级（`app/lib/util/asr_util.dart` 的 `calculateOverallSimilarity` 降级分支），**绝不允许它把判定链路挂住**；加载有界（`PhonemeUtil.loadTimeout` 20 秒），失败/超时打日志并降级。⚠️ 精确识别会先走 `selectBestCandidateWithPhonemeAndScore` 的快速路径直接判 100 分、**根本不碰这个词典**，所以"词典挂了"的表现是"只有听偏的词没反应，听准的词一切正常"。改词典数据必须重新生成资源，`app/test/phoneme_asset_roundtrip_test.dart` 会逐词校验资源与源数据一致 |
 | AI 裁判 | `AiRefereeUtil`（`app/lib/util/ai_referee_util.dart`） | 本地判不出来时请大模型裁决：英中（en2Ch）看中文释义对不对、中英（ch2En）看发音像不像或说了同义词、例句看翻译是否忠实 | 判过错的答案存在 `_failedWordAiEvaluationsForCurrentWord`；「裁判没执行」（超时/限流/额度）与「判错」是两回事，前者只提示原因、不判错 |
+| 本轮开口结论 | 背单词页 `BdcState.asrRoundHeardText`（`app/lib/page/bdc/providers/bdc_state.dart`）与词表页 `WordWrapper.roundHeardText`（`app/lib/util/word_util.dart`）；文案统一由 `asrRoundVerdictText` 产出 | 用户说完一句之后给出的那句话：空字符串＝没听清（显示「没听清，再说一遍」），非空＝听到了这句但不对（显示「听到的是「这句」，不对」） | 只在**说完之后**（停顿约 1.5 秒）写一次；用户重新开口、换词、说中释义时清空。它只回答"你听到了什么、对不对"，**不参与判题**、不影响通过与否。此前判错与没听清都是静默的，界面和"程序卡死"长得一模一样（线上反馈）。只有语音才有"没听清"，键盘敲一个字不算。回显原话由 `AsrUtil.heardEchoText` 截断到 20 字 |
 | 练习模式 | `_isPracticeMode`（`app/lib/page/bdc/providers/bdc_notifier.dart:1107` 的 `hideAnswer` 进入） | 例句环节"看答案"后点「隐藏答案继续练习」：练习答对只给反馈与揭晓答案，不改今日测评结果、不写学习记录 | 离开练习模式时用的仍是"看答案"那次已受理的评分凭据 |
 | 待计分作答凭据 | `_pendingGrade` | 受理一次作答时登记、流转下一词时消费一次的凭据 | 同一呈现只受理一次；练习模式不得把它清空，否则「下一词」会被判成重复提交而点不动 |
 | 所见即所改 | 面板身份判据 `BdcNotifier.hasUnsubmittedAnswer`（`app/lib/page/bdc/providers/bdc_notifier.dart`） | 评分面板那一行显示的是哪条记录，点它改的就必须是同一条：本次作答 = `lastFsrsRating` + 本次推算 `fsrsItem`；其余 = **当天最近一次计分作答** `todayLatestRating` + `todayLatestScheduledDays`（`todayLatestLogIndex` 标明它是当天第几条） | 标签按"这一行此刻代表谁"给三种：本次作答且是测评环节＝**测评结果**；本次作答且是后续环节＝**本次评分**；其余（还没作答 / 本环节重练 / 回看历史，显示的是这个词当前已记入的评分）＝**当前评分**。**改评分改的是"当天最近一条学习记录"**（用户最近那次作答），不是"当天首条测评"。标签、数据源、修改对象三者共用同一个判据；回看历史时绝不能拿"被回看那条的作答事实"或"当天首条"互相顶替 —— 否则用户对着"巩固的良好"改回良好，改掉的却是测评首条，天数从 16 天变成 `init(良好)` 的 3 天 |
@@ -370,6 +371,14 @@
 | 主动离开对局 | 客户端 `_confirmLeaveGame`（`app/lib/page/russia.dart:1005`）与 `_leftCurrentGame`；服务端 `ReadyState.handleUserLeft`（`server/nnbdc-service/src/main/java/beidanci/service/socket/system/game/russia/state/ReadyState.java:360`），挂载点是 `RussiaRoom.userLeave`（同目录 `RussiaRoom.java:338`） | 对局进行中用户点返回箭头、点换房间、按系统返回键，或长时间无操作被清理时，服务端当场判他战败、对手判胜，与「断线宽限到点判负」同一套结果 | 单人练习、以及房间里混着练习者的那一局都不判（练习不计分，且不能让"别人离开"抢占 `gameOverProcessor` 的 loser 位，否则练习者自己结束练习时判负会失效）；练习跑在 `WaitState`，连 `handleUserLeft` 都进不去。客户端离开前必须弹确认说清代价，文案按处境分开（`leaveGameConfirmText`，`app/lib/page/russia.dart:231`）：正式对战判负扣费、匹配练习只是退出匹配、私房练习则看"我是不是房里最后一人"决定房号是否作废；弹窗开着时 `_confirmLeaveOpen` 会把这一局定住，不能一边犹豫一边被泡泡扣血 |
 | 虚拟摇杆 | 客户端 `GameJoystick`（`app/lib/widget/game_joystick.dart`） | 按住哪、哪就是底盘中心（浮动底盘）；手指相对落点的方向决定朝哪走，推得越远力度越大，松手归零 | 五条硬约束：① 手势用 `Listener` 的 pointer 事件（DOWN / UP / CANCEL 一定成对），**不要用 `GestureDetector` 的 pan 判断「有没有手指按着」**——轻点达不到 pan 的 slop，`onPanEnd` 不会来，标志残留后摇杆会「滑动两下就没反应」；② 偏移用 `PointerEvent.position`（全局）的差值算，`localPosition` 只用来决定底盘画在哪；③ 底盘中心必须跟着按下点走；④ 方向只由「相对落点的位移」决定，**不能**由「这一帧滑了多少」决定；⑤ **摇杆必须挂在带稳定 key 的 Stack 子项上**——它前面每帧都可能增减子项（怪群进出场、答题 UI 出现消失），没有 key 时 Flutter 只按位置顺序匹配 Element，摇杆 State 会被反复重建、杆偏移清零，真机表现就是「按住一拖就弹回中心」。摇杆不要加缓动/惯性 |
 | 小队走位 | 客户端 `_squadX` / `_squadDepth`（`app/lib/widget/monster_sprite.dart`） | 左下虚拟摇杆控制我方小宠物整队前后左右挪位置：横向在桥面内，纵向在桥头阵地内 | 横向范围 `_squadLimit = 0.40` 是**答题能不能够到两侧单词靶**的前提：弹丸朝正前方飞，队伍推到边上时坚果正好落到靶子那一行；收小它会让走位答题永远打不中。纵向只走到桥头阵地（离水果线还留一段），不会踩到水果或和小怪重叠 |
+| 桥墩 | 客户端 `_PierPainter`（`app/lib/widget/monster_sprite.dart`） | 桥面在单词墙那一节向左右**展开**到屏幕边缘，并且**一直铺到画布底边**，形成两段更宽的桥面（两翼）；单词墙立在这两翼上 | **不是**一条横贯全屏的板子：只画桥面之外的左右两翼，与桥面交界是跟着透视走的斜线。**下端必须铺到画布底边**（`_pierNear = 1080`）：队伍横向能走到 ±0.40 个画布宽，地板停在半路的话队伍脚下就是水面、看着像悬空。画在**怪群之前**（单独一层）。后边缘 `_pierFar = 660` |
+
+
+| 单词墙 | 客户端 `_wall`（`app/lib/widget/monster_sprite.dart`） | 桥面两翼上各立一面**面对镜头**的石墙，左右两个答案单词直接写在墙面上；墙顶铺一层小台子 | 位置是 `_wallLane = 1.22` 倍该处桥面半宽：**墙的内侧边缘正好贴在桥面外沿**，整面墙都在桥面之外、不跨桥面。这个数和走位范围 `_squadLimit = 0.34` 是绑定的——贴边后弹丸要打到墙心约需 1.32 的横向比例，0.34 的走位范围能推到约 1.38，队伍不用跑到最边、最右侧成员也不会被屏幕裁掉 |
+
+
+| 奖赏金币 | 客户端 `_coin` / `_rewardSide` / `_rewardStart`（`app/lib/widget/monster_sprite.dart`） | 每面单词墙顶的小台子上摆一枚金币，代表「答对」的奖赏；答对时正确那一侧的金币向上飘、缩小、淡出 | 金币只是一次答对的即时反馈，**不是可累计的货币**；每道新题出现时重新摆好（`_rewardSide = 0`）。将来要接真实奖励（智慧果/道具）时，接在 `_answer(correct: true)` 那一支 |
+| 离开站位才出题 | 客户端 `_squadLeftAskSpot`（`app/lib/widget/monster_sprite.dart`） | 上一题结算后，队伍必须先离开结算那一刻的站位（横向挪出约 1/10 画布宽，或前后挪出一段），下一题才会挂出来 | 不加这道闸的话，玩家站在上一题的弹道上不动，新题一出现就会被自动弹丸打掉一面墙——真机表现是「还没看清就答错了」。空档期间顶部显示「挪动队伍，准备下一题」 |
 | 自动投掷 | 客户端 `_tickSim` 里的开火段（`app/lib/widget/monster_sprite.dart`） | 小宠物一直自动朝正前方投掷坚果；同一路弹丸既打小怪、也打桥两侧的单词牌——所以队伍的横向位置就决定了坚果会落到哪块牌上，这就是答题选择 | 「朝正前方」指世界坐标里走直线、屏幕上朝消失点收拢，不是屏幕竖直向上（见 `design/ideas.html` IDEA #010 的记录 ㊴）。将来武器升级会加「自动锁怪」，现在不做 |
 
 ### 4.7 词内容资源
@@ -400,7 +409,7 @@
 | 权限宏 | `app/ios/Podfile` 中 `GCC_PREPROCESSOR_DEFINITIONS` 里的 `PERMISSION_xxx=1` | 告诉 permission_handler_apple 要编译哪些权限的处理代码 | 漏一个宏不会编译报错，只会让该权限在 iOS 上永远返回「已拒绝」 |
 | 底栏 | `app/lib/page/index.dart`、`app/lib/model/nav_tab_config.dart` | App 最底下那一排图标（学习 / 词表 / 查词 / 比赛 / 我），点一下就切页面 | 分两类：**切页型**（`NavTabKey`，选中后就停在那一页、用户可把它移出底栏）与**唤起型**（`NavBarShortcut`，点开就推一个独立全屏页、没有选中态，目前只有随身听）。用户口中的「底部导航」「下方按钮」都是它 |
 | 功能收纳 | `app/lib/widget/nav_stash_widgets.dart` | 底栏放不下的功能统一收在这里，有两个入口：「我」页面的【功能收纳】毛玻璃卡片，以及长按底栏弹出的「快捷功能收纳」弹窗 | 单一认知锚点：底栏没有的，一律去收纳区找。底栏已经有的（含已经被用户放进底栏的随身听）不在收纳区重复出现 |
-| 随身听 | `app/lib/page/walkman.dart`、`app/lib/page/walkman_launcher.dart`，路由 `/walkman` | 不看屏幕连续听词的沉浸全屏页，听哪本词表由「上次收听的来源」决定 | 必须先登录（游客点了只弹提示）。默认只住在「快捷功能收纳」里；想让它常驻的人去「我」页面的「底栏导航管理」行（`app/lib/page/me.dart`，弹窗标题为「底栏导航定制」）打开开关，默认关闭 |
+| 随身听 | `app/lib/page/walkman.dart`、`app/lib/page/walkman_launcher.dart`，路由 `/walkman` | 不看屏幕连续听词的沉浸全屏页，听哪本词表由「上次收听的来源」决定 | 必须先登录（游客点了只弹提示）。默认只住在「快捷功能收纳」里；想让它常驻的人去「我」页面的「底栏导航管理」行（`app/lib/page/me.dart`，弹窗标题为「底栏导航定制」）打开开关，默认关闭。听到生词要细看：先点暂停键，播放键上方才会浮现「查看详情」，点它进单词详情页；左上角返回仍停在暂停的那个词，接着由用户决定何时继续播放 |
 
 ---
 

@@ -192,4 +192,24 @@ TWELVE T W EH1 L V
       expect(plainResult.score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
   });
+
+  group('判错回显（听到的是「这句」，不对）', () {
+    test('优先用未去标点的原句', () {
+      expect(AsrUtil.heardEchoText('露水。', '露水'), '露水。');
+    });
+
+    test('原句为空时回落到去标点的判题文本', () {
+      expect(AsrUtil.heardEchoText(null, '犹太人'), '犹太人');
+      expect(AsrUtil.heardEchoText('   ', '犹太人'), '犹太人');
+    });
+
+    test('整段累积过长时截断并加省略号：行内小字太长会被缩到看不清', () {
+      final long = 'precisely strictly strictly accurately';
+      final echo = AsrUtil.heardEchoText(long, long);
+
+      expect(echo.length, AsrUtil.heardEchoMaxChars + 1);
+      expect(echo.endsWith('…'), isTrue);
+      expect(echo.startsWith('precisely'), isTrue);
+    });
+  });
 }

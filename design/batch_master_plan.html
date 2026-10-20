@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>词表批量掌握 · 产品方案</title>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --panel: #14181e;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-hairline: rgba(255, 255, 255, 0.06);
+    --text-primary: #f0f3f6;
+    --text-secondary: #9aa5b5;
+    --text-muted: #66707f;
+    --accent: #18BA7C;
+    --accent-soft: rgba(24, 186, 124, 0.14);
+    --accent-blue: #60a5fa;
+    --accent-amber: #fbbf24;
+    --danger: #f87171;
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --mono-stack: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-stack);
+    line-height: 1.7;
+    padding: 44px 24px 96px;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 12% 6%, rgba(24, 186, 124, 0.06) 0%, transparent 42%),
+      radial-gradient(circle at 88% 12%, rgba(96, 165, 250, 0.045) 0%, transparent 46%);
+    background-attachment: fixed;
+  }
+  .layout { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 190px 1fr; gap: 48px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 28px; } .toc { position: static !important; } }
+
+  header { max-width: 1080px; margin: 0 auto 38px; }
+  .eyebrow { font-size: 11.5px; letter-spacing: 0.34px; color: var(--text-muted); }
+  h1 { font-size: 23px; font-weight: 700; letter-spacing: -0.3px; margin: 8px 0 6px; }
+  .lede { font-size: 12.5px; color: var(--text-secondary); }
+  .meta { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-hairline); display: flex; flex-wrap: wrap; gap: 22px; font-size: 11.5px; color: var(--text-muted); }
+  .meta b { color: var(--text-secondary); font-weight: 500; }
+
+  .toc { position: sticky; top: 32px; font-size: 12.5px; }
+  .toc-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); padding-bottom: 10px; border-bottom: 1px solid var(--border-hairline); margin-bottom: 10px; }
+  .toc a { display: block; padding: 5px 0; color: var(--text-secondary); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+
+  main { min-width: 0; }
+  section { margin-bottom: 48px; }
+  h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 14px; }
+  h2 .idx { font-family: var(--mono-stack); font-size: 12px; color: var(--text-muted); margin-right: 10px; }
+  h3 { font-size: 13px; font-weight: 600; margin: 22px 0 8px; }
+  p { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+  p strong, li strong { color: var(--text-primary); font-weight: 600; }
+  ul, ol { margin: 0 0 12px 0; padding-left: 20px; }
+  li { font-size: 13px; color: var(--text-secondary); margin-bottom: 7px; }
+  code { font-family: var(--mono-stack); font-size: 11.5px; background: rgba(255, 255, 255, 0.05); padding: 1.5px 5px; border-radius: 5px; color: #cfd8e3; }
+  .loc { font-family: var(--mono-stack); font-size: 11px; color: var(--text-muted); }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 18px; }
+  th { font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+  td { font-size: 12.5px; color: var(--text-secondary); padding: 11px 12px 11px 0; border-bottom: 1px solid var(--border-hairline); vertical-align: top; }
+  td:first-child { color: var(--text-primary); font-weight: 500; }
+
+  .callout {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px;
+    margin: 14px 0 18px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+  .callout.warn { border-left-color: var(--accent-amber); background: rgba(251, 191, 36, 0.08); }
+  .callout.danger { border-left-color: var(--danger); background: rgba(248, 113, 113, 0.07); }
+  .callout b { color: var(--text-primary); }
+
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { position: relative; padding-left: 22px; }
+  .checklist li::before { content: ''; position: absolute; left: 4px; top: 8px; width: 5px; height: 9px; border-right: 1.6px solid var(--accent); border-bottom: 1.6px solid var(--accent); transform: rotate(42deg); }
+
+  .fig { margin: 18px 0 8px; display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+  .fig img { width: 300px; border-radius: 14px; box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45); }
+  .fig-notes { flex: 1; min-width: 240px; }
+  .cap { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; }
+  .state-list { display: grid; gap: 8px; margin-top: 4px; }
+  .state-item { font-size: 12px; color: var(--text-secondary); }
+  .state-item b { color: var(--text-primary); }
+
+  hr { border: 0; border-top: 1px solid var(--border-hairline); margin: 26px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">泡泡单词 · 词表交互</div>
+  <h1>词表批量掌握</h1>
+  <p class="lede">把「左滑 → 点掌握」的一次一个，改成「长按进入多选 → 勾一批 → 一次标记掌握」。</p>
+  <div class="meta">
+    <span>提出日期 <b>2026-10-20</b></span>
+    <span>状态 <b>待确认</b></span>
+    <span>原型 <b><a href="ui/batch_master_preview.html" style="color:var(--accent-blue);text-decoration:none;">design/ui/batch_master_preview.html</a></b></span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc">
+    <div class="toc-title">目录</div>
+    <a href="#s0">结论</a>
+    <a href="#s1">现在为什么累</a>
+    <a href="#s2">三种做法</a>
+    <a href="#s3">推荐的交互</a>
+    <a href="#s4">实现要点</a>
+    <a href="#s5">会影响到什么</a>
+    <a href="#s6">风险与不做的事</a>
+    <a href="#s7">验收清单</a>
+  </nav>
+
+  <main>
+
+    <section id="s0">
+      <h2><span class="idx">00</span>结论</h2>
+      <p>做<strong>多选模式</strong>：在词表页长按任意单词（或从「更多」菜单点「批量选择」）进入多选，勾选后底部操作条一次标记掌握；顶部「全选」把当前筛选下的全部未掌握词一次选中。</p>
+      <p>附带一个<strong>单个词的提速</strong>：左滑露出「掌握」后继续滑到底松手，直接掌握，不必再点一次按钮。两件事合起来，零星几个词不用两次操作，成批的词不用一个一个来。</p>
+    </section>
+
+    <section id="s1">
+      <h2><span class="idx">01</span>现在为什么累</h2>
+      <p>词表页每一行的「掌握」只存在于左滑出来的操作面板里（<span class="loc">app/lib/page/word_list/word_list.dart:2261-2312</span>）。要掌握 N 个词，就要 N 次「左滑 → 找准按钮 → 点」。这条路上没有任何"一次处理多个"的入口：</p>
+      <ul>
+        <li>长按单词目前是打开单词详情页（<span class="loc">app/lib/page/word_list/word_list.dart:2256</span>），不能用来多选。</li>
+        <li>单词详情页里能看的只有单词本身，没有批量操作。</li>
+        <li>「状态筛选」只改变列表显示范围（<span class="loc">app/lib/page/word_list/word_list.dart:4036</span>），筛出来之后仍然要一个一个掌握。</li>
+      </ul>
+      <p>每点一次「掌握」，客户端都要走一遍完整的单条写入（<span class="loc">app/lib/db/dao.dart:2060</span> → <span class="loc">app/lib/db/dao.dart:1943</span>）：开一个事务、查一次是否已掌握、查一次当前最大序号、插一行词条、重算一次词书词数、重算一次用户已掌握数。其中重算用户已掌握数还会顺带跑段位判定与勋章判定（<span class="loc">app/lib/db/dao.dart:2092-2121</span>）。<strong>连点 100 个词，这套动作就重复 100 遍</strong>，量大时手机会明显发烫、卡顿，同步也要被触发 100 次。</p>
+    </section>
+
+    <section id="s2">
+      <h2><span class="idx">02</span>三种做法</h2>
+      <table>
+        <tr><th>做法</th><th>怎么用</th><th>优点</th><th>代价</th></tr>
+        <tr>
+          <td>多选模式</td>
+          <td>长按 / 菜单进入，勾选后底部条执行</td>
+          <td>批量、可精确控制、能全选</td>
+          <td>要新增一套选择态界面与批量写库</td>
+        </tr>
+        <tr>
+          <td>筛选结果一键掌握</td>
+          <td>筛出「未学习」后点一个按钮，整批标记</td>
+          <td>一次点击最快</td>
+          <td>没有"这批里这三个先留着"的余地；误点一次不可挽回</td>
+        </tr>
+        <tr>
+          <td>左滑滑到底直接掌握</td>
+          <td>一个词一次滑动，松手即执行</td>
+          <td>改动最小，单位操作快一倍</td>
+          <td>仍然是一个一个，解决不了成批</td>
+        </tr>
+      </table>
+      <p>我建议<strong>把「筛选结果一键掌握」并进多选的全选</strong>：全选本身就是"当前筛选下所有未掌握的词一次选中"，效果一样，但用户在按下去之前亲眼看到选中了多少个，比一个来路不明的"一键"安全得多。</p>
+    </section>
+
+    <section id="s3">
+      <h2><span class="idx">03</span>推荐的交互</h2>
+
+      <div class="fig">
+        <div>
+          <img src="ui/png/batch_master_preview.png" alt="多选态原型">
+          <div class="cap">多选态：左侧序号变成勾选圈，顶部显示已选数量与全选入口，底部固定操作条。</div>
+        </div>
+        <div class="fig-notes">
+          <div class="state-list">
+            <div class="state-item"><b>进入：</b>长按任意单词，进入多选并选中该词；「更多」菜单里也加一项「批量选择」，保证不用猜也能找到。</div>
+            <div class="state-item"><b>选择：</b>点整行切换勾选，左侧序号变成勾选圈；勾中的行给一层极淡的绿色底与描边。</div>
+            <div class="state-item"><b>全选：</b>顶部「全选 N」，N 是当前筛选下还没掌握的词数；按一次全选，再按一次取消全选。</div>
+            <div class="state-item"><b>底部操作条：</b>左边显示「已选 N 个」，主按钮「标记掌握」；次按钮「移出词表」（即删除词条，走原有删除逻辑）；「更多」放「加入生词本」。</div>
+            <div class="state-item"><b>确认：</b>点「标记掌握」先弹确认卡，说清去向与后果，再执行。</div>
+            <div class="state-item"><b>完成：</b>这批词从当前列表即时消失（在「已掌握」视图下是不出现），顶部词数与三态计数同步刷新，Toast「已掌握 N 个单词」。</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>确认卡文案</h3>
+      <p>标题：「将 <b>N</b> 个词标记为已掌握？」正文：「它们会立即进入「已掌握」词表，不再出现在今天的学习任务里；当天已开始的学习进度不会倒退。之后想重新背，需要到「已掌握」里逐个点「重学」。」</p>
+      <div class="callout">
+        <b>为什么必须解释"进度不会倒退"</b>：用户最怕的是点了之后当天的打卡进度环往回缩。现有单条掌握在当天已开始学习时，会把该词今日的环节数补满（<span class="loc">app/lib/db/dao.dart:2071-2082</span>），批量必须沿用同一条规则，并把这句话写进确认卡，让用户敢按。
+      </div>
+
+      <h3>左滑滑到底直接掌握（附带的单个提速）</h3>
+      <p>现有左滑面板用的是 <code>flutter_slidable</code>（<span class="loc">app/lib/page/word_list/modes/word_list_item_layout.dart:210</span>），它自带"滑过阈值松手即触发"的能力。给「掌握」这一个动作接上：滑到一半只是露出按钮，继续滑过阈值再松手才执行，滑到底的过程中按钮逐渐放大并给一次触感反馈，让用户知道"这一滑会生效"。</p>
+      <div class="callout warn">
+        <b>取舍</b>：这个动作不可撤销（见第 06 节），误滑的代价是真实的。所以只对「掌握」启用滑到底，删除、重学、编辑这些都不启用；同时阈值设为整条宽度的一半以上，滑不到就弹回。
+      </div>
+
+      <h3>不新增的东西</h3>
+      <ul>
+        <li>不新增独立的「批量掌握」页面：批量操作发生在用户已经在看的那张词表上，选中谁、掌握谁，一眼能对上。</li>
+        <li>不做撤销条：撤销若要无损，就得额外记住每个词原来的学习进度与批次位置，为一个低频操作加一套状态，不划算。用确认卡拦住误操作。</li>
+      </ul>
+    </section>
+
+    <section id="s4">
+      <h2><span class="idx">04</span>实现要点</h2>
+
+      <h3>4.1 写库只开一次事务</h3>
+      <p>新增一个批量方法（位置在 <span class="loc">app/lib/db/dao.dart</span> 的 <code>MasteredWordsDao</code> 里，紧挨现有 <code>saveMasteredWord</code> 与 <code>setLearningWordAsMastered</code>），一次事务里做完：</p>
+      <ol>
+        <li>查一次「已掌握」词书 ID；查一次这批词里哪些已经在词书里，先减掉（重复点不会写出重复行）。</li>
+        <li>查一次当前最大序号，给剩下的词按顺序分配序号，批量插入词条（每行照旧生成一条同步日志）。</li>
+        <li>重算一次词书词数；重算一次用户已掌握数（段位与勋章判定因此只跑一次）。</li>
+        <li>按单条的同一规则处理学习进度：当天学习已开始时把这批词的今日环节数补满；还没开始时删掉它们规划中的学习记录。</li>
+      </ol>
+      <p>整批要么全成功，要么整批回滚并报错。<strong>不允许出现"成功了一半、界面却显示全部成功"</strong>。</p>
+
+      <h3>4.2 掌握规则不许另写一套</h3>
+      <p>批量必须与单条完全同源。当前单条的规则写在 <span class="loc">app/lib/db/dao.dart:2060-2088</span>：进「已掌握」词书、当天已开始就补满今日环节、未开始就删学习记录。批量不能复制一份然后各改各的，应当把这段规则收成一个方法，单条与批量都调用它，批量只是把"一个词"换成"一批词"、把逐条查询换成批量查询。</p>
+
+      <h3>4.3 全选的数量与范围</h3>
+      <p>「全选 N」里的 N，取当前筛选条件下的未掌握词数，现成可用的是三态统计（<span class="loc">app/lib/api/bo/word_bo.dart:2005</span>）与按筛选取全部词 ID 的查询（<span class="loc">app/lib/api/bo/word_bo.dart:1996</span> 的 <code>_getVisibleWordIdSet</code>，本次改为公开方法供页面调用）。<strong>不能只取"已经加载出来的这一屏"</strong>：用户看到的 N 是 320，按下去就该是 320 个，而不是 30 个。</p>
+
+      <h3>4.4 界面改动落点</h3>
+      <ul>
+        <li>选择状态与批量动作放在词表页的控制器里（<span class="loc">app/lib/page/word_list/word_list_controller.dart</span>，与现有 <code>masterWord</code> 第 659 行并列）。</li>
+        <li>每行的左侧序号位增加"勾选圈"展示（<span class="loc">app/lib/page/word_list/modes/word_list_item_layout.dart:221</span> 的左侧列）。</li>
+        <li>顶部栏在多选态切换成「取消 / 已选 N 个 / 全选 N」（<span class="loc">app/lib/page/word_list/word_list.dart:3342</span>）。</li>
+        <li>长按进入多选（<span class="loc">app/lib/page/word_list/word_list.dart:2256</span> 的 <code>_handleWordLongPress</code>）；单词详情仍可从左滑面板的「详情」进入，能力不丢。</li>
+        <li>完成后刷新：今天计划页已经在监听掌握事件（<span class="loc">app/lib/page/today_plan.dart:419</span>），批量完成发一次事件即可，不必发 N 次。</li>
+      </ul>
+    </section>
+
+    <section id="s5">
+      <h2><span class="idx">05</span>会影响到什么</h2>
+      <table>
+        <tr><th>地方</th><th>会怎样</th></tr>
+        <tr><td>今日任务</td><td>这批词从今天的学习与复习里消失；当天已开始的学习进度不倒退。今日计划页、首页书桌卡片即时刷新。</td></tr>
+        <tr><td>打卡</td><td>不会因为掌握而少算。当天已开始的词仍按"已走完环节"计入，与现在单条掌握一致。</td></tr>
+        <tr><td>段位与勋章</td><td>已掌握词数一次涨 N，可能当场跳段或点亮词汇勋章。这是正确结果，但要在完成提示里让用户知道「已掌握词数 +N」。</td></tr>
+        <tr><td>端云同步</td><td>N 个词就是 N 条词条日志，一次同步上传。3000 个词约 600KB，远低于服务端 5MB 上限。</td></tr>
+        <tr><td>随身听 / 书签</td><td>批量移出会改变列表长度，书签位置按现有规则前移，不需要额外处理。</td></tr>
+      </table>
+    </section>
+
+    <section id="s6">
+      <h2><span class="idx">06</span>风险与不做的事</h2>
+      <div class="callout danger">
+        <b>不可撤销是最大的风险</b>：取消掌握不等于撤销。它会把词移进生词本、删掉学习进度，是从零重学（<span class="loc">app/lib/db/dao.dart:1990-2004</span>、<span class="loc">app/lib/api/bo/word_bo.dart:2029</span>）。所以批量入口必须满足三条：确认卡写明后果、全选数量始终可见、执行中锁住按钮防连点。
+      </div>
+      <ul>
+        <li><strong>不做</strong>「一键掌握整本词书」的独立按钮：它就是全选，单独再做一个只是多一条误点路径。</li>
+        <li><strong>不做</strong>撤销条与二次恢复：为一个低频操作引入一套历史状态，长期维护成本高于收益。</li>
+        <li><strong>不做</strong>长按后的二级菜单：长按直接进多选并选中该词，一步到位。</li>
+        <li><strong>暂不做</strong>「按学习状态批量掌握」（例如"把学习中全部标为掌握"）：筛选后全选已经能覆盖，且这种入口最容易被误点。</li>
+      </ul>
+    </section>
+
+    <section id="s7">
+      <h2><span class="idx">07</span>验收清单</h2>
+      <ul class="checklist">
+        <li>长按任意单词进入多选并选中该词；「更多 → 批量选择」也能进入。</li>
+        <li>勾选、取消勾选、全选、取消全选，顶部数量与底部数量始终一致。</li>
+        <li>「全选 N」的 N 等于当前筛选下的未掌握词数，不是已加载页数。</li>
+        <li>批量掌握后：这批词从当前列表消失，三态计数、标题词数、「已掌握」词书词数、个人页已掌握数四处一致。</li>
+        <li>当天学习已开始时批量掌握，打卡进度环不倒退；未开始时，规划中的学习记录被删除。</li>
+        <li>同一批词重复标记，不产生重复词条，已掌握数不重复增长。</li>
+        <li>批量过程中断网或写库失败，整批不落库、界面不显示成功，并给出错误提示。</li>
+        <li>左滑滑到底松手能直接掌握；滑不到阈值弹回，不会误执行。</li>
+        <li>单元测试覆盖：批量去重、今日进度补满、未开始删记录、全选范围取全量。</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

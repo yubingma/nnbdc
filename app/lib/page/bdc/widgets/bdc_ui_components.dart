@@ -1862,6 +1862,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                         bdcNotifierProvider.select((s) => s.isScorePassed));
                     final isAiEvaluating = ref.watch(
                         bdcNotifierProvider.select((s) => s.isAiEvaluating));
+                    // 本轮开口的结论：用户说完后必须看见"听到了什么、对不对"，
+                    // 否则判错与"程序没反应"在界面上完全一样。
+                    final roundHeardText = ref.watch(
+                        bdcNotifierProvider.select((s) => s.asrRoundHeardText));
 
                     final bool isChineseInput =
                         state.studyStep == StudyStep.en2Ch.json ||
@@ -1881,6 +1885,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             isScorePassed: isScorePassed,
                             isSentenceStep: isSentence,
                             isAiEvaluating: isAiEvaluating,
+                            roundHeardText: roundHeardText,
                           )
                         : EnglishAsrInputWidget(
                             controller: notifier.meaningController,
@@ -1893,6 +1898,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             isScorePassed: isScorePassed,
                             isSentenceStep: isSentence,
                             isAiEvaluating: isAiEvaluating,
+                            roundHeardText: roundHeardText,
                           );
                   },
                 ),

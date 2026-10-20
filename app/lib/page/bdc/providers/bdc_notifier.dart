@@ -119,6 +119,9 @@ class BdcNotifier extends _$BdcNotifier {
   Timer? _checkAsrDebounceTimer;
   Timer? _wordPassDebounceTimer;
   Timer? _wordAiRefereeDebounceTimer;
+  /// 「这一轮什么都没听清」的停顿计时器：与裁判去抖分开，语义不同
+  ///（一个是我要请教大模型，一个是我压根没有可判的文字），不能共用一个计时器。
+  Timer? _heardNothingTimer;
   Timer? _autoJumpTimer;
   Timer? _showWordDetailTimer;
   /// 本词已被裁判判错的答案 → 上次给出的判错说明。同一个答案再次出现时直接重讲，
@@ -194,6 +197,8 @@ class BdcNotifier extends _$BdcNotifier {
     _wordPassDebounceTimer = null;
     _wordAiRefereeDebounceTimer?.cancel();
     _wordAiRefereeDebounceTimer = null;
+    _heardNothingTimer?.cancel();
+    _heardNothingTimer = null;
     _sentenceAiRefereeDebounceTimer?.cancel();
     _sentenceAiRefereeDebounceTimer = null;
   }
@@ -872,6 +877,7 @@ class BdcNotifier extends _$BdcNotifier {
       lastFsrsRating: null,
       lastFsrsRatingReason: null,
       currentAsrCandidates: [],
+      asrRoundHeardText: null, // 换词：上一词的"没听清/不对"结论不能带到新词
       loadError: null, // Successfully loaded a word, clear error
       loadErrorCause: null,
       tabIndex: newTabIndex,
@@ -1298,7 +1304,10 @@ class BdcNotifier extends _$BdcNotifier {
       showSentenceWordMeaning: false,
       currentScore: null,
       currentAsrCandidates: [],
+      asrRoundHeardText: null, // 练习＝这一轮重来，上一轮的判错结论作废
     );
+    _heardNothingTimer?.cancel();
+    _heardNothingTimer = null;
     sentenceAnswerController.text = "";
     _accumulatedAsrText = "";
     _lastFinalAsrText = "";
@@ -1774,7 +1783,10 @@ class BdcNotifier extends _$BdcNotifier {
         wordWrapper: wrapper,
         isUpdatingByHint: !state.isUpdatingByHint,
         currentAsrCandidates: [],
+        asrRoundHeardText: null, // 用户主动清空＝重新作答，旧结论作废
       );
+      _heardNothingTimer?.cancel();
+      _heardNothingTimer = null;
       // 例句环节已答对时,点"清空"自动进入练习模式(可继续语音练习,评分不改变测评结果)
       final bool isSentenceStep = state.studyStep == StudyStep.enSentence2Ch.json ||
           state.studyStep == StudyStep.chSentence2En.json;
@@ -2397,6 +2409,14 @@ class BdcNotifier extends _$BdcNotifier {
       best = best.replaceAll(repeatPattern, '').trim();
       candidates = candidates.map((c) => c.replaceAll(repeatPattern, '').trim()).toList();
 
+      // 用户又开口说话了：上一轮"没听清 / 说得不对"的结论已经过时，先撤掉再判这一轮。
+      // 只在真的听到字时才撤（空帧频繁到达，不能让它把结论闪掉）。
+      if (best.isNotEmpty && state.asrRoundHeardText != null) {
+        _heardNothingTimer?.cancel();
+        _heardNothingTimer = null;
+        state = state.copyWith(asrRoundHeardText: null);
+      }
+
       debugPrint('🔎 [ASR-DIAG] enter step=${state.studyStep} finished=${state.hasFinishedAnswering} '
           'correctHandling=$_isAnswerCorrectHandling practice=$_isPracticeMode '
           'getNext=${state.isGettingNextWord} showHw=${state.showHandwritingBoard} '
@@ -2960,6 +2980,8 @@ class BdcNotifier extends _$BdcNotifier {
 
       if (result.newMatchCount > 0) {
         _wordAiRefereeDebounceTimer?.cancel(); // 本地匹配命中，取消待触发的AI裁判
+        _heardNothingTimer?.cancel(); // 已经听出内容了，不能再挂"没听清"
+        _heardNothingTimer = null;
         // 本句已命中，清掉累积：否则下一句识别会与这一句串接成「竞争性的 好胜的」
         // 这种混合文本，把后一句的释义命中带偏。判过时机由停顿去抖独立把关
         //（见 _scheduleWordPassOnSilence），不依赖这里的累积文本。
@@ -2971,6 +2993,8 @@ class BdcNotifier extends _$BdcNotifier {
           isAiEvaluating: false,
           canLeaveCurrWord: true,
           wordWrapper: clonedWrapper,
+          // 这一轮已经听对了：上一轮残留的"没听清/不对"结论必须撤掉
+          asrRoundHeardText: null,
         );
         // ⚡ 极速听觉反馈：在正确答案视觉点亮的同一瞬间，立即触发播放正确反馈音！
         // 彻底消除由于后续异步关麦、FSRS 评分计算等排队造成的音效滞后感
@@ -3068,7 +3092,8 @@ class BdcNotifier extends _$BdcNotifier {
         // AI 裁判只兜底本地一个释义都识别不出的回答。
         if (result.matchedCount == 0) {
           // 语音"说中文"未匹配：落到单词 AI 裁判判定（原逻辑不变）。
-          _scheduleWordAiRefereeCheck(inputs);
+          // spoken 只影响"没有可判文字时要不要提示没听清"：键盘只敲了一个字不算没听清。
+          _scheduleWordAiRefereeCheck(inputs, spoken: isVoice);
         }
       }
     } else if (state.studyStep == StudyStep.ch2En.json) {
@@ -4385,6 +4410,23 @@ class BdcNotifier extends _$BdcNotifier {
     return true;
   }
 
+  /// 一次开口没有可判文字（识别为空、或只剩一个字的杂音）时，停顿后给出「没听清」。
+  ///
+  /// 此前这种情况整条链路一个字都不发：界面从「正在倾听...」悄悄退回「请说中文释义」，
+  /// 和从没开口长得一模一样，用户只能靠"什么都没发生"猜是不是程序死了。
+  ///
+  /// 去抖是必须的：识别帧会持续涌入（用户还在说），任何一帧出现可判文字都会走
+  /// [_scheduleWordAiRefereeCheck]，在那里把这个计时器取消掉，不会误报。
+  void _scheduleHeardNothingHint() {
+    _heardNothingTimer?.cancel();
+    _heardNothingTimer = Timer(const Duration(milliseconds: 1500), () {
+      _heardNothingTimer = null;
+      if (_isDisposed || state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+      if (_isWordAiRefereeJudging) return;
+      state = state.copyWith(asrRoundHeardText: "");
+    });
+  }
+
   /// 本地一个释义都没命中时，把用户的中文答案交给大模型裁判兜底。
   ///
   /// 语音"说中文"用默认的 1500ms 停顿防抖（识别帧会持续涌入，必须等用户说完）；
@@ -4392,14 +4434,25 @@ class BdcNotifier extends _$BdcNotifier {
   ///
   /// 返回 true 表示裁判已接手；返回 false 表示裁判不接（状态不允许/答案太短不值得烧额度/
   /// 本词频次已用尽），此时调用方必须自己给出判错反馈——否则用户点了「提交」将毫无动静。
-  bool _scheduleWordAiRefereeCheck(List<String> inputs, {bool immediate = false}) {
+  ///
+  /// [spoken] 表示这次作答来自语音识别：只有语音才有"没听清"这回事（键盘敲一个字不是没听清）。
+  bool _scheduleWordAiRefereeCheck(List<String> inputs,
+      {bool immediate = false, bool spoken = false}) {
     _wordAiRefereeDebounceTimer?.cancel();
     if (state.hasFinishedAnswering || _isAnswerCorrectHandling || _isWordAiRefereeJudging) return false;
     if (state.studyStep != StudyStep.en2Ch.json) return false;
 
     final String asrText = inputs.isNotEmpty ? inputs.first : meaningController.text;
     final cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
-    if (cleanInput.length < 2) return false; // 避免单字/助词杂音（如“啊/嗯”）浪费大模型Token
+    if (cleanInput.length < 2) {
+      // 避免单字/助词杂音（如“啊/嗯”）浪费大模型Token；但"裁判不接"不等于"什么都不用说"。
+      // 语音路径必须自己补一句「没听清」，中文默写则由提交方给出它自己那句判错提示。
+      if (spoken && !immediate && !state.isChineseDictation) _scheduleHeardNothingHint();
+      return false;
+    }
+    // 有可判文字了：读这一轮还挂着的「没听清」结论作废
+    _heardNothingTimer?.cancel();
+    _heardNothingTimer = null;
 
     // 单词请求频次上限
     if (_wordAiEvaluationCountForCurrentWord >= 5) return false;
@@ -4422,7 +4475,11 @@ class BdcNotifier extends _$BdcNotifier {
       List<String> inputs, int matchedCountAtSchedule) async {
     // 同一个答案刚判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
     // 只能放在停顿回调里——调度入口每一帧识别都会进一次，提示会刷屏。
-    if (_remindAlreadyJudgedAnswer(cleanInput)) return;
+    if (_remindAlreadyJudgedAnswer(cleanInput)) {
+      // 说明只弹一次就会被忽略，状态行上的"听到的是哪句"要留在屏幕上
+      state = state.copyWith(asrRoundHeardText: AsrUtil.heardEchoText(asrText, cleanInput));
+      return;
+    }
     await _evaluateWordWithAiReferee(cleanInput,
         rawInput: asrText,
         candidates: inputs,
@@ -4566,7 +4623,13 @@ class BdcNotifier extends _$BdcNotifier {
       } else {
         _failedWordAiEvaluationsForCurrentWord[cleanInput] = explanation;
         wordWrapper.isAiEvaluating = false;
-        state = state.copyWith(isAiEvaluating: false);
+        state = state.copyWith(
+          isAiEvaluating: false,
+          // 判"不对"必须落到界面上：自动兜底裁判没有对话框、也不是中文默写，
+          // 此前这里一个提示都不发，用户看到的只是"说完之后什么都没发生"，
+          // 与程序卡死无法区分。回显原话还能顺带回答"是不是网络没识别出来"。
+          asrRoundHeardText: AsrUtil.heardEchoText(rawInput, cleanInput),
+        );
         final confusableHint = AiRefereeUtil.confusableWordHint(
           userAnswer: cleanInput,
           confusedWord: refereeResult.confusedWord,
@@ -4655,7 +4718,13 @@ class BdcNotifier extends _$BdcNotifier {
 
     final rawInput = inputs.isNotEmpty ? inputs.first : meaningController.text;
     final cleanInput = rawInput.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-    if (cleanInput.length < 2) return;
+    if (cleanInput.length < 2) {
+      // 没有可判的发音（空帧/一个音的口水音）：裁判不接，但同样不能让界面一片死寂。
+      _scheduleHeardNothingHint();
+      return;
+    }
+    _heardNothingTimer?.cancel();
+    _heardNothingTimer = null;
 
     // 本次停顿覆盖到的整段识别文本：裁判往返期间用户可能已经开口说下一个词，基线必须
     // 推进到这里，而不是推进到回调执行时的最新整段——否则等待期间说的词会被当成已判过
@@ -4675,7 +4744,10 @@ class BdcNotifier extends _$BdcNotifier {
 
       // 同一个词刚判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
       // 只能放在停顿回调里——调度入口每一帧识别都会进一次，提示会刷屏。
-      if (_remindAlreadyJudgedAnswer(cleanInput)) return;
+      if (_remindAlreadyJudgedAnswer(cleanInput)) {
+        state = state.copyWith(asrRoundHeardText: AsrUtil.heardEchoText(rawInput, cleanInput));
+        return;
+      }
       if (_wordAiEvaluationCountForCurrentWord >= 5) return;
 
       await _evaluateCh2EnWithAiReferee(
@@ -4782,7 +4854,11 @@ class BdcNotifier extends _$BdcNotifier {
       } else {
         _failedWordAiEvaluationsForCurrentWord[cleanInput] = explanation;
         wordWrapper.isAiEvaluating = false;
-        state = state.copyWith(isAiEvaluating: false);
+        state = state.copyWith(
+          isAiEvaluating: false,
+          // 同英中环节：判"不对"必须让用户看见，否则"说完没反应"与"程序死了"无法区分。
+          asrRoundHeardText: AsrUtil.heardEchoText(rawInput, cleanInput),
+        );
         if (isSynonym && explanation.isNotEmpty) {
           ToastUtil.info(explanation, autoCloseDuration: const Duration(seconds: 4));
         } else if (context != null && context.mounted) {

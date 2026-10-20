@@ -81,6 +81,8 @@ class WordListAsrController extends ChangeNotifier {
     required String targetSpell,
     required WordWrapper? activeWord,
     required Function(String matchedResult) onMatchChecked,
+    /// 这一帧没有任何可判文字时的回调（说中文/说英文）：页面据此在停口后给「没听清」。
+    VoidCallback? onEmptyResult,
   }) async {
     final startTime = DateTime.now().millisecondsSinceEpoch;
     Global.logger.d("~~~~~收到语音识别原始结果: $event");
@@ -168,7 +170,15 @@ class WordListAsrController extends ChangeNotifier {
     }
 
     Global.logger.d("~~~~~语音识别最终结果: $newAsrResult (耗时: ${DateTime.now().millisecondsSinceEpoch - startTime}ms)");
-    
+
+    // 这一帧什么都没听出来：说中文/说英文必须让页面知道，否则界面上一片死寂，
+    // 用户分不清"没听到"与"程序卡死"（与背单词页同一套语义）。
+    if (newAsrResult.isEmpty &&
+        (studyMode == WordListStudyMode.speakChinese ||
+            studyMode == WordListStudyMode.speakEnglish)) {
+      onEmptyResult?.call();
+    }
+
     if (newAsrResult != asrResult) {
       asrResult = newAsrResult;
       if (activeWord != null) {

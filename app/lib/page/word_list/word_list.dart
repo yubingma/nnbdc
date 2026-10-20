@@ -277,7 +277,9 @@ class WordListPageState extends State<WordListPage>
           word.answeredAllMeanings = false;
           word.lastAsrResult = null;
           word.pronunciationScore = null;
+          word.roundHeardText = null;
           _aiRefereeDebounceTimer?.cancel();
+          _roundVerdictTimer?.cancel();
           _failedAiEvaluationsForCurrentWord.clear();
           _aiEvaluationCountForCurrentWord = 0;
           _isAiRefereeJudging = false;
@@ -364,6 +366,10 @@ class WordListPageState extends State<WordListPage>
   bool canLeaveCurrWord = false;
 
   Timer? _aiRefereeDebounceTimer;
+  /// 「这一轮说完了」的停顿计时器：等用户停口后，把"听到了什么、对不对"写到答题行上。
+  ///
+  /// 说错与没听清都必须有结论，否则界面上它们和"程序卡死"长得一模一样（与背单词页同一套语义）。
+  Timer? _roundVerdictTimer;
   bool _isAiRefereeJudging = false;
   final Set<String> _failedAiEvaluationsForCurrentWord = {};
   int _aiEvaluationCountForCurrentWord = 0;
@@ -746,6 +752,10 @@ class WordListPageState extends State<WordListPage>
       onMatchChecked: (matchedResult) {
         checkAsrResult(matchedResult);
       },
+      onEmptyResult: () {
+        // 停口 1.5 秒后若仍然没听到任何文字，行上给「没听清，再说一遍」
+        _scheduleRoundVerdict(bookmarkedIndex, targetWord, '');
+      },
     );
   }
 
@@ -761,6 +771,14 @@ class WordListPageState extends State<WordListPage>
 
     if (asr.state != AsrState.started) {
       return;
+    }
+
+    // 用户又开口说话了：上一轮的结论已经过时，先撤掉再判这一轮。
+    // 只在真的听到字时才撤（空帧不能把结论闪掉，否则用户还没看清就没了）。
+    if (asrResult.trim().isNotEmpty && words[currWordIndex].roundHeardText != null) {
+      _roundVerdictTimer?.cancel();
+      _roundVerdictTimer = null;
+      setState(() => words[currWordIndex].roundHeardText = null);
     }
 
     try {
@@ -786,6 +804,7 @@ class WordListPageState extends State<WordListPage>
         }
 
         if (isMatch) {
+          _roundVerdictTimer?.cancel();
           canLeaveCurrWord = true;
           words[currWordIndex].answeredAllMeanings = true;
           words[currWordIndex].speakEnglishPassed = true;
@@ -807,6 +826,11 @@ class WordListPageState extends State<WordListPage>
           } catch (e) {
             Global.logger.d("播放发音失败: $e");
           }
+        } else {
+          // 没通过：说英文没有大模型裁判，这一行是用户唯一能看到的结局。
+          // 不提示的话，"说错了"与"麦克风没反应"在界面上完全一样。
+          _scheduleRoundVerdict(currWordIndex, words[currWordIndex],
+              AsrUtil.heardEchoText(inputText, inputText));
         }
       } else if (studyMode == WordListStudyMode.translateSentence) {
         // 翻译例句模式：检查例句中文翻译
@@ -868,6 +892,8 @@ class WordListPageState extends State<WordListPage>
 
         if (result.newMatchCount > 0) {
           _aiRefereeDebounceTimer?.cancel();
+          _roundVerdictTimer?.cancel();
+          words[currWordIndex].roundHeardText = null; // 这一轮已经听对了，旧的判错结论必须撤掉
           bool isPass = false;
           switch (asrPassRule) {
             case 'HALF':
@@ -1000,6 +1026,7 @@ class WordListPageState extends State<WordListPage>
   void dispose() {
     final sw = Stopwatch()..start();
     _aiRefereeDebounceTimer?.cancel();
+    _roundVerdictTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
 
     // 停止 ASR：不再检查 studyMode，只要页面销毁就无条件尝试停止识别引擎并转换状态机到 idle
@@ -1715,9 +1742,18 @@ class WordListPageState extends State<WordListPage>
     if (wordWrapper.answeredAllMeanings) return;
 
     final cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
-    if (cleanInput.length < 2) return;
+    if (cleanInput.length < 2) {
+      // 没有可判文字（空帧/单字杂音）：裁判不接，但界面上不能什么都不说。
+      _scheduleRoundVerdict(wordIndex, wordWrapper, '');
+      return;
+    }
 
-    if (_failedAiEvaluationsForCurrentWord.contains(cleanInput)) return;
+    if (_failedAiEvaluationsForCurrentWord.contains(cleanInput)) {
+      // 这个答案刚判过错：不再烧裁判额度，但"听到的是哪句"要留在行上。
+      setState(() =>
+          wordWrapper.roundHeardText = AsrUtil.heardEchoText(asrText, cleanInput));
+      return;
+    }
     if (_aiEvaluationCountForCurrentWord >= 5) return;
 
     _aiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
@@ -1829,6 +1865,9 @@ class WordListPageState extends State<WordListPage>
         }
       } else {
         _failedAiEvaluationsForCurrentWord.add(cleanInput);
+        // 判"不对"必须落到行上：这个词表模式没有对话框，此前这里一个提示都不发，
+        // 用户看到的只是"说完之后什么都没发生"，与程序卡死无法区分。
+        wordWrapper.roundHeardText = AsrUtil.heardEchoText(userInput, cleanInput);
         // 形近词张冠李戴：点明"你答的是哪个词的意思"，帮用户把两个词分开记（与背单词页一致）。
         final confusableHint = AiRefereeUtil.confusableWordHint(
           userAnswer: cleanInput,
@@ -2138,7 +2177,29 @@ class WordListPageState extends State<WordListPage>
       word.speakEnglishPassed = false;
       word.pronunciationScore = null;
       word.lastAsrResult = null;
+      word.roundHeardText = null;
     }
+    _roundVerdictTimer?.cancel();
+    _roundVerdictTimer = null;
+  }
+
+  /// 把"这一轮开口的结论"写到这一行上（[heardText] 为空字符串表示什么都没听到）。
+  ///
+  /// 停顿 1.5 秒才写：识别帧会持续涌入，用户还在说时不能抢答式地判错。
+  void _scheduleRoundVerdict(int wordIndex, WordWrapper wordWrapper, String heardText) {
+    _roundVerdictTimer?.cancel();
+    _roundVerdictTimer = Timer(const Duration(milliseconds: 1500), () {
+      _roundVerdictTimer = null;
+      if (!mounted) return;
+      if (_isAiRefereeJudging) return;
+      if (wordWrapper.answeredAllMeanings) return;
+      if (getBookMarkUiPosition() != wordIndex) return;
+      if (studyMode != WordListStudyMode.speakChinese &&
+          studyMode != WordListStudyMode.speakEnglish) {
+        return;
+      }
+      setState(() => wordWrapper.roundHeardText = heardText);
+    });
   }
 
   Widget _buildWordDecoration(
@@ -2646,6 +2707,9 @@ class WordListPageState extends State<WordListPage>
   void clearHint(WordWrapper word) {
     setState(() {
       word.hintLetterCount = 0;
+      // 用户主动清空＝重新作答：上一轮的结论作废
+      _roundVerdictTimer?.cancel();
+      word.roundHeardText = null;
       // 在背英文和翻译例句模式下，清除提示时也清空识别结果
       if (studyMode == WordListStudyMode.speakEnglish ||
           studyMode == WordListStudyMode.translateSentence) {

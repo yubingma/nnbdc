@@ -183,6 +183,21 @@ class AsrUtil {
     return result;
   }
 
+  /// 判错回显的最大字数。
+  ///
+  /// 答题区的状态行只有一行小字，而识别结果是整段累积的（见术语表「语音识别整段累积」），
+  /// 不截断会被缩到看不清。
+  static const int heardEchoMaxChars = 20;
+
+  /// 判错回显给用户的原话：优先未去标点的原句（更接近用户实际说的那句话），超长截断。
+  ///
+  /// 背单词页与词表页的"听到的是「这句」，不对"共用这一个口径，不许各写一套。
+  static String heardEchoText(String? rawInput, String cleanInput) {
+    final text = (rawInput ?? '').trim().isNotEmpty ? rawInput!.trim() : cleanInput;
+    if (text.length <= heardEchoMaxChars) return text;
+    return '${text.substring(0, heardEchoMaxChars)}…';
+  }
+
   /// 预处理语音识别结果
   /// 主要处理发音相似的中英文替换，并将阿拉伯数字转换为中文数字
   static String preprocess(String result) {

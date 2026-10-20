@@ -165,6 +165,11 @@ class BrickPageState extends State<BrickPage>
   int opponentHp = 10;
   static const int maxHp = 10;
 
+  /// 方块高度与"0 层堆叠时一题的下落时间"。
+  /// 这两个值同时决定客户端速度和上报给服务端的节奏，改动后服务端会自动跟随。
+  static const double brickHeight = 58.0;
+  static const double baseFallSeconds = 6.2;
+
   /// 我方生命值由底部死词层数唯一决定：堆满 10 层即防线失守。
   /// 这样"堆叠高度 / 血条 / 服务端 stackRows"三者天然是同一个事实，不会再各算一套。
   int get myHp => max(0, maxHp - stackRows.length);
@@ -566,7 +571,25 @@ class BrickPageState extends State<BrickPage>
 
     _wordPack.reset();
     _spellByIndex.clear();
+    _reportGamePacing();
     _requestWordPack(0);
+  }
+
+  /// 把本局真实的"初始下落时间 + 每层消耗的行程比例"上报给服务端。
+  /// 服务端用它计算机器人的触底窗口，这样以后只改客户端的 baseFallSeconds
+  /// 或竞技场/行高，服务端会自动跟随，不会留着旧速度常数。
+  void _reportGamePacing() {
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final size = mediaQuery?.size ?? const Size(390, 844);
+    final topPadding = max(mediaQuery?.padding.top ?? 44.0, 16.0);
+    final arenaBottomY = _arenaBottomY(size.height, mediaQuery?.padding.bottom ?? 0.0);
+    final double startY = topPadding + 62.0;
+    final double fallDistance = max(80.0, arenaBottomY - startY - brickHeight / 2);
+    final double rowHeight = _stackRowHeight(arenaBottomY, topPadding);
+    sendUserCmd('GAME_PACING', [
+      (baseFallSeconds * 1000).round(),
+      rowHeight / fallDistance,
+    ]);
   }
 
   void _requestWordPack(int fromIndex) {
@@ -657,12 +680,11 @@ class BrickPageState extends State<BrickPage>
 
     // 1. 生成自上而下缓缓掉落的单一目标英文单词大方块
     const double brickW = 230.0;
-    const double brickH = 58.0;
     final Color color = brickColors[myWordIndex % brickColors.length];
-    // 初始下落时间按约 6.2 秒定：竞技场变高后速度同步放大，避免场地变大把节奏拖慢
+    // 初始下落时间固定为 baseFallSeconds：竞技场变高后速度同步放大，避免场地变大把节奏拖慢
     final double arenaBottomY = _arenaBottomY(size.height, mediaQuery?.padding.bottom ?? 0.0);
-    final double fallDistance = max(80.0, arenaBottomY - startY - brickH / 2);
-    final double speed = fallDistance / 6.2;
+    final double fallDistance = max(80.0, arenaBottomY - startY - brickHeight / 2);
+    final double speed = fallDistance / baseFallSeconds;
 
     bricks.add(BrickItem(
       id: nextBrickId++,
@@ -672,7 +694,7 @@ class BrickPageState extends State<BrickPage>
       y: startY,
       baseX: size.width / 2,
       width: brickW,
-      height: brickH,
+      height: brickHeight,
       speed: speed,
       swingAmplitude: 3.5,
       swingFreq: 1.2,

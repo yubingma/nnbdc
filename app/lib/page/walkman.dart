@@ -28,6 +28,7 @@ import '../util/prefs.dart';
 import '../widget/app_scaffold.dart';
 import '../widget/theme_select_dialog.dart';
 import 'walkman_launcher.dart';
+import 'word_detail.dart';
 
 /// 随身听自然沉浸场景（动态微动态背景 + 原版高保真环境白噪音）
 enum WalkmanScene {
@@ -1329,7 +1330,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                     ),
                   ),
                   // 固定在下方的高透明度播放/暂停控制按钮（无光晕，极简低干扰）
-                  _renderPlayPauseButton(),
+                  _renderBottomControls(),
                   SizedBox(
                     height: isLandscape
                         ? 8.0
@@ -1367,6 +1368,62 @@ class WalkmanPageState extends State<WalkmanPage> {
         ),
       ],
     );
+  }
+
+  /// 底部控制区：常驻的播放/暂停按钮；用户暂停后，上方才淡出「查看详情」入口。
+  /// 听词时它既不可见也不吃点击，保持随身听"基本不用操作"的沉浸感。
+  Widget _renderBottomControls() {
+    final hasScene = currentScene != WalkmanScene.none;
+    final detailColor =
+        (hasScene ? Colors.white : context.themeConfig.textPrimary)
+            .withValues(alpha: 0.38);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedOpacity(
+          opacity: isPaused ? 1 : 0,
+          duration: const Duration(milliseconds: 200),
+          child: IgnorePointer(
+            ignoring: !isPaused,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _openWordDetail,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '查看详情',
+                      style: TextStyle(fontSize: 13, color: detailColor),
+                    ),
+                    Icon(Icons.chevron_right_rounded,
+                        size: 16, color: detailColor),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        _renderPlayPauseButton(),
+      ],
+    );
+  }
+
+  /// 暂停后打开当前单词的详情页。返回时仍是暂停态、同一个词，并重新进入随身听的沉浸全屏。
+  Future<void> _openWordDetail() async {
+    final word = _wordCache[currWordIndex];
+    if (word == null) return;
+    // 详情页是普通页面：先按 App 的全局全屏策略显示系统栏，返回后再切回随身听的沉浸全屏
+    await Prefs.applyFullScreenMode();
+    if (!mounted) return;
+    await context.push('/word_detail',
+        extra: WordDetailPageArgs(word.word, false, null, false,
+            autoPlayWordOnEnter: false));
+    if (!mounted) return;
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   /// 固定在屏幕下方的高透明度低干扰播放/暂停按钮（纯图标，无外围圆圈）

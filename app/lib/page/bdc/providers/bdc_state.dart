@@ -58,6 +58,13 @@ class BdcState extends Equatable {
   final String asrResult;
   final List<String> currentAsrCandidates;
 
+  /// 本轮开口的结论回显（null = 暂无结论）。
+  ///
+  /// 空字符串表示"这一轮根本没听到可判的文字"，非空表示"听到的是这句，但不对"。
+  /// 它只在用户**说完之后**写入一次，重新开口、换词、说中释义时清空；
+  /// 只用于让用户看见"系统听到了什么"，不参与判题、不影响通过与否。
+  final String? asrRoundHeardText;
+
   final bool isKeyboardVisible;
   final bool autoJumpAfterCorrectCh2En;
   final bool autoJumpAfterCorrectEn2Ch;
@@ -165,6 +172,7 @@ class BdcState extends Equatable {
     this.asrState = AsrState.unknown,
     this.asrResult = "",
     this.currentAsrCandidates = const [],
+    this.asrRoundHeardText,
     this.isKeyboardVisible = false,
     this.autoJumpAfterCorrectCh2En = true,
     this.autoJumpAfterCorrectEn2Ch = true,
@@ -255,6 +263,7 @@ class BdcState extends Equatable {
     AsrState? asrState,
     String? asrResult,
     List<String>? currentAsrCandidates,
+    Object? asrRoundHeardText = _sentinel,
     bool? isKeyboardVisible,
     bool? autoJumpAfterCorrectCh2En,
     bool? autoJumpAfterCorrectEn2Ch,
@@ -343,6 +352,9 @@ class BdcState extends Equatable {
       asrState: asrState ?? this.asrState,
       asrResult: asrResult ?? this.asrResult,
       currentAsrCandidates: currentAsrCandidates ?? this.currentAsrCandidates,
+      asrRoundHeardText: asrRoundHeardText == _sentinel
+          ? this.asrRoundHeardText
+          : (asrRoundHeardText as String?),
       isKeyboardVisible: isKeyboardVisible ?? this.isKeyboardVisible,
       autoJumpAfterCorrectCh2En: autoJumpAfterCorrectCh2En ?? this.autoJumpAfterCorrectCh2En,
       autoJumpAfterCorrectEn2Ch: autoJumpAfterCorrectEn2Ch ?? this.autoJumpAfterCorrectEn2Ch,
@@ -431,6 +443,7 @@ class BdcState extends Equatable {
     asrState,
     asrResult,
     currentAsrCandidates,
+    asrRoundHeardText,
     isKeyboardVisible,
     autoJumpAfterCorrectCh2En,
     autoJumpAfterCorrectEn2Ch,

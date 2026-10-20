@@ -174,10 +174,10 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
   /// 小队中心能移到的最大偏移（占画布宽的比例）。
   ///
-  /// 这个值同时决定「走位答题」能不能生效：单词靶在桥两侧 1.45 倍半宽处，弹丸朝正前方飞，
-  /// 玩家必须把小队推到最边上、让弹丸在靶子那一行正好落到靶子上。推得太近（例如 0.24）
-  /// 弹丸到靶子那一行时会差出两百多画布像素，永远打不中。
-  static const double _squadLimit = 0.40;
+  /// 它和 [_wallLane] 是绑定的：墙内侧贴在桥边（1.22 倍半宽）时，弹丸要打到墙心
+  /// 需要约 1.32 的横向比例，而 0.34 的走位范围能推到约 1.38——留了一点余量，
+  /// 同时最右侧成员仍在屏幕内。再收小（例如 0.24）就够不到墙了。
+  static const double _squadLimit = 0.34;
 
   /// 推满杆的走位速度（画布像素/秒）。
   static const double _squadSpeed = 520;
@@ -226,6 +226,11 @@ class _MonsterSpriteState extends State<MonsterSprite>
     return _canvasW * _lerp(0.10, 0.38, k);
   }
 
+  /// 第 [side] 面单词墙的中心横坐标（-1 = 左墙，1 = 右墙）。
+  /// 墙立在墙脚那一行，所以横向位置按墙脚处的桥面半宽算。
+  static double _wallCenterX(int side) =>
+      _canvasW / 2 + side * _wallLane * _bridgeHalf(_wallBaseY);
+
   late final AnimationController _clock = AnimationController(
     vsync: this,
     duration: Duration(milliseconds: (_tTotal * 1000).round()),
@@ -244,6 +249,14 @@ class _MonsterSpriteState extends State<MonsterSprite>
   final List<_WordTarget> _words = [];
   String? _flash; // 判定结果提示
   double _flashUntil = 0;
+
+  /// 答对后飞走的那枚金币在墙的哪一侧：-1 左墙、1 右墙、0 没有动画。
+  int _rewardSide = 0;
+  double _rewardStart = 0;
+
+  /// 上一题结算时小队站的位置。null = 还没有限制（第一题直接出）。
+  double? _askSquadX;
+  double? _askSquadDepth;
 
   /// 增益等级：答对 +1、答错 −1。持久累积，只在重开时归零。
   int _buffLevel = 0;
@@ -269,6 +282,10 @@ class _MonsterSpriteState extends State<MonsterSprite>
     _askDeadline = 0;
     _words.clear();
     _flash = null;
+    _rewardSide = 0;
+    _rewardStart = 0;
+    _askSquadX = null;
+    _askSquadDepth = null;
     _buffLevel = 0;
     _nuts.clear();
     _stars.clear();
@@ -286,6 +303,12 @@ class _MonsterSpriteState extends State<MonsterSprite>
   void _answer(bool correct) {
     _asking = false;
     _askDeadline = _simTime + _gapSeconds; // 空一段，避免一题接一题
+    if (correct) {
+      // 答对：让正确那一面墙顶的金币飞走，这就是「答对的奖赏」看得见的那一下。
+      final _WordTarget hit = _words.firstWhere((w) => w.correct);
+      _rewardSide = hit.x < _canvasW / 2 ? -1 : 1;
+      _rewardStart = _simTime;
+    }
     _words.clear();
     if (correct) {
       _buffLevel++;
@@ -295,7 +318,20 @@ class _MonsterSpriteState extends State<MonsterSprite>
       _flash = '答错了…火力 ×${_fireFactor().toStringAsFixed(2)}（等级 $_buffLevel）';
     }
     _flashUntil = _simTime + 1.6;
+    _askSquadX = _squadX;
+    _askSquadDepth = _squadDepth;
     _questionIndex++;
+  }
+
+  /// 小队是不是已经离开上一题结算时站的位置。
+  ///
+  /// 横向挪出约 1/10 个画布宽，或者前后挪出一段，都算离开。没离开就不出新题，
+  /// 免得玩家还站在上一题的弹道上、新题一出现就被自动打掉一面墙。
+  bool get _squadLeftAskSpot {
+    final double? x = _askSquadX;
+    if (x == null) return true;
+    return (_squadX - x).abs() > 0.10 ||
+        (_squadDepth - (_askSquadDepth ?? 0)).abs() > 60;
   }
 
   /// 开火间隔的倍率（<1 更快）：0.8^增益等级，夹在上下限之间。
@@ -369,22 +405,25 @@ class _MonsterSpriteState extends State<MonsterSprite>
       m.step(dt, _fruits);
     }
 
-    // ---- 出题循环：空一段 → 提问并倒计时 → 判定 → 再空一段
+    // ---- 出题循环：空一段 → 等队伍离开上一题的站位 → 提问并倒计时 → 判定
+    //
+    // 为什么要等队伍挪开：小宠物只朝正前方投掷，玩家站在上一题的位置不动，
+    // 新题的两面墙一挂出来就会被立刻打中其中一面——很多次「明明还没看清就答错了」。
     if (!_asking) {
-      if (_simTime >= _askDeadline) {
+      if (_simTime >= _askDeadline && _squadLeftAskSpot) {
         // 这里 _askDeadline 当「下次出题时刻」用
         _asking = true;
         _askDeadline = _simTime + _askSeconds;
         final _Question q =
             _demoQuestions[_questionIndex % _demoQuestions.length];
         final bool rightCorrect = math.Random().nextBool();
-        final double hw = _bridgeHalf(_wordDepth);
+        _rewardSide = 0; // 新题上来，台子上的金币重新摆好
         _words
           ..clear()
           ..add(_WordTarget(rightCorrect ? q.wrongWord : q.word, !rightCorrect,
-              _canvasW / 2 - _wordLane * hw))
+              _wallCenterX(-1)))
           ..add(_WordTarget(rightCorrect ? q.word : q.wrongWord, rightCorrect,
-              _canvasW / 2 + _wordLane * hw));
+              _wallCenterX(1)));
       }
     } else if (_simTime >= _askDeadline) {
       _answer(false); // 倒计时内没作答 = 答错
@@ -595,6 +634,14 @@ class _MonsterSpriteState extends State<MonsterSprite>
                 child: Image.asset(_bg,
                     fit: BoxFit.cover, filterQuality: FilterQuality.medium),
               ),
+              // 桥墩垫在怪群下面：小怪走到水果线时是站在这段宽桥面上的
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _PierPainter(cover: cover, offX: offX, offY: offY),
+                  ),
+                ),
+              ),
             ];
 
             // ---- 怪群：由玩法模拟驱动（竖直弹丸 + 命中驱动的挨打/哭/逃）
@@ -629,6 +676,9 @@ class _MonsterSpriteState extends State<MonsterSprite>
                   pl, _allyPoseFromShot(ai), 1 - bob * 0.55, 1 + bob, 0));
             }
 
+            final double rewardK = _rewardSide == 0
+                ? 0
+                : ((_simTime - _rewardStart) / _rewardSeconds).clamp(0.0, 1.0);
             children.add(Positioned.fill(
               child: IgnorePointer(
                 child: CustomPaint(
@@ -639,7 +689,9 @@ class _MonsterSpriteState extends State<MonsterSprite>
                       nuts: _nuts,
                       stars: _stars,
                       mobs: _mobs,
-                      fruits: _fruits),
+                      fruits: _fruits,
+                      rewardSide: _rewardSide,
+                      rewardK: rewardK),
                 ),
               ),
             ));
@@ -653,26 +705,25 @@ class _MonsterSpriteState extends State<MonsterSprite>
               final double wy = offY + _WordTarget.depth * cover;
               for (final w in _words) {
                 final double wx = offX + w.x * cover;
+                // 单词直接写在墙面上：没有背板，靠深色字 + 浅色描边在石墙上读清楚
                 children.add(Positioned(
-                  left: wx - 80,
-                  top: wy - 26,
-                  child: Container(
-                    width: 160,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF23303F).withValues(alpha: 0.80),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.60),
-                          width: 1.6),
+                  left: wx - 90,
+                  top: wy - 15,
+                  width: 180,
+                  child: Text(
+                    w.text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: const Color(0xFF3A2A18),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                      shadows: [
+                        Shadow(
+                            color: Colors.white.withValues(alpha: 0.55),
+                            blurRadius: 2),
+                      ],
                     ),
-                    child: Text(w.text,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 21,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5)),
                   ),
                 ));
               }
@@ -722,6 +773,33 @@ class _MonsterSpriteState extends State<MonsterSprite>
                 ),
               ));
             }
+            // 上一题已结算、但队伍还站在原地的提示：不出新题，等玩家挪开
+            if (!_asking && !_lost && !_squadLeftAskSpot) {
+              children.add(Positioned(
+                top: 10,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1C2230).withValues(alpha: 0.74),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      '挪动队伍，准备下一题',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1),
+                    ),
+                  ),
+                ),
+              ));
+            }
+
             if (_flash != null && _simTime < _flashUntil) {
               children.add(Positioned(
                 top: 92,
@@ -874,23 +952,41 @@ const double _stealRadius = 46;
 /// 只有进到后半段才向水果集中——正是需求里要的「后半段才向水果密集处集中」。
 const double _seekRadius = 300;
 
-// ---------------------------------------------------------------- 答题平台
+// ---------------------------------------------------------------- 单词墙
 //
-// 桥两侧贴着岸边的加宽平台（「桥肩」），从水果那一行一直延伸到镜头前。
-// 为什么不做成「深处那一小块」：队伍只能左右移动，深处它够不着。
-// 做成从水果行延伸到近处，队伍**只靠左右移动就能滑上去**，不必新增前后移动的操作。
-const double _platDepthFar = _fruitDepth; // 平台的最深处（＝水果那一行）
-const double _platDepthNear = 1020; // 延伸到队伍脚下再往前一点
-/// 平台外沿（占该处桥面半宽的比例）；>1 表示伸出桥面之外。
-const double _platOuter = 1.90;
+// 桥两侧各立一面**面对镜头**的石墙：单词直接写在墙面上，墙顶再铺一个小台子，
+// 台子上放一枚金币作为「答对」的奖赏。原来贴着岸边的桥肩平台去掉了——它只是
+// 地面装饰，而单词牌悬在半空里，既不结实、离得也远。
+//
+// 位置比原来的单词牌更靠屏幕中央（1.05 而不是 1.45 倍桥面半宽）：两面墙正好夹住
+// 桥面，玩家一眼就能看到左右两个选项，弹丸也更容易够到。
+/// 1.22 = 墙的内侧边缘正好贴在桥面外沿（墙半宽 118 ÷ 桥面半宽 550 ≈ 0.21）。
+/// 这样队伍不用推到最边上就能够到墙，最两侧的小宠物也不会被屏幕裁到。
+const double _wallLane = 1.22;
+const double _wallBaseY = 720; // 墙脚所在的画布行
+const double _wallHeight = 160; // 墙高（画布像素）
+const double _wallHalfW = 118; // 墙半宽（画布像素）
+const double _wallTopY = _wallBaseY - _wallHeight;
+
+/// 墙顶台面的进深（屏幕上方那一条），纯视觉。
+const double _wallRoofDepth = 14;
+
+/// 墙所在的这一节桥面（桥墩）向左右铺满整个屏幕：墙不再立在窄桥边上，
+/// 而是立在一段横贯全屏的宽平台上。
+const double _pierFar = 660; // 平台后边缘（画布行）
+// 两翼一直铺到画布底边：队伍横向能走到 ±0.40 个画布宽，而近处桥面只到 ±730，
+// 如果地板停在半路（比如 820），队伍走到外侧脚下就是水面——看着像悬空，也没法射击。
+const double _pierNear = 1080;
+
+/// 单词文字的中心行（墙面中心）。
+const double _wordDepth = _wallBaseY - _wallHeight / 2;
 
 // 出题节奏：先空一段（不上题，避免一题接一题），再给一段答题时间，超时算答错。
 const double _gapSeconds = 2.5;
 const double _askSeconds = 6.0;
 
-/// 单词靶的位置：在平台**前方**（更深），站在平台上朝正前方射击正好打到它。
-const double _wordDepth = 560;
-const double _wordLane = 1.45;
+/// 答对后金币飞走的时长（秒）。
+const double _rewardSeconds = 0.8;
 
 // 增益就是**一个等级**：答对 +1、答错 −1（用户明确要求，持久累积、不清零）。
 // 火力倍率 = 0.8^等级，夹在上下限之间。
@@ -1129,6 +1225,80 @@ class _Star {
   double age = 0;
 }
 
+/// 桥墩：墙所在的这一节桥面横向铺满整个屏幕，两侧一直延伸到屏幕边缘。
+///
+/// 单独一层，画在**怪群之前**：小怪走到水果线时会站到这段宽桥面上，
+/// 如果跟水果/墙一起画在 FX 层，怪会被桥面盖住。
+class _PierPainter extends CustomPainter {
+  _PierPainter({
+    required this.cover,
+    required this.offX,
+    required this.offY,
+  });
+
+  final double cover;
+  final double offX;
+  final double offY;
+
+  double _x(double canvasX) => offX + canvasX * cover;
+
+  double _y(double canvasY) => offY + canvasY * cover;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 桥面在这一节向两侧「展开」：只画桥面之外的左右两块翼，桥面本身保持原样，
+    // 交界处是一条跟着透视走的斜线——所以看起来是桥面变宽，而不是一条横板压在桥上。
+    for (final int side in const [-1, 1]) {
+      final double outerX =
+          side < 0 ? _x(-60) : _x(_MonsterSpriteState._canvasW + 60);
+      final double innerFar = _x(_MonsterSpriteState._canvasW / 2 +
+          side * _MonsterSpriteState._bridgeHalf(_pierFar));
+      final double innerNear = _x(_MonsterSpriteState._canvasW / 2 +
+          side * _MonsterSpriteState._bridgeHalf(_pierNear));
+
+      final Path wing = Path()
+        ..moveTo(outerX, _y(_pierFar))
+        ..lineTo(innerFar, _y(_pierFar))
+        ..lineTo(innerNear, _y(_pierNear))
+        ..lineTo(outerX, _y(_pierNear))
+        ..close();
+      canvas.drawPath(wing, Paint()..color = const Color(0xFFDCCBA6));
+
+      // 横向木板缝：只画到桥面外沿为止，不压到桥面上
+      final Paint seam = Paint()
+        ..color = const Color(0x24805E38)
+        ..strokeWidth = math.max(1.0, 1.6 * cover);
+      for (double y = _pierFar + 20; y < _pierNear - 6; y += 22) {
+        final double inner = _x(_MonsterSpriteState._canvasW / 2 +
+            side * _MonsterSpriteState._bridgeHalf(y));
+        canvas.drawLine(Offset(outerX, _y(y)), Offset(inner, _y(y)), seam);
+      }
+
+      // 前后边缘：平台与水面的交界，只在外翼范围内
+      final Paint lip = Paint()
+        ..color = const Color(0xFFB08B5A)
+        ..strokeWidth = math.max(1.4, 2.4 * cover);
+      canvas.drawLine(
+          Offset(outerX, _y(_pierFar)), Offset(innerFar, _y(_pierFar)), lip);
+      canvas.drawLine(
+          Offset(outerX, _y(_pierNear)), Offset(innerNear, _y(_pierNear)), lip);
+
+      // 与桥面交界的那条斜线：淡淡一条，让「展开」有边但不切断桥面
+      canvas.drawLine(
+        Offset(innerFar, _y(_pierFar)),
+        Offset(innerNear, _y(_pierNear)),
+        Paint()
+          ..color = const Color(0x66B08B5A)
+          ..strokeWidth = math.max(1.0, 1.6 * cover),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PierPainter old) =>
+      old.cover != cover || old.offX != offX || old.offY != offY;
+}
+
 class _MonsterFxPainter extends CustomPainter {
   _MonsterFxPainter({
     required this.cover,
@@ -1138,6 +1308,8 @@ class _MonsterFxPainter extends CustomPainter {
     required this.stars,
     required this.mobs,
     required this.fruits,
+    required this.rewardSide,
+    required this.rewardK,
   });
 
   final double cover;
@@ -1147,6 +1319,12 @@ class _MonsterFxPainter extends CustomPainter {
   final List<_Star> stars;
   final List<_Mob> mobs;
   final List<_Fruit> fruits;
+
+  /// 答对后飞走的那枚金币在哪一侧（-1 左 / 1 右 / 0 无）。
+  final int rewardSide;
+
+  /// 金币飞走的进度（0 = 刚开始，1 = 已消失）。
+  final double rewardK;
 
   double _x(double canvasX) => offX + canvasX * cover;
 
@@ -1184,6 +1362,122 @@ class _MonsterFxPainter extends CustomPainter {
           ..color = const Color(0xFF7A4A22));
   }
 
+  /// 一面面对镜头的石墙：正面 + 顶面 + 台子 + 台子上的金币。
+  void _wall(Canvas canvas, int side) {
+    final double cx = _MonsterSpriteState._wallCenterX(side);
+    final double half = _wallHalfW;
+    final double baseY = _wallBaseY;
+    final double topY = _wallTopY;
+    final double roof = _wallRoofDepth;
+
+    final double left = _x(cx - half);
+    final double right = _x(cx + half);
+
+    // 正面
+    final Rect front = Rect.fromLTRB(left, _y(topY), right, _y(baseY));
+    canvas.drawRect(front, Paint()..color = const Color(0xFFC9B08A));
+
+    // 砖缝：横线 + 错缝竖线
+    final Paint seam = Paint()
+      ..color = const Color(0x2E8A6B3A)
+      ..strokeWidth = math.max(1.0, 1.8 * cover);
+    for (double y = topY + 26; y < baseY - 4; y += 30) {
+      canvas.drawLine(Offset(left, _y(y)), Offset(right, _y(y)), seam);
+      final bool shift = (((y - topY) / 30).round()).isEven;
+      final double sx = _x(cx + (shift ? -half * 0.34 : half * 0.34));
+      canvas.drawLine(Offset(sx, _y(y)), Offset(sx, _y(y + 30)), seam);
+    }
+
+    // 描边
+    canvas.drawRect(
+      front,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1.6, 3.0 * cover)
+        ..color = const Color(0xFF8A6B3A),
+    );
+
+    // 墙顶台面（向屏幕上方铺出一条厚度，读成「墙顶是个平台」）
+    final Path roofPath = Path()
+      ..moveTo(left, _y(topY))
+      ..lineTo(_x(cx - half + 8), _y(topY - roof))
+      ..lineTo(_x(cx + half + 8), _y(topY - roof))
+      ..lineTo(right, _y(topY))
+      ..close();
+    canvas.drawPath(roofPath, Paint()..color = const Color(0xFFB89A6E));
+    canvas.drawPath(
+      roofPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1.2, 2.2 * cover)
+        ..color = const Color(0xFF8A6B3A),
+    );
+
+    // 台子：比墙窄的一层矮台，金币就摆在这上面
+    final double padHalf = half * 0.56;
+    final Rect pad = Rect.fromLTRB(
+      _x(cx - padHalf),
+      _y(topY - roof - 2),
+      _x(cx + padHalf),
+      _y(topY - roof - 11),
+    );
+    canvas.drawRect(pad, Paint()..color = const Color(0xFF9C7B4E));
+    canvas.drawRect(
+      pad,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1.0, 1.8 * cover)
+        ..color = const Color(0xFF6E5433),
+    );
+
+    // 台子上的金币：答对时这一侧的金币往上飘、缩小、淡出
+    final bool animating = rewardSide != 0 && side == rewardSide;
+    final double k = animating ? rewardK : 0;
+    final double alpha = animating ? (1 - k) : 1;
+    final double r = math.max(4.0, 17 * cover * (1 - 0.45 * k));
+    final double coinCy = _y(topY - roof - 11) - r * 1.35 - 88 * k * cover;
+    _coin(canvas, _x(cx), coinCy, r, alpha);
+  }
+
+  /// 一枚金币（代表「答对的奖赏」）。
+  void _coin(Canvas canvas, double cx, double cy, double r, double alpha) {
+    if (alpha <= 0.01) return;
+    // 光晕
+    canvas.drawCircle(
+      Offset(cx, cy),
+      r * 1.55,
+      Paint()
+        ..color = const Color(0xFFFFD76A).withValues(alpha: 0.16 * alpha)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.9),
+    );
+    // 币身
+    canvas.drawCircle(Offset(cx, cy), r,
+        Paint()..color = const Color(0xFFF2C14E).withValues(alpha: alpha));
+    canvas.drawCircle(
+      Offset(cx, cy),
+      r,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1.0, r * 0.16)
+        ..color = const Color(0xFFA8791F).withValues(alpha: alpha),
+    );
+    // 内圈
+    canvas.drawCircle(
+      Offset(cx, cy),
+      r * 0.56,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(0.8, r * 0.10)
+        ..color = const Color(0xFFFFF1C4).withValues(alpha: alpha * 0.9),
+    );
+    // 高光
+    canvas.drawCircle(
+      Offset(cx - r * 0.28, cy - r * 0.28),
+      r * 0.22,
+      Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.75),
+    );
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     // ---- 水果：画在所有人下面（地面上的一排）
@@ -1196,29 +1490,9 @@ class _MonsterFxPainter extends CustomPainter {
       _fruit(canvas, _x(f.x), _y(f.depth) - r * 1.05, r);
     }
 
-    // ---- 两侧答题平台（桥肩）：从水果那一行延伸到近处
+    // ---- 两侧单词墙：墙脚在水果那一行，单词写在墙面上，墙顶台子摆一枚金币
     for (final int side in const [-1, 1]) {
-      final double yFar = _platDepthFar;
-      final double yNear = _platDepthNear;
-      final double hFar = _MonsterSpriteState._bridgeHalf(yFar);
-      final double hNear = _MonsterSpriteState._bridgeHalf(yNear);
-      final double innerFar = side * hFar;
-      final double outerFar = side * hFar * _platOuter;
-      final double innerNear = side * hNear;
-      final double outerNear = side * hNear * _platOuter;
-      final Path plat = Path()
-        ..moveTo(_x(_MonsterSpriteState._canvasW / 2 + innerFar), _y(yFar))
-        ..lineTo(_x(_MonsterSpriteState._canvasW / 2 + outerFar), _y(yFar))
-        ..lineTo(_x(_MonsterSpriteState._canvasW / 2 + outerNear), _y(yNear))
-        ..lineTo(_x(_MonsterSpriteState._canvasW / 2 + innerNear), _y(yNear))
-        ..close();
-      canvas.drawPath(plat, Paint()..color = const Color(0xFFD9C08A));
-      canvas.drawPath(
-          plat,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = math.max(1.5, 3 * cover)
-            ..color = const Color(0xFF8A6B3A));
+      _wall(canvas, side);
     }
 
     // ---- 投掷物：一次只画一个，不拖尾迹。大小按所在深度的透视缩放。

@@ -86,5 +86,10 @@ void main() {
     expect(source, contains('opponentCurrentWord: opponentCurrentWord'), reason: '对手当前词传给画布');
     expect(source, contains('word: myCurrentWord'), reason: '名字上方必须绘制当前单词');
     expect(source, contains(r'第$ordinal词'), reason: '题号以"第N词"展示');
+
+    // 15. 每局把客户端真实节奏上报给服务端，避免服务端抄一份速度常数后静默漂移
+    expect(source, contains("sendUserCmd('GAME_PACING'"), reason: '每局必须上报初始下落时间与每层行程比例');
+    expect(source, contains('baseFallSeconds'), reason: '初始下落时间必须是可上报的具名常量');
+    expect(source, contains('brickHeight'), reason: '方块高度必须是可上报的具名常量');
   });
 }

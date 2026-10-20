@@ -127,6 +127,12 @@ class WordWrapper {
   /// 最近一次的语音识别结果（用于展示）
   String? lastAsrResult;
 
+  /// 本轮开口的结论回显（null = 暂无结论；空字符串 = 没听清；非空 = 听到的是这句，但不对）。
+  ///
+  /// 词表页「说中文/说英文」的答题行据此告诉用户"我听到了什么、对不对"，
+  /// 与背单词页 `BdcState.asrRoundHeardText` 同一套语义。只用于展示，不参与判题。
+  String? roundHeardText;
+
   /// 缓存进度信息，用于 UI 展示
   double? currentProgress;
   double? maxProgress;
@@ -189,6 +195,7 @@ class WordWrapper {
       ..isAiEvaluating = isAiEvaluating
       ..aiApprovedAnswer = aiApprovedAnswer
       ..lastAsrResult = lastAsrResult
+      ..roundHeardText = roundHeardText
       ..currentProgress = currentProgress
       ..maxProgress = maxProgress;
   }
@@ -325,6 +332,35 @@ bool chineseInputMatchesAnyMeaning(WordVo word, Object input, {bool strict = fal
     }
   }
   return false;
+}
+
+/// 本轮开口结论的文案（背单词页与词表页共用，不许各写一套）。
+///
+/// [heardText] 为 null 表示暂无结论（不展示）；空字符串表示这一轮什么都没听清；
+/// 非空表示系统听到的就是这句，但它不对。
+String? asrRoundVerdictText(String? heardText) {
+  if (heardText == null) return null;
+  return heardText.isEmpty ? '没听清，再说一遍' : '听到的是「$heardText」，不对';
+}
+
+/// 词表页「说中文/说英文」行内的本轮开口结论。
+///
+/// 这一行是这个模式下唯一能告诉用户"我听到了什么、对不对"的地方：
+/// 没有它，答错与程序卡死在界面上完全一样。
+Widget buildAsrRoundVerdict(String? heardText) {
+  final text = asrRoundVerdictText(heardText);
+  if (text == null) return const SizedBox.shrink();
+  return Text(
+    text,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    style: const TextStyle(
+      fontSize: 10,
+      height: 1.3,
+      color: Colors.orange,
+      fontWeight: FontWeight.w500,
+    ),
+  );
 }
 
 List<Widget> renderAsrMeaningItems(WordWrapper word,

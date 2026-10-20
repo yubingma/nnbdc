@@ -95,6 +95,10 @@ class SpeakModeItem extends StatelessWidget {
           const SizedBox(height: 4),
           _buildAiJudgingBadge(),
         ],
+        if (word.roundHeardText != null) ...[
+          const SizedBox(height: 4),
+          buildAsrRoundVerdict(word.roundHeardText),
+        ],
       ],
     );
   }
@@ -178,7 +182,11 @@ class SpeakModeItem extends StatelessWidget {
             ),
           ),
         ),
-
+        if (word.roundHeardText != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: buildAsrRoundVerdict(word.roundHeardText),
+          ),
       ],
     );
   }

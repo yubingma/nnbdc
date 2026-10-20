@@ -71,6 +71,24 @@ public class ReadyState extends RoomState {
      */
     private static final long MAX_TOTAL_DISCONNECT_MS = 90 * 1000;
 
+    /**
+     * 旧客户端不上报节奏时的兜底值：0 层堆叠时一题的下落时间。
+     * 新客户端每局会通过 GAME_PACING 上报真实的 baseFallMs，这里只在没有上报时使用。
+     */
+    private static final long BOT_BASE_FALL_MS = 6200;
+
+    /**
+     * 旧客户端不上报节奏时的兜底份额：前端按 maxHp + 2 = 12 行堆叠，
+     * 方块自身还有半个高度，实际行程约等于 11 行的份额。
+     */
+    private static final int BOT_STACK_SLOTS = 11;
+
+    /** 本局客户端上报的初始下落时间（毫秒）；未上报时用兜底值。 */
+    private volatile long gameBaseFallMs = BOT_BASE_FALL_MS;
+
+    /** 本局客户端上报的"每堆一层消耗的行程比例"；未上报时用兜底值。 */
+    private volatile double gameRowFraction = 1.0 / BOT_STACK_SLOTS;
+
     // 前端上报下落触底 ETA 的调度器与任务表（按用户）
     private final Timer fallTimer = new Timer(true);
     private final Map<String, TimerTask> fallTasks = new ConcurrentHashMap<>();
@@ -93,6 +111,18 @@ public class ReadyState extends RoomState {
     private UserVo botUserObj = null;
     // 缓存人类用户对象
     private UserVo humanUserObj = null;
+
+    /**
+     * 机器人在当前堆叠高度下，下一题最多还能等多久。
+     * 堆得越高、剩余行程越短，可用时间就越少；到点还没答按触底处理。
+     */
+    private long botAnswerWindowMs(int stackRows) {
+        double remaining = 1.0 - stackRows * gameRowFraction;
+        if (remaining < 0) {
+            remaining = 0;
+        }
+        return (long) (gameBaseFallMs * remaining);
+    }
 
     /**
      * 触发机器人进行一次答题动作。
@@ -198,6 +228,11 @@ public class ReadyState extends RoomState {
             cmd.setCmd("GET_NEXT_WORD");
             cmd.setArgs(new String[] { String.valueOf(botWordIdx++), isCorrect ? "true" : "false", "" });
             room.processUserCmd(botUserObj, cmd);
+
+            // 机器人也要受"堆得越高、触底行程越短"的约束：
+            // 按当前堆叠高度给它这道题的可用时间，到点还没答就按触底补一层。
+            // 否则它只剩 1 格血时仍会按固定 2-4.8 秒慢悠悠答，和玩家承受的压迫完全不对称。
+            scheduleFallTask(botUserObj, botAnswerWindowMs(currentBotData.getStackRows()));
 
             // 调度下一次动作
             long now = System.currentTimeMillis();
@@ -599,6 +634,7 @@ public class ReadyState extends RoomState {
                 processAnswerReport(user, userCmd);
                 getNextWordProcessor.processAnswerCmd(user, userCmd);
             }
+            case "GAME_PACING" -> processGamePacing(user, userCmd);
             case "GET_WORD_PACK" -> getNextWordProcessor.processGetWordPackCmd(user, userCmd);
             case "START_EXERCISE" -> {
                 // 单人练习命令
@@ -640,6 +676,33 @@ public class ReadyState extends RoomState {
 
     }
 
+    /**
+     * 客户端上报本局真实的答题节奏：初始下落毫秒 + 每堆一层消耗的行程比例。
+     * 机器人触底窗口直接用它计算；以后客户端调速度或行高，服务端会自动跟随，
+     * 不再依赖服务端抄一份常数。旧客户端不上报时保留兜底值。
+     */
+    private void processGamePacing(UserVo user, UserCmd userCmd) {
+        try {
+            String[] args = userCmd.getArgs();
+            if (args == null || args.length < 2) {
+                return;
+            }
+            long baseMs = Long.parseLong(args[0]);
+            double rowFraction = Double.parseDouble(args[1]);
+            if (baseMs < 1000 || baseMs > 30000 || rowFraction <= 0.0 || rowFraction >= 0.5) {
+                log.warn(String.format("忽略非法的对局节奏上报: user=%s, baseMs=%d, rowFraction=%.4f",
+                        Util.getNickNameOfUser(user), baseMs, rowFraction));
+                return;
+            }
+            gameBaseFallMs = baseMs;
+            gameRowFraction = rowFraction;
+            log.info(String.format("对局节奏已更新: base=%dms, rowFraction=%.4f（机器人触底窗口将使用该值）",
+                    baseMs, rowFraction));
+        } catch (NumberFormatException e) {
+            log.warn("解析对局节奏失败: user=" + Util.getNickNameOfUser(user));
+        }
+    }
+
     private void processUsePropsCmd(UserVo user, int props) {
         UserGameData playData = room.getUserPlayData(user);
         if (playData.getPropsCounts()[props] > 0) {
@@ -658,11 +721,19 @@ public class ReadyState extends RoomState {
                         broadcastStackRows(another, "对手导弹轰击");
                         if (opp.getStackRows() >= 10) {
                             gameOverProcessor.handleLoser(another);
+                        } else if (botUserObj != null && another.getId().equals(botUserObj.getId()) && isPlaying) {
+                            // 机器人被导弹砸高了一层，触底窗口也要按新高度立即收紧
+                            scheduleFallTask(another, botAnswerWindowMs(opp.getStackRows()));
                         }
                     }
                 } else if (props == 1) {
                     playData.setStackRows(Math.max(0, playData.getStackRows() - 1));
                     broadcastStackRows(user, "海星修复防线");
+                    // 机器人把自己治好后，按新的堆叠高度重算触底窗口；
+                    // 否则旧窗口仍按治疗前的高度计时，会提前把刚治好的机器人压死。
+                    if (botUserObj != null && user.getId().equals(botUserObj.getId()) && isPlaying) {
+                        scheduleFallTask(user, botAnswerWindowMs(playData.getStackRows()));
+                    }
                 }
             } catch (Exception ignored) {
             }

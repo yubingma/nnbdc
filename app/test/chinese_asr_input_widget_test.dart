@@ -90,6 +90,74 @@ void main() {
       expect(find.text('回答正确'), findsOneWidget);
       expect(find.text('请说例句中文'), findsNothing);
     });
+
+    testWidgets('判错时把"听到的原话"显示出来：不能让用户对着"请说中文释义"猜是不是死机了', (tester) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          ChineseAsrInputWidget(
+            controller: controller,
+            asrState: AsrState.stopped,
+            onStartAsr: (_) {},
+            isKeyboardVisible: false,
+            focusNode: focusNode,
+            roundHeardText: '露水',
+          ),
+        ),
+      );
+
+      expect(find.text('听到的是「露水」，不对'), findsOneWidget);
+      expect(find.text('请说中文释义'), findsNothing);
+
+      final textWidget = tester.widget<Text>(find.text('听到的是「露水」，不对'));
+      expect(textWidget.style?.color, Colors.orange,
+          reason: '判错要比常态提示更醒目，否则用户扫一眼就滑过去了');
+    });
+
+    testWidgets('本轮什么都没听到时显示"没听清，再说一遍"', (tester) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          ChineseAsrInputWidget(
+            controller: controller,
+            asrState: AsrState.stopped,
+            onStartAsr: (_) {},
+            isKeyboardVisible: false,
+            focusNode: focusNode,
+            roundHeardText: '',
+          ),
+        ),
+      );
+
+      expect(find.text('没听清，再说一遍'), findsOneWidget);
+    });
+
+    testWidgets('已判通过时不受上一轮判错结论影响，仍显示"回答正确"', (tester) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          ChineseAsrInputWidget(
+            controller: controller,
+            asrState: AsrState.stopped,
+            onStartAsr: (_) {},
+            isKeyboardVisible: false,
+            focusNode: focusNode,
+            isScorePassed: true,
+            // 通过落地的同一帧里，上一轮的判错结论可能还没被清掉
+            roundHeardText: '露水',
+          ),
+        ),
+      );
+
+      expect(find.text('回答正确'), findsOneWidget);
+      expect(find.text('听到的是「露水」，不对'), findsNothing);
+    });
   });
 
   group('EnglishAsrInputWidget 状态文字测试', () {
@@ -116,6 +184,30 @@ void main() {
 
       final textWidget = tester.widget<Text>(find.text('回答正确'));
       expect(textWidget.style?.color, Colors.green);
+    });
+
+    testWidgets('说英文判错时同样回显原话，不再只留"请说单词发音"', (tester) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          EnglishAsrInputWidget(
+            controller: controller,
+            asrState: AsrState.stopped,
+            onStartAsr: (_) {},
+            isKeyboardVisible: false,
+            focusNode: focusNode,
+            roundHeardText: 'orange',
+          ),
+        ),
+      );
+
+      expect(find.text('听到的是「orange」，不对'), findsOneWidget);
+      expect(find.text('请说单词发音'), findsNothing);
+
+      final textWidget = tester.widget<Text>(find.text('听到的是「orange」，不对'));
+      expect(textWidget.style?.color, Colors.orange);
     });
   });
 }

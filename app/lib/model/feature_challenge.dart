@@ -48,6 +48,19 @@ class FeatureChallengeRepository {
       explanation: '背单词时直接开口说出答案，无需手动点按。',
     ),
     FeatureChallenge(
+      id: 'tip_voice_round_feedback',
+      category: '学习操作',
+      title: '说完之后屏幕上那句话是什么意思',
+      question: '开口答题后，屏幕上出现「听到的是「×××」，不对」，这是在告诉你什么？',
+      options: [
+        '系统听清了你这句话，但它不是这个词的释义（不是程序没反应）',
+        '麦克风坏了，程序卡住了',
+        '网络断了，答案没有发送成功',
+      ],
+      correctIndex: 0,
+      explanation: '这句话只说明两件事：我听到了什么、它对不对。若你明明说对了却被这样提示，说明是语音把内容听岔了——照着引号里那句回显重说一遍即可；完全没听清时，这里会直接提示「没听清，再说一遍」。',
+    ),
+    FeatureChallenge(
       id: 'tip_pet_daily_diet',
       category: '陪伴宠物',
       title: '小馋宝的每日饭量',
@@ -167,6 +180,20 @@ class FeatureChallengeRepository {
       correctIndex: 0,
       explanation:
           '随身听的环境音与单词发音是独立通道。在设置中选好自然场景（如闲时听雨、夏夜虫鸣）后，把发音栏的各项全部取消勾选，就能得到纯净的助眠白噪音，且支持熄屏后台持续播放。',
+    ),
+    FeatureChallenge(
+      id: 'tip_walkman_view_detail',
+      category: '随身听',
+      title: '听到生词想仔细看',
+      question: '随身听自动连播时，突然想仔细看看刚刚那个词，正确姿势是？',
+      options: [
+        '点底部的暂停按钮，再点浮现出来的「查看详情」，看完左上角返回，继续听',
+        '连续猛点屏幕，点得够快就会弹出详情',
+        '退出随身听，回到词书列表里手动搜这个词',
+      ],
+      correctIndex: 0,
+      explanation:
+          '随身听平时自动往下播、页面上只有英文。点暂停键后，播放键上方才会浮现「查看详情」，点它打开单词详情页；左上角返回就回到刚才停下的那个词，想继续听再点一次播放。',
     ),
     FeatureChallenge(
       id: 'tip_meaning_limit',
