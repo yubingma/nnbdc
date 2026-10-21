@@ -298,20 +298,19 @@ class _SyncProgressOverlayState extends State<SyncProgressOverlay> {
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          stalled
-              ? '已 $silence没有新进展。如果超过 1 分钟仍没有变化，请检查网络后重试。'
-              : '$silence前有进展',
-          style: TextStyle(
-            fontSize: 10.5,
-            height: 1.5,
-            fontWeight: stalled ? FontWeight.w500 : FontWeight.w400,
-            color: stalled
-                ? (widget.isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
-                : textSecondary.withValues(alpha: 0.8),
+        // 数字本身就在跳，不再常驻一行"几秒前有进展"；只有真的停下来才提示。
+        if (stalled) ...[
+          const SizedBox(height: 8),
+          Text(
+            '已 $silence没有更新。如果超过 1 分钟仍没有变化，请检查网络后重试。',
+            style: TextStyle(
+              fontSize: 10.5,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+              color: widget.isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

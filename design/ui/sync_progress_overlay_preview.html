@@ -653,7 +653,6 @@
       showCount: false,
       countLabel: '已处理记录',
       elapsed: 84,
-      last: '刚刚有进展',
       stalled: false
     },
     system: {
@@ -665,7 +664,6 @@
       showCount: true,
       countLabel: '已处理记录',
       elapsed: 312,
-      last: '刚刚有进展',
       stalled: false
     },
     write: {
@@ -677,7 +675,6 @@
       showCount: true,
       countLabel: '已处理记录',
       elapsed: 222,
-      last: '2 秒前有进展',
       stalled: false
     },
     upload: {
@@ -689,7 +686,6 @@
       showCount: true,
       countLabel: '已上传记录',
       elapsed: 308,
-      last: '刚刚有进展',
       stalled: false
     },
     stalled: {
@@ -701,7 +697,7 @@
       showCount: true,
       countLabel: '已处理记录',
       elapsed: 391,
-      last: '已 52 秒没有新进展。如果超过 1 分钟仍没有变化，请检查网络后重试。',
+      last: '已 52 秒没有更新。如果超过 1 分钟仍没有变化，请检查网络后重试。',
       stalled: true
     },
     prepare: {
@@ -777,7 +773,7 @@
         <span class="phase">${data.stage}</span>
         <span class="elapsed" data-role="elapsed">已用时 ${formatTime(data.elapsed)}</span>
       </div>
-      <div class="last ${data.stalled ? 'warn' : ''}" data-role="last">${data.last}</div>
+      ${data.stalled ? `<div class="last warn" data-role="last">${data.last}</div>` : ''}
     `;
   }
 
