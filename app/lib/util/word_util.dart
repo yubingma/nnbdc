@@ -4,6 +4,25 @@ import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/global.dart';
 import '../api/vo.dart';
 
+/// 释义词性的候选列表；「编辑释义」与「添加单词」共用同一份，避免两处各写一套。
+const List<String> wordPosOptions = [
+  'n.',
+  'v.',
+  'vt.',
+  'vi.',
+  'adj.',
+  'adv.',
+  'prep.',
+  'conj.',
+  'pron.',
+  'art.',
+  'num.',
+  'int.',
+  'phrase.',
+  'abbr.',
+  '无',
+];
+
 /// 自定义 TextEditingController，实现单个字符的实时颜色反馈
 class SpellingTextEditingController extends TextEditingController {
   final String? Function() getTargetSpell;

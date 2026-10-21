@@ -150,9 +150,28 @@ class TodayPlanPageState extends State<TodayPlanPage>
   int? _lastPetSpeechIndex;
   bool _petFirstMet = false;
 
-  /// 拖动时最近一次悬停在「接不住」的格子上记下的原因。
-  /// 松手时若 wasAccepted 为 false 且它非空，就弹 Toast 把原因讲清楚。
-  String? _hoveredBlockReason;
+  /// 手指此刻正停在一个「接不住」的格子上时的原因（null = 没停在这种格子上）。
+  ///
+  /// 用 [ValueNotifier] 是因为它要驱动拖拽卡片上那行提示：卡片在 Overlay 里，
+  /// 父级 setState 重建不到它，只有监听值变化才能跟着手指实时显示/消失。
+  final ValueNotifier<String?> _hoveredBlockReason = ValueNotifier<String?>(null);
+
+  /// 手指离开「接不住」的格子时，把原因交接给它；松手时若没被接收就弹 Toast。
+  /// 与 [_hoveredBlockReason] 的区别只有生命周期：那个是"此刻"，这个是"刚才"。
+  String? _releasedBlockReason;
+
+  /// 拖拽反馈卡片里节点顶边相对手指的偏移（手指压在节点右下角，不挡卡面）。
+  static const double _dragFeedbackNodeDy = -18;
+
+  /// 节点上方留给「为什么放不进去」那条提示的高度。
+  /// 固定占位（没提示也留着），卡片高度才不会随提示出现而跳动。
+  static const double _dragFeedbackNoticeSlot = 40;
+
+  /// 手指此刻的横坐标（与拖拽反馈同一个坐标系），拖拽卡片横向夹取用。
+  ///
+  /// 卡片默认挂在手指左侧；手指贴近屏幕左边缘时左侧放不下，就得把卡片推回屏内，
+  /// 否则「本轨道已有该环节」这种提示会被裁掉一半——那正是这次要解决的问题。
+  final ValueNotifier<double?> _dragPointerX = ValueNotifier<double?>(null);
 
   /// 宠物当前处于哪一态：选图和抽台词共用它，保证「说」和「看」永远一致。
   PetMood get _petMood {
@@ -452,6 +471,8 @@ class TodayPlanPageState extends State<TodayPlanPage>
     _wordMasteredSubscription?.cancel();
     _wordUnMasteredSubscription?.cancel();
     _todayStudyListChangedSubscription?.cancel();
+    _hoveredBlockReason.dispose();
+    _dragPointerX.dispose();
     super.dispose();
   }
 
@@ -1255,46 +1276,112 @@ class TodayPlanPageState extends State<TodayPlanPage>
       // （托盘里的 chip 在 Wrap + Opacity + Builder 里，重建约束不同），偏移就错位，
       // 卡片会飘到离手指很远的地方。指针锚定与尺寸无关，两种来源的拖动体验一致。
       dragAnchorStrategy: pointerDragAnchorStrategy,
-      // 卡片画在指针的左上：手指正好压在卡片的右下角，卡面大部分露在外面，
-      // 不会被手指挡住。位置只在 feedback 内部做位移（见 FeedbackRightAligned）。
-      // 判定点必须就是手指位置：绝不能拿 feedbackOffset 去补视觉偏移——它会被
-      // 加进 hitTestInView 的坐标（Flutter `_DragAvatar.updateDrag` 里的
-      // `globalPosition + feedbackOffset`），手指便要让开那段距离才能命中目标，
+      // 卡片平时画在指针的左上（手指压在卡片右下角，卡面不被挡住），
+      // 贴到屏幕左边缘时往回收一点，免得卡面上的提示被裁掉（见 FeedbackRightAligned）。
+      // 位置只在 feedback 内部做位移，绝不能用 feedbackOffset 去补——判定点必须就是
+      // 手指位置：它会被加进 hitTestInView 的坐标（Flutter `_DragAvatar.updateDrag`
+      // 里的 `globalPosition + feedbackOffset`），手指便要让开那段距离才能命中目标，
       // 一侧的落点区因此变成死区。
-      onDragStarted: () {
-        HapticFeedback.mediumImpact();
-        _hoveredBlockReason = null;
-        setState(() => _draggingPayload = drag);
-      },
-      onDragEnd: (details) {
-        // 松手时没被任何格子接收、且刚才确实停在一个"接不住"的格子上 → 讲清原因。
-        // 只是拖到空白处松手不会弹，避免噪音。
-        final reason = _hoveredBlockReason;
-        _hoveredBlockReason = null;
-        if (!details.wasAccepted && reason != null) {
-          ToastUtil.info(reason);
-        }
-        setState(() => _draggingPayload = null);
-      },
+      onDragStarted: () => _onTrackDragStart(drag),
+      onDragUpdate: (details) => _dragPointerX.value = details.globalPosition.dx,
+      onDragEnd: (details) => _onTrackDragFinish(wasAccepted: details.wasAccepted),
       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
       // 反馈卡片放大一点：手指本身会挡住它，放大后才看得清拖的是什么
       // 宽度按内容自适应；位置由「右边缘贴指针左侧 10px」决定，
       // 所以宽窄不同的环节，跟手程度也一致。
-      feedback: CustomSingleChildLayout(
-        delegate: const FeedbackRightAligned(gap: 10, dy: -18),
-        child: Material(
-          color: Colors.transparent,
-          child: Transform.scale(
-            scale: 1.18,
-            // 右对齐缩放：放大后右边缘不会往前顶
-            alignment: Alignment.centerRight,
-            child: Opacity(opacity: 0.95, child: node),
-          ),
-        ),
-      ),
+      feedback: _dragFeedback(Opacity(opacity: 0.95, child: node)),
       childWhenDragging: Opacity(opacity: 0.3, child: node),
       child: node,
     );
+  }
+
+  /// 拖拽反馈卡片：环节节点 + 上方一条「为什么放不进去」的提示。
+  ///
+  /// 提示不能画在放置条里：手指正压着那一格，小字必然被手盖住（用户反馈"很费劲"）。
+  /// 所以提示和环节节点一起放进拖拽卡片：卡片平时在手指左上方，提示又在节点上方，
+  /// 两样东西都在手指够不到的地方。
+  /// 提示槽固定占高：没提示时留空，卡片高度不随提示出现而跳动。
+  Widget _dragFeedback(Widget node) {
+    // 外层只跟手指的横坐标走：卡片默认挂在手指左侧，贴到屏幕左边缘时被推回屏内，
+    // 提示才不会连同卡片一起被裁掉一半。卡片内容（child）不参与这次重建。
+    return ValueListenableBuilder<double?>(
+      valueListenable: _dragPointerX,
+      builder: (context, fingerX, child) => CustomSingleChildLayout(
+        delegate: FeedbackRightAligned(
+          gap: 10,
+          dy: _dragFeedbackNodeDy - _dragFeedbackNoticeSlot,
+          fingerX: fingerX,
+        ),
+        child: child,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            SizedBox(
+              height: _dragFeedbackNoticeSlot,
+              child: ValueListenableBuilder<String?>(
+                valueListenable: _hoveredBlockReason,
+                builder: (context, reason, _) {
+                  if (reason == null) return const SizedBox.shrink();
+                  return Align(
+                    alignment: Alignment.centerRight,
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 160),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text(
+                        reason,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          height: 1.2,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Transform.scale(
+              scale: 1.18,
+              // 右对齐缩放：放大后右边缘不会往前顶
+              alignment: Alignment.centerRight,
+              child: node,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 开始拖一个环节：清掉上一轮遗留的提示状态，并让所有放置条知道自己接不接受这一份。
+  void _onTrackDragStart(_TrackDragPayload payload) {
+    HapticFeedback.mediumImpact();
+    _hoveredBlockReason.value = null;
+    _releasedBlockReason = null;
+    _dragPointerX.value = null;
+    setState(() => _draggingPayload = payload);
+  }
+
+  /// 松手：没被任何格子接收、且刚才确实停在一个"接不住"的格子上 → 把原因讲清楚。
+  /// 只是拖到空白处松手不会弹，避免噪音。
+  void _onTrackDragFinish({required bool wasAccepted}) {
+    final String? reason = _releasedBlockReason;
+    _releasedBlockReason = null;
+    _hoveredBlockReason.value = null;
+    _dragPointerX.value = null;
+    if (!wasAccepted && reason != null) ToastUtil.info(reason);
+    setState(() => _draggingPayload = null);
   }
 
   /// 分叉：中线落下来，左右各拐一个圆角接到两条支路上。
@@ -1947,11 +2034,20 @@ class TodayPlanPageState extends State<TodayPlanPage>
     if (!_trackEditing) return const SizedBox.shrink();
     return DragTarget<_TrackDragPayload>(
       onWillAcceptWithDetails: (d) {
+        // 手指进入这一格时就把"接不接得住"告诉拖拽卡片（接得住 = 说 null，清掉旧提示）；
+        // 进入不接的格子不该再保留上一个格子的原因。
         final reason = _trackStepBlockReason(d.data, scope, group, index);
-        if (reason != null) _hoveredBlockReason = reason;
+        _hoveredBlockReason.value = reason;
+        _releasedBlockReason = reason;
         return reason == null;
       },
       onAcceptWithDetails: (d) => _onDropTrackStep(d.data, scope, group, index),
+      // 手指离开这一格：提示立刻收起，否则会挂在"空白处"上继续说明才不相关的原因。
+      // 原因同时交接给 _releasedBlockReason，供松手时弹 Toast（finishDrag 会先 onLeave 后 onDragEnd）。
+      onLeave: (_) {
+        _releasedBlockReason = _hoveredBlockReason.value;
+        _hoveredBlockReason.value = null;
+      },
       builder: (context, candidate, rejected) {
         final bool active = candidate.isNotEmpty;
         // 有环节正在被拖、且这一格接不住（同组重复题型 / 组已满）→ 灰掉，
@@ -1968,11 +2064,9 @@ class TodayPlanPageState extends State<TodayPlanPage>
         final Color zoneColor = moving == null
             ? neutral
             : (blocked ? neutral.withValues(alpha: 0.55) : inkColor);
-        // 手指停在这一格上（rejected 非空）→ 把原因直接写进胶囊里。
-        // 注意：提示必须**沿用胶囊的尺寸**。之前这里返回的是另一种尺寸的提示条，
-        // 尺寸一变，指针就"移出"了 DragTarget，rejected 清空 → 恢复小胶囊 →
-        // 指针又"移入" → 无限闪烁。
-        final bool showReason = blocked && rejected.isNotEmpty;
+        // 接不住的原因不画在胶囊里：手指正压着这一格，小字会被手挡掉大半。
+        // 原因改由拖拽卡片上方那行提示承载（见 _dragFeedback），卡片在手指够不到的地方。
+        // 胶囊只留颜色与 🚫，尺寸恒定——尺寸一变，指针就会"移出"DragTarget，来回闪烁。
         // 尺寸固定、不再随拖动变化：之前的「感应放大」会让整条支路忽大忽小，
         // 界面一直晃。现在一开始就做成足够大的 150×40，靠颜色表达状态：
         //   平时灰 / 能放高亮 / 不能放更淡的灰 + 🚫。
@@ -1990,21 +2084,9 @@ class TodayPlanPageState extends State<TodayPlanPage>
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: zoneColor, width: active ? 1.8 : 0.8),
               ),
-              child: showReason
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      child: Center(
-                        child: Text(
-                          rejectReason,
-                          maxLines: 2,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 8, height: 1.15, color: Color(0xFFEF4444)),
-                        ),
-                      ),
-                    )
-                  : (blocked
-                      ? Icon(Icons.block_rounded, size: 11, color: lineColor.withValues(alpha: 0.45))
-                      : (active ? Icon(Icons.add_rounded, size: 16, color: zoneColor) : null)),
+              child: blocked
+                  ? Icon(Icons.block_rounded, size: 11, color: lineColor.withValues(alpha: 0.45))
+                  : (active ? Icon(Icons.add_rounded, size: 16, color: zoneColor) : null),
           ),
         );
       },
@@ -2108,39 +2190,21 @@ class TodayPlanPageState extends State<TodayPlanPage>
                       delay: const Duration(milliseconds: 220),
                       dragAnchorStrategy: pointerDragAnchorStrategy,
                       // 判定点 = 手指：不要用 feedbackOffset 补视觉偏移（原因见 _trackNode）
-                      onDragStarted: () {
-                        HapticFeedback.mediumImpact();
-                        _hoveredBlockReason = null;
-                        setState(() => _draggingPayload = payload);
-                      },
-                      onDragEnd: (details) {
-                        final reason = _hoveredBlockReason;
-                        _hoveredBlockReason = null;
-                        if (!details.wasAccepted && reason != null) {
-                          ToastUtil.info(reason);
-                        }
-                        setState(() => _draggingPayload = null);
-                      },
+                      onDragStarted: () => _onTrackDragStart(payload),
+                      onDragUpdate: (details) => _dragPointerX.value = details.globalPosition.dx,
+                      onDragEnd: (details) => _onTrackDragFinish(wasAccepted: details.wasAccepted),
                       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
-                      feedback: CustomSingleChildLayout(
-                        delegate: const FeedbackRightAligned(gap: 10, dy: -18),
+                      feedback: _dragFeedback(
                         // 这里重建一个「不撑满」的节点：托盘里的 chip 是 expand 的
                         // （宽度 infinity），直接拿来当反馈会在无约束下画不出来；
                         // 重建后宽度随文字自适应，右边缘仍贴着指针。
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Transform.scale(
-                            scale: 1.18,
-                            alignment: Alignment.centerRight,
-                            child: _trackNode(
-                              text: StudyStepExt.displayName(step),
-                              inkColor: ink.primary,
-                              bg: nodeBg,
-                              borderColor: nodeBorder,
-                              fontSize: 11,
-                              shadows: shadows,
-                            ),
-                          ),
+                        _trackNode(
+                          text: StudyStepExt.displayName(step),
+                          inkColor: ink.primary,
+                          bg: nodeBg,
+                          borderColor: nodeBorder,
+                          fontSize: 11,
+                          shadows: shadows,
                         ),
                       ),
                       childWhenDragging: chip(step, dragging: true),
@@ -5041,10 +5105,16 @@ class _PetBubbleTailPainter extends CustomPainter {
 /// 用布局而非固定偏移，卡片宽度就能随内容自适应，宽窄不同的环节跟手程度一致。
 @visibleForTesting
 class FeedbackRightAligned extends SingleChildLayoutDelegate {
-  const FeedbackRightAligned({required this.gap, required this.dy});
+  const FeedbackRightAligned({required this.gap, required this.dy, this.fingerX});
 
   final double gap;
   final double dy;
+
+  /// 手指的横坐标（与反馈同一个坐标系）。为空表示还没收到指针移动，按默认位置摆。
+  final double? fingerX;
+
+  /// 卡片左边缘离屏幕左边缘的最小距离。
+  static const double _screenMargin = 8;
 
   @override
   Size getSize(BoxConstraints constraints) => constraints.constrain(Size.zero);
@@ -5053,9 +5123,16 @@ class FeedbackRightAligned extends SingleChildLayoutDelegate {
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) => constraints.loosen();
 
   @override
-  Offset getPositionForChild(Size size, Size childSize) => Offset(-childSize.width - gap, dy);
+  Offset getPositionForChild(Size size, Size childSize) {
+    final double leftOfPointer = -childSize.width - gap;
+    final double? x = fingerX;
+    if (x == null) return Offset(leftOfPointer, dy);
+    // 手指贴到屏幕左边缘时，左侧已经放不下卡片：把它推回屏内（会压住手指），
+    // 宁可卡片压手，也不能让「为什么放不进去」那行字被裁掉。
+    return Offset(math.max(leftOfPointer, _screenMargin - x), dy);
+  }
 
   @override
   bool shouldRelayout(covariant FeedbackRightAligned oldDelegate) =>
-      oldDelegate.gap != gap || oldDelegate.dy != dy;
+      oldDelegate.gap != gap || oldDelegate.dy != dy || oldDelegate.fingerX != fingerX;
 }

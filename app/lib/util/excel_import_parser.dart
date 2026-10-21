@@ -130,7 +130,10 @@ const Map<String, List<String>> _headerAliases = {
   ],
 };
 
-final RegExp _englishPattern = RegExp(r"^[A-Za-z][A-Za-z' \-.]*$");
+/// 合法拼写：以英文字母开头，可含字母、撇号、空格、连字符与句点。
+///
+/// 「添加单词」弹窗与 Excel 导入共用这一条规则，避免手动能加、导入却判非法的口径分裂。
+final RegExp englishSpellPattern = RegExp(r"^[A-Za-z][A-Za-z' \-.]*$");
 final RegExp _cjkPattern = RegExp(r'[\u4e00-\u9fff]');
 final RegExp _spellNoisePattern = RegExp(r'\[[^\]]*\]');
 
@@ -204,7 +207,7 @@ class ExcelColumnDetector {
         final value = row[c].trim();
         if (value.isEmpty) continue;
         nonEmpty[c]++;
-        if (_englishPattern.hasMatch(value)) englishHits[c]++;
+        if (englishSpellPattern.hasMatch(value)) englishHits[c]++;
         if (_cjkPattern.hasMatch(value)) chineseHits[c]++;
       }
     }
@@ -305,7 +308,7 @@ class ExcelRowParser {
   static String? _normalizeSpell(String raw) {
     var value = raw.replaceAll(_spellNoisePattern, ' ').trim();
     if (value.isEmpty) return null;
-    if (!_englishPattern.hasMatch(value)) return null;
+    if (!englishSpellPattern.hasMatch(value)) return null;
     value = value.replaceAll(RegExp(r'\s+'), ' ');
     return value;
   }

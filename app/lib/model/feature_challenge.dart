@@ -264,6 +264,20 @@ class FeatureChallengeRepository {
       explanation: '在书桌页面点击导入，支持拍照 OCR 提取生词，也支持导入标准格式的 Excel 表格。',
     ),
     FeatureChallenge(
+      id: 'tip_add_word_manually',
+      category: '词书功能',
+      title: '手动加一个词典里没有的词',
+      question: '在自建词书的词表页，想加入一个通用词典里查不到的生词（比如专业缩写或自造词），该怎么做？',
+      options: [
+        '点词表右上角「+」输入拼写，查不到时会展开释义输入，填好即可建词加入',
+        '必须先把它整理进 Excel 才能加，App 里无法单独添加',
+        '只能等官方词典收录这个词之后才能加',
+      ],
+      correctIndex: 0,
+      explanation:
+          '词表页右上角的「+」就是手动加词：通用词典里有的词直接加入；没有的词会展开词性与释义输入，补充后按新词建入当前词表，不必先去做表格。',
+    ),
+    FeatureChallenge(
       id: 'tip_fullscreen_mode',
       category: '常用设置',
       title: '全屏模式',

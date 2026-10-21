@@ -48,6 +48,7 @@ import '../../util/word_util.dart';
 import '../index.dart';
 import '../walkman.dart';
 import '../word_detail.dart';
+import 'add_word_dialog.dart';
 import 'ai_story_page.dart';
 import 'dict_words.dart';
 import 'wrong_words.dart';
@@ -1486,77 +1487,41 @@ class WordListPageState extends State<WordListPage>
       await Future.delayed(const Duration(milliseconds: 350));
       if (!capturedContext.mounted) return;
 
-      final TextEditingController controller = TextEditingController();
       await showDialog(
         context: capturedContext,
-        builder: (context) => AlertDialog(
-          title: const Text('添加单词'),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.text,
-            autocorrect: false,
-            decoration: const InputDecoration(
-              hintText: '输入单词拼写',
-              labelText: '单词',
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
-            TextButton(
-              onPressed: () async {
-                final spell = controller.text.trim();
-                if (spell.isEmpty) return;
-
-                final wordModifier = args.wordsProvider as WordModifier;
-                // 检查单词是否存在于通用词典
-                final searchResult = await WordBo().searchWordLocalOnly(spell);
-
-                if (searchResult.word == null) {
-                  ToastUtil.error('单词未在通用词典中找到，无法添加');
-                  return;
-                }
-
-                // 添加到词典
-                final success =
-                    await wordModifier.addWord(searchResult.word!.id!);
-                if (success) {
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                  _sessionController.playAddSuccessSound();
-
-                  // 刷新列表
-
-                  // 此处必须重置 totalWordCount，否则 doQuery 中的优化逻辑(words.length >= totalWordCount)
-                  // 会认为数据已全部加载而跳过本次查询，导致新添加的单词无法显示
-                  totalWordCount = -1;
-                  int queryPageSize = _pageSize;
-                  int targetBaseIndex = baseIndex ?? 0;
-                  try {
-                    final checkResult = await args.wordsProvider.getAPageOfWords(0, 1);
-                    final newTotalCount = checkResult.total;
-                    if (newTotalCount - targetBaseIndex <= 100) {
-                      queryPageSize = max(_pageSize, newTotalCount - targetBaseIndex);
-                    } else {
-                      targetBaseIndex = ((newTotalCount - 1) ~/ _pageSize) * _pageSize;
-                      baseIndex = targetBaseIndex;
-                    }
-                  } catch (e) {
-                    Global.logger.e('计算添加单词后的分页参数失败: $e');
-                  }
-                  await doQuery(true, targetBaseIndex, queryPageSize, true);
-                  setState(() {}); // 强制刷新UI
-                }
-              },
-              child: const Text('添加'),
-            ),
-          ],
+        builder: (context) => AddWordDialog(
+          wordModifier: args.wordsProvider as WordModifier,
+          onAdded: _refreshAfterAdd,
         ),
       );
     } finally {
       isMenuOpen = false;
     }
+  }
+
+  /// 添加单词成功后的列表刷新。
+  Future<void> _refreshAfterAdd() async {
+    _sessionController.playAddSuccessSound();
+
+    // 此处必须重置 totalWordCount，否则 doQuery 中的优化逻辑(words.length >= totalWordCount)
+    // 会认为数据已全部加载而跳过本次查询，导致新添加的单词无法显示
+    totalWordCount = -1;
+    int queryPageSize = _pageSize;
+    int targetBaseIndex = baseIndex ?? 0;
+    try {
+      final checkResult = await args.wordsProvider.getAPageOfWords(0, 1);
+      final newTotalCount = checkResult.total;
+      if (newTotalCount - targetBaseIndex <= 100) {
+        queryPageSize = max(_pageSize, newTotalCount - targetBaseIndex);
+      } else {
+        targetBaseIndex = ((newTotalCount - 1) ~/ _pageSize) * _pageSize;
+        baseIndex = targetBaseIndex;
+      }
+    } catch (e) {
+      Global.logger.e('计算添加单词后的分页参数失败: $e');
+    }
+    await doQuery(true, targetBaseIndex, queryPageSize, true);
+    if (mounted) setState(() {}); // 强制刷新UI
   }
 
   Future<void> _showEditMeaningDialog(WordWrapper word) async {

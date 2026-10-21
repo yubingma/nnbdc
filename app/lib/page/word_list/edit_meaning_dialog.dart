@@ -30,29 +30,6 @@ class EditMeaningDialog extends StatefulWidget {
 class _EditMeaningDialogState extends State<EditMeaningDialog> {
   late List<MeaningItemController> controllers;
   bool _hasDiffFromDefault = false;
-  
-  List<String> get availablePosList {
-    // 返回所有词性选项
-    return posList;
-  }
-  
-  final List<String> posList = [
-    'n.',
-    'v.',
-    'vt.',
-    'vi.',
-    'adj.',
-    'adv.',
-    'prep.',
-    'conj.',
-    'pron.',
-    'art.',
-    'num.',
-    'int.',
-    'phrase.',
-    'abbr.',
-    '无'
-  ];
 
   @override
   void initState() {
@@ -82,7 +59,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
         bool isCustom = items.any((e) => (e.id?.length ?? 0) > 10);
         
         // 确定下拉框选中的值
-        String selectedPos = posList.contains(cx) ? cx : '无';
+        String selectedPos = wordPosOptions.contains(cx) ? cx : '无';
 
         controllers.add(MeaningItemController(
           selectedPos: selectedPos,
@@ -149,7 +126,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
     
     // 找出可用的词性（未使用的）
     String defaultPos = 'n.';
-    for (final pos in posList) {
+    for (final pos in wordPosOptions) {
       if (!usedPos.contains(pos)) {
         defaultPos = pos;
         break;
@@ -246,7 +223,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
         .toSet();
     // 始终包含当前控制器已选的值（即使被其他控制器使用），否则下拉框会报错
     final currentPos = controllers[excludeIndex].selectedPos;
-    final result = posList.where((pos) => !usedPos.contains(pos) || pos == currentPos).toList();
+    final result = wordPosOptions.where((pos) => !usedPos.contains(pos) || pos == currentPos).toList();
     return result;
   }
   
@@ -448,7 +425,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
             bool isCustom = false;
             
             // 确定下拉框选中的值
-            String selectedPos = posList.contains(cx) ? cx : '无';
+            String selectedPos = wordPosOptions.contains(cx) ? cx : '无';
 
             controllers.add(MeaningItemController(
               selectedPos: selectedPos,

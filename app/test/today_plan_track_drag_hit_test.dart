@@ -216,4 +216,41 @@ void main() {
 
     await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
   });
+
+  testWidgets('拖到已存在的环节上：原因显示在拖拽卡片里，整条落在手指上方', (tester) async {
+    await seedTodayPlanNotStarted();
+    await pumpTodayPlan(tester);
+    await pumpUntil(tester, find.text('学习轨道'));
+
+    await tester.tap(find.text('学习轨道'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('编辑'));
+    await tester.pumpAndSettle();
+
+    // 默认「答对后」里已经有汉译英：把托盘里的汉译英拖进去，就是接不住的那种落点。
+    final int before = find.text('汉译英').evaluate().length;
+    final Rect zone = tester.getRect(zones.first);
+    // 指在胶囊最左边：手指贴着屏幕左边缘，卡片若不往回推，提示会被裁掉一半。
+    final Offset dropAt = Offset(zone.left + 6, zone.center.dy);
+
+    final chip = find.text('汉译英').last;
+    final gesture = await tester.startGesture(tester.getCenter(chip));
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.moveTo(dropAt);
+    await tester.pump();
+
+    final notice = find.text('本轨道已有该环节');
+    expect(notice, findsOneWidget, reason: '接不住的原因要跟着拖拽卡片走');
+    final Rect noticeRect = tester.getRect(notice);
+    expect(noticeRect.bottom, lessThan(dropAt.dy - 12),
+        reason: '提示必须整条落在手指上方：画在放置条里就会被手指压住');
+    expect(noticeRect.left, greaterThanOrEqualTo(0), reason: '手指贴左边缘时提示不能被裁到屏幕外');
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.text('汉译英'), findsNWidgets(before), reason: '接不住的格子不该接收这个环节');
+    expect(find.text('本轨道已有该环节'), findsWidgets, reason: '松手后原因仍由 Toast 交代清楚');
+
+    await tester.pump(const Duration(seconds: 60));
+  });
 }
