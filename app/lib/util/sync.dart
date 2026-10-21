@@ -492,6 +492,12 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     // 本批回放中被改动的词书：回放结束后每本只做一次语义排序缓存失效
     final Set<String> touchedDictIds = <String>{};
 
+    // 合并、排序都已完成，从这里开始才真正往本机数据库写。
+    syncProgress.value = SyncProgress(
+      phase: 'WRITING LOCAL DATA',
+      done: 0,
+      total: backendToLocal.length,
+    );
     await db.transaction(() async {
       final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
 
@@ -1143,6 +1149,9 @@ Future<void> syncUserDb(String userId, {bool retried = false}) async {
   }
   _isSyncUserDbRunning = true;
 
+  // 先核对本地版本、核心数据与本机待上传日志；这一步还没开始下载云端日志。
+  syncProgress.value = const SyncProgress(phase: 'PREPARING USER DATA');
+
   final stopwatch = Stopwatch()..start();
   try {
     // 获取本地数据库版本
@@ -1185,15 +1194,14 @@ Future<void> syncUserDb(String userId, {bool retried = false}) async {
 
     // 与后端同步用户数据库
     if (localDbVersion != remoteDbVersion || localLogs.isNotEmpty || missingTables.isNotEmpty) {
+      // 本地核对完毕，从这里开始才真正向云端请求日志。
+      syncProgress.value = const SyncProgress(phase: 'FETCHING USER DATA');
       var result1 = await Api.client.getDbLogsFromVersion(localDbVersion, userId, missingTables.join(','));
       if (result1.success) {
         List<UserDbLogDto> remoteLogs = result1.data!;
         Global.logger.i("✅ 获取远程变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
-        syncProgress.value = SyncProgress(
-          phase: 'WRITING LOCAL DATA',
-          done: 0,
-          total: remoteLogs.length,
-        );
+        // 日志已到本机，接下来是内存里的去重、冲突合并与排序，还没开始写数据库。
+        syncProgress.value = const SyncProgress(phase: 'MERGING USER DATA');
 
         // 记录上下行数量
         addUploadCount(localLogs.length);
@@ -1306,7 +1314,6 @@ Future<void> syncDb() async {
 
     // 再同步用户数据（游客不需要同步用户数据）
     if (!Global.isGuest) {
-      syncProgress.value = const SyncProgress(phase: 'FETCHING USER DATA');
       await syncUserDb(loggedInUser.id!);
     }
 

@@ -389,9 +389,13 @@ class _SyncProgressOverlayState extends State<SyncProgressOverlay> {
       case 'FETCHING SYSTEM DATA':
         return '正在下载系统数据';
       case 'WRITING SYSTEM DATA':
-        return '正在准备系统数据';
+        return '正在写入系统数据';
+      case 'PREPARING USER DATA':
+        return '正在核对本地数据';
       case 'FETCHING USER DATA':
         return '正在下载你的云端数据';
+      case 'MERGING USER DATA':
+        return '正在整理云端记录';
       case 'WRITING LOCAL DATA':
         return '正在把云端记录写入本机';
       case 'UPLOADING CHANGES':

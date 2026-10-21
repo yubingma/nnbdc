@@ -58,6 +58,25 @@ void main() {
     expect(find.text('正在下载你的云端数据'), findsOneWidget);
   });
 
+  testWidgets('阶段文案严格对应当时真正发生的操作', (tester) async {
+    syncProgress.value = const SyncProgress(phase: 'PREPARING USER DATA');
+    await tester.pumpWidget(host(syncing: true));
+    await tester.pump();
+    expect(find.text('正在核对本地数据'), findsOneWidget);
+
+    syncProgress.value = const SyncProgress(phase: 'MERGING USER DATA');
+    await tester.pump();
+    expect(find.text('正在整理云端记录'), findsOneWidget);
+
+    syncProgress.value = const SyncProgress(
+      phase: 'WRITING SYSTEM DATA',
+      done: 10,
+      total: 100,
+    );
+    await tester.pump();
+    expect(find.text('正在写入系统数据'), findsOneWidget);
+  });
+
   testWidgets('同步结束但计划仍未就绪时，显示准备今日计划', (tester) async {
     await tester.pumpWidget(host(syncing: false));
     await tester.pump();

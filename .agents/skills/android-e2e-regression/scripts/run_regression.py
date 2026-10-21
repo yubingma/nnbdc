@@ -341,11 +341,7 @@ class Runner:
         print("[*] 通过真机「注销账号」销毁旧账号...")
         self._goto_me_tab()
         self._open_settings_section()
-        for _ in range(4):
-            if self.device.wait(ID_ME_UNREGISTER, timeout=1.5):
-                break
-            self.device.swipe_up(0.8, 0.3, 300)
-        node = self.device.find_by_id(ID_ME_UNREGISTER)
+        node = self._scroll_to_id(ID_ME_UNREGISTER, max_swipes=5)
         if not node:
             return False
         self.device.tap_node(node)
@@ -362,17 +358,43 @@ class Runner:
         # 等回到欢迎页
         return self.device.wait(ID_LOGIN_EMAIL_ENTRY, timeout=10) is not None
 
+    def _ensure_main_ui(self):
+        """从完成页、详情页等二级页面退回到带底栏的主界面。"""
+        for _ in range(4):
+            nodes = self.device.dump()
+            if self._has(nodes, ID_NAV_STUDY):
+                return
+            if not self.device.go_back(nodes):
+                self.device.press_key(4)
+            time.sleep(0.6)
+        raise CaseFailure("退不回主界面")
+
     def _goto_me_tab(self):
+        self._ensure_main_ui()
         node = self.device.wait(ID_NAV_ME, timeout=5)
-        if node:
-            self.device.tap_node(node)
-            time.sleep(0.3)
+        if node is None:
+            raise CaseFailure("底栏找不到「我」")
+        self.device.tap_node(node)
+        time.sleep(0.3)
 
     def _open_settings_section(self):
+        """「设置与工具」是折叠区，已经展开时再点会把它收起来 —— 先看标题上的收起/展开。"""
         node = self.device.find_by_id(ID_ME_SETTINGS)
-        if node:
-            self.device.tap_node(node)
-            time.sleep(0.4)
+        if node is None:
+            raise CaseFailure("个人中心找不到「设置与工具」")
+        if "收起" in " ".join(self.device.texts_within(node, self.device.dump())):
+            return
+        self.device.tap_node(node)
+        time.sleep(0.4)
+
+    def _scroll_to_id(self, identifier: str, max_swipes: int = 4):
+        for _ in range(max_swipes):
+            node = self.device.find_by_id(identifier)
+            if node:
+                return node
+            self.device.swipe_up(0.78, 0.34, 300)
+            time.sleep(0.3)
+        return self.device.find_by_id(identifier)
 
     def _first_edit_text(self):
         for n in self.device.dump():
@@ -882,10 +904,7 @@ class Runner:
         """我 → 设置与工具 → 云同步状态。进这个页面本身就会触发一次原生同步。"""
         self._goto_me_tab()
         self._open_settings_section()
-        tile = self.device.find_by_id(ID_ME_SYNC)
-        if tile is None:
-            self.device.swipe_up(0.8, 0.4, 300)
-            tile = self.device.find_by_id(ID_ME_SYNC)
+        tile = self._scroll_to_id(ID_ME_SYNC)
         if tile is None:
             raise CaseFailure("个人中心找不到「云同步状态」")
         self.device.tap_node(tile)
@@ -1008,6 +1027,7 @@ class Runner:
 
     def step_home_status(self):
         print("\n--- [13] 主页打卡状态 ---")
+        self._ensure_main_ui()
         self.device.tap_id(ID_NAV_STUDY)
         time.sleep(0.8)
         nodes = self.device.dump()

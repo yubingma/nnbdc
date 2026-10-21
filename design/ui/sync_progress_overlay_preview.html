@@ -493,7 +493,8 @@
   <div class="toolbar">
     <span class="toolbar-label">同步阶段</span>
     <button class="state-btn" data-state="download" type="button">下载云端数据</button>
-    <button class="state-btn" data-state="system" type="button">准备系统数据</button>
+    <button class="state-btn" data-state="system" type="button">写入系统数据</button>
+    <button class="state-btn" data-state="merge" type="button">整理云端记录</button>
     <button class="state-btn active" data-state="write" type="button">写入本机</button>
     <button class="state-btn" data-state="upload" type="button">上传本机改动</button>
     <button class="state-btn" data-state="stalled" type="button">停滞 52 秒</button>
@@ -638,7 +639,8 @@
   </main>
 
   <div class="notes">
-    <strong>说明：</strong>卡片宽度、字号、间距按 Flutter 的 <code>SyncProgressOverlay</code> 实际参数还原；两个手机的卡片是同一个组件在浅色/深色主题下的样子。点击上方阶段可切换状态，数字会自动前进，方便观察“数字在跳 = 没卡死”的效果；点“暂停数字”可停下来细看。
+    <strong>说明：</strong>卡片宽度、字号、间距按 Flutter 的 <code>SyncProgressOverlay</code> 实际参数还原；两个手机的卡片是同一个组件在浅色/深色主题下的样子。点击上方阶段可切换状态，数字会自动前进，方便观察“数字在跳 = 没卡死”的效果；点“暂停数字”可停下来细看。<br>
+    <strong>真实阶段顺序：</strong>用户数据是「核对本地数据 → 下载云端数据 → 整理云端记录 → 写入本机 → 上传本机改动」；系统数据是「下载系统数据 → 写入系统数据」。这里放的是几个代表状态。
   </div>
 </div>
 
@@ -657,13 +659,24 @@
     },
     system: {
       preparing: false,
-      stage: '正在准备系统数据',
+      stage: '正在写入系统数据',
       bytesMb: 38.2,
       done: 24800,
       total: 61200,
       showCount: true,
       countLabel: '已处理记录',
       elapsed: 312,
+      stalled: false
+    },
+    merge: {
+      preparing: false,
+      stage: '正在整理云端记录',
+      bytesMb: 38.2,
+      done: 0,
+      total: 0,
+      showCount: false,
+      countLabel: '已处理记录',
+      elapsed: 248,
       stalled: false
     },
     write: {
