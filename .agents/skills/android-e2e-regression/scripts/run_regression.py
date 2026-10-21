@@ -485,6 +485,19 @@ class Runner:
             self.device.tap_node(node)
             time.sleep(0.25)
 
+    def _stable_dump(self, attempts: int = 6) -> list:
+        """等界面刷稳：连续两次抓到的词书行一致才算数，避免用半加载时的旧坐标去点。"""
+        nodes = self.device.dump()
+        rows = [n["rid"] for n in nodes if n["rid"].startswith(ID_BOOK_ROW_PREFIX)]
+        for _ in range(attempts):
+            time.sleep(0.35)
+            nodes = self.device.dump()
+            current = [n["rid"] for n in nodes if n["rid"].startswith(ID_BOOK_ROW_PREFIX)]
+            if current and current == rows:
+                return nodes
+            rows = current
+        return nodes
+
     def step_select_book(self):
         print("\n--- [6] 词书 ---")
         self._dismiss_import_dialog()
@@ -496,21 +509,18 @@ class Runner:
         if entry is None:
             raise CaseFailure("主页既没有学习入口也没有「选择词书」")
         self.device.tap_node(entry)
-        time.sleep(1.0)
+        time.sleep(0.8)
 
         # 默认停在「自定义」页签，里面只有 0 词的生词本；切到「大学」才有成规模的词书
         uni = self.device.wait_by_text_any(["大学"], timeout=4)
         if uni:
             self.device.tap_node(uni)
-            time.sleep(0.8)
-        rows = self.device.find_all_by_id_prefix(ID_BOOK_ROW_PREFIX)
-        if not rows:
-            raise CaseFailure("词书列表里没有任何词书行")
+        nodes = self._stable_dump()
 
-        nodes = self.device.dump()
-        chosen = None
-        chosen_count = None
-        for row in rows:
+        chosen, chosen_count = None, None
+        for row in nodes:
+            if not row["rid"].startswith(ID_BOOK_ROW_PREFIX):
+                continue
             text = " ".join(self.device.texts_within(row, nodes))
             match = re.search(r"([\d,]+)\s*词", text)
             if not match:
@@ -521,33 +531,20 @@ class Runner:
                 chosen, chosen_count = row, count
         if chosen is None:
             raise CaseFailure(f"没有找到不少于 {self.plan_words} 词的词书")
-        print(f"[*] 选中 {chosen_count} 词的词书（词数最少，导入最快）")
+        print(f"[*] 选中 {chosen_count} 词的词书（在够用的里面挑词数最少的，导入最快）")
         self.device.tap_node(chosen)
-        time.sleep(0.5)
+        time.sleep(0.6)
 
         save = self.device.wait(ID_BOOK_SAVE, timeout=3)
         if save is None:
             raise CaseFailure("词书页没有「保存」按钮")
         self.device.tap_node(save)
+        self._dismiss_import_dialog(timeout=300)
 
-        # 导入弹窗是系统级进度对话框，只能按文案等它消失
-        deadline = time.time() + 300
-        while time.time() < deadline:
-            nodes = self.device.dump()
-            if "导入词书" not in self._labels(nodes):
-                break
-            time.sleep(1.0)
-        nodes = self.device.dump()
-        if "导入词书" in self._labels(nodes):
-            raise CaseFailure("词书导入超过 300 秒仍未完成")
-        for label in ("完成", "确定"):
-            hit = self.device.find_by_text(label)
-            if hit:
-                self.device.tap_node(hit)
-                break
-        ok = self.device.wait(ID_HOME_START, timeout=10) is not None
+        ok = self.device.wait(ID_HOME_START, timeout=20) is not None
         self.expect("词书就绪校验", ok,
-                    f"已导入 {chosen_count} 词的词书，主页出现学习入口" if ok else "导入后主页仍无学习入口",
+                    f"已选中并导入 {chosen_count} 词的词书，主页出现学习入口" if ok
+                    else "词书保存导入后主页仍无学习入口",
                     self.capture("dict_imported"))
 
     def step_set_plan(self):
@@ -577,61 +574,89 @@ class Runner:
 
     def step_study_track(self):
         print("\n--- [8] 学习轨道 ---")
-        card = None
-        for _ in range(3):
-            nodes = self.device.dump()
-            for n in nodes:
-                if n["clickable"] and ("新词轨道" in n["label"] or "旧词轨道" in n["label"]):
-                    card = n
-                    break
-            if card:
-                break
-            self.device.swipe_up(0.55, 0.75, 300)
-        if card is None:
-            raise CaseFailure("主页找不到学习轨道卡片")
-        self.device.tap_node(card)
-        time.sleep(0.5)
         nodes = self.device.dump()
         labels = self._labels(nodes)
-        ok = "答对后环节" in labels or "答错后环节" in labels
-        self.expect("学习轨道配置与切换", ok,
-                    "展开轨道编辑态，看到答对/答错后环节" if ok else "轨道卡片点了但没有环节配置",
-                    self.capture("study_track"))
-        self.device.press_key(4)  # 收起编辑态
-        time.sleep(0.3)
+        new_card = next((n["label"] for n in nodes
+                         if n["clickable"] and n["label"].endswith("新词")), None)
+        flow_visible = "答对" in labels and "答错" in labels and "汉译英" in labels
+        if not flow_visible:
+            header = self.device.wait_by_text_any(["学习轨道"], timeout=3)
+            if header:
+                self.device.tap_node(header)
+                time.sleep(0.5)
+                nodes = self.device.dump()
+                labels = self._labels(nodes)
+                flow_visible = "答对" in labels and "答错" in labels
+
+        collapse = self.device.wait_by_text_any(["收起轨道"], timeout=3)
+        if flow_visible and collapse:
+            self.device.tap_node(collapse)
+            time.sleep(0.5)
+            collapsed = "答对" not in self._labels(self.device.dump())
+            header = self.device.wait_by_text_any(["学习轨道"], timeout=3)
+            reopened = False
+            if header:
+                self.device.tap_node(header)
+                time.sleep(0.5)
+                reopened = "答对" in self._labels(self.device.dump())
+            ok = collapsed and reopened
+            self.expect("学习轨道配置与切换", ok,
+                        f"主页轨道呈现 {new_card or '新词'} 卡片及环节流程，收起后环节消失、再展开又回来"
+                        if ok else "学习轨道收起/展开后环节流程没有跟着切换",
+                        self.capture("study_track"))
+            return
+
+        self.expect("学习轨道配置与切换", False,
+                    "主页既没有轨道环节流程，也没有「收起轨道」",
+                    self.capture("study_track_missing"))
 
     # ---------- 学习主循环 ----------
 
     def _enter_study(self):
-        start = self.device.wait(ID_HOME_START, timeout=6) or self.device.wait(ID_HOME_EXTRA, timeout=1)
-        if start is None:
-            raise CaseFailure("主页没有「开始学习/继续学习」")
-        self.device.tap_node(start)
-        confirm = self.device.wait_by_text_any(["马上开始"], timeout=2)
-        if confirm:
-            self.device.tap_node(confirm)
+        """从任何状态进到答题卡片：可能已经在卡片上、可能停在主页、也可能停在别的页签。"""
+        for _ in range(3):
+            nodes = self.device.dump()
+            if self._has(nodes, ID_STUDY_DONT_KNOW):
+                self._dismiss_voice_guide(nodes)
+                return
+            start = self._node(nodes, ID_HOME_START) or self._node(nodes, ID_HOME_EXTRA)
+            if start is None:
+                self.device.tap_id(ID_NAV_STUDY)
+                time.sleep(0.5)
+                continue
+            self.device.tap_node(start)
+            confirm = self.device.wait_by_text_any(["马上开始"], timeout=2)
+            if confirm:
+                self.device.tap_node(confirm)
+            if self.device.wait(ID_STUDY_DONT_KNOW, timeout=8):
+                self._dismiss_voice_guide()
+                return
+        raise CaseFailure("进不到单词答题卡片")
+
+    def _dismiss_voice_guide(self, nodes=None):
+        """新手语音引导蒙层「你说，我来听」会盖住答题卡片，先点掉它。"""
+        nodes = nodes if nodes is not None else self.device.dump()
+        if not any("你说，我来听" in n["label"] for n in nodes):
+            return
+        btn = self.device.find_by_text("开始学习", nodes)
+        if btn is None:
+            raise CaseFailure("语音引导蒙层上没有可点的按钮")
+        self.device.tap_node(btn)
+        time.sleep(0.4)
 
     def step_study(self):
         print("\n--- [9] 学完当日计划 ---")
         self.device.tap_id(ID_NAV_STUDY)
         time.sleep(0.4)
         self._enter_study()
-
-        if self.device.wait(ID_STUDY_DONT_KNOW, timeout=8) is None:
-            raise CaseFailure("进入学习后没有出现答题卡片")
+        self._switch_to_choice_mode()
 
         nodes = self.device.dump()
         header = self._header(nodes)
         self.expect("进入单词测评卡片", bool(header),
                     f"已呈现单词卡片：{header}", self.capture("study_card"))
 
-        # 切到选择题：这样「答对/答错」才有明确可判的选项
-        if not self._options(nodes):
-            self.device.tap_id(ID_STUDY_MODE_SWITCH)
-            time.sleep(0.6)
-            nodes = self.device.dump()
-
-        # 反向用例：拿掉录音权限，切到「说释义」必须给出权限提示且不崩
+        # 反向用例：拿掉录音权限，切到「说释义」必须不崩且给出权限提示
         self._permission_case()
 
         # 准备释义真值：先停进程拉一份快照，避免边学边读造成撕裂
@@ -649,35 +674,67 @@ class Runner:
                     "学完当日计划并自动进入完成打卡页" if reached else "没有进入完成打卡页",
                     self.capture("finish_page"))
 
+    def _switch_to_choice_mode(self, attempts: int = 3):
+        """把作答方式切到「选择题」，题目才有可判定的选项，也不会一直开着麦克风。"""
+        for _ in range(attempts):
+            nodes = self.device.dump()
+            if self._options(nodes):
+                return
+            self.device.tap_id(ID_STUDY_MODE_SWITCH, nodes)
+            time.sleep(0.7)
+        if not self._options(self.device.dump()):
+            raise CaseFailure("切不到选择题，看不到任何选项")
+
     def _permission_case(self):
-        print("[*] 反向用例：撤销录音权限后切到语音作答")
+        print("[*] 反向用例：没有录音权限时切到「说释义」")
+        # 撤销权限会被系统直接杀掉进程，所以必须先撤销再启动，才能看到「没权限时会不会崩」
+        self.device.stop_app()
         self.device.set_permission("android.permission.RECORD_AUDIO", False)
+        self.device.launch_app(grant=False)
+        self._enter_study()
+        self._switch_to_choice_mode()
         pid_before = self._pid()
-        # 切到「说释义」会申请麦克风
-        self.device.tap_id(ID_STUDY_MODE_SWITCH)
-        time.sleep(1.2)
+
+        self.device.tap_id(ID_STUDY_MODE_SWITCH)   # 选择题 → 说释义（要麦克风）
+        time.sleep(1.5)
         nodes = self.device.dump()
-        dialog = [n for n in nodes
-                  if n.get("package") and n["package"] != "com.nn.nnbdc.android"
-                  and any(k in n["label"] for k in ("允许", "禁止", "使用"))]
-        pid_after = self._pid()
-        alive = bool(pid_after) and pid_after == pid_before
-        if dialog:
-            deny = next((n for n in dialog if "禁止" in n["label"] or "不允许" in n["label"]), None)
+        labels = self._labels(nodes)
+        explained = "麦克风权限" in labels or "暂不授权" in labels
+        denied = False
+        if explained:
+            deny = self.device.find_by_text("暂不授权", nodes) or self.device.find_by_text("去授权", nodes)
             if deny:
                 self.device.tap_node(deny)
+                denied = True
+                time.sleep(0.5)
+
+        system_dialog = [n for n in nodes
+                         if n["package"] and n["package"] != "com.nn.nnbdc.android"
+                         and any(k in n["label"] for k in ("允许", "禁止", "使用"))]
+        if system_dialog:
+            deny_btn = next((n for n in system_dialog
+                             if "禁止" in n["label"] or "不允许" in n["label"]), None)
+            if deny_btn:
+                self.device.tap_node(deny_btn)
             else:
                 self.device.press_key(4)
+            denied = True
             time.sleep(0.5)
+
+        pid_after = self._pid()
+        alive = bool(pid_after) and pid_after == pid_before
         self.device.set_permission("android.permission.RECORD_AUDIO", True)
-        self.expect("拒绝录音权限不崩溃", alive,
-                    "撤销录音权限后 App 进程未重启，且系统权限弹窗正常出现" if dialog and alive
-                    else ("App 未崩溃，但没看到系统权限弹窗" if alive
-                          else "撤销录音权限后 App 进程消失（崩溃）"),
-                    self.capture("permission_denied"))
-        # 切回选择题继续作答
-        self.device.tap_id(ID_STUDY_MODE_SWITCH)
-        time.sleep(0.5)
+        ok = alive and (explained or bool(system_dialog))
+        if explained:
+            detail = ("没有录音权限时切到语音作答，App 弹出「麦克风权限」说明并给"
+                      f"{'了「暂不授权」出口，拒绝后进程没有重启' if denied else '出授权入口'}")
+        elif system_dialog:
+            detail = "没有录音权限时切到语音作答，系统弹出权限申请，App 进程没有重启"
+        else:
+            detail = "没有录音权限时切到语音作答，既没有权限说明也没有系统授权弹窗"
+        if not alive:
+            detail = "没有录音权限时切到语音作答，App 进程直接消失了"
+        self.expect("拒绝录音权限不崩溃", ok, detail, self.capture("permission_denied"))
 
     def _pid(self):
         res = self.device._run_adb(["shell", "pidof", "com.nn.nnbdc.android"], check=False)
@@ -690,6 +747,7 @@ class Runner:
         self.auditor.pull_snapshot()
         self.device.launch_app()
         self._enter_study()
+        self._switch_to_choice_mode()
         self.meanings = self.auditor.meanings_by_spell()
         print(f"[*] 本地可判定的单词释义 {len(self.meanings)} 个")
 
@@ -794,6 +852,7 @@ class Runner:
         time.sleep(0.5)
         self.device.launch_app()
         self._enter_study()
+        self._switch_to_choice_mode()
         node = self.device.wait(ID_STUDY_DONT_KNOW, timeout=10)
         nodes = self.device.dump() if node is None else None
         header_after = self._header(self.device.dump() if nodes is None else nodes)

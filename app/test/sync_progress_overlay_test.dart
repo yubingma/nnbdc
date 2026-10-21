@@ -37,7 +37,7 @@ void main() {
     await tester.pumpWidget(host(syncing: true));
     await tester.pump();
 
-    expect(find.text('正在从云端同步'), findsOneWidget);
+    expect(find.text('正在同步学习记录'), findsOneWidget);
     expect(find.text('本次已下载'), findsOneWidget);
     expect(find.text('18.4 MB'), findsOneWidget);
     expect(find.text('已处理记录'), findsOneWidget);
@@ -63,7 +63,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('正在准备今日计划'), findsOneWidget);
-    expect(find.text('正在从云端同步'), findsNothing);
+    expect(find.text('正在同步学习记录'), findsNothing);
   });
 
   test('本轮已接收字节数只增不减', () {

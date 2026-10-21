@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>云端同步进度 · 交互原型</title>
+<style>
+  :root {
+    --page-bg: #E7ECF2;
+    --page-ink: #0F172A;
+    --page-sub: #5B6B7F;
+    --number-font: "Roboto", "Helvetica Neue", Arial, sans-serif;
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    padding: 36px 24px 64px;
+    background-color: var(--page-bg);
+    background-image:
+      radial-gradient(circle at 12% 4%, rgba(10, 107, 140, 0.08) 0%, transparent 38%),
+      radial-gradient(circle at 88% 10%, rgba(251, 146, 60, 0.06) 0%, transparent 36%),
+      radial-gradient(circle at 50% 100%, rgba(30, 41, 59, 0.04) 0%, transparent 55%);
+    color: var(--page-ink);
+    font-family: var(--font-stack);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page { max-width: 1040px; margin: 0 auto; }
+
+  .page-head { max-width: 720px; }
+  .page-kicker {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+    color: #0A6B8C;
+    text-transform: uppercase;
+  }
+  .page-head h1 {
+    margin-top: 8px;
+    font-size: 27px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  .page-head p {
+    margin-top: 8px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--page-sub);
+  }
+
+  .toolbar {
+    margin: 22px 0 28px;
+    padding: 12px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .toolbar-label {
+    margin-right: 2px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    color: #64748B;
+    text-transform: uppercase;
+  }
+  .state-btn,
+  .tool-btn {
+    appearance: none;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #F8FAFC;
+    color: #334155;
+    border-radius: 9px;
+    padding: 7px 11px;
+    font-family: var(--font-stack);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+  .state-btn:hover,
+  .tool-btn:hover { background: #EEF2F7; }
+  .state-btn.active {
+    background: #0F172A;
+    border-color: #0F172A;
+    color: #F8FAFC;
+  }
+  .toolbar-spacer { flex: 1 1 24px; }
+  .tool-btn.on {
+    background: rgba(10, 107, 140, 0.08);
+    border-color: rgba(10, 107, 140, 0.22);
+    color: #0A6B8C;
+  }
+  .tool-btn.ghost { background: transparent; }
+
+  .stage {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+  .phone {
+    position: relative;
+    width: 410px;
+    height: 864px;
+    padding: 10px;
+    border-radius: 56px;
+    background: linear-gradient(145deg, #303A48 0%, #101720 38%, #0A0F16 100%);
+    box-shadow:
+      0 40px 90px -30px rgba(2, 6, 23, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.10) inset,
+      0 0 0 2px rgba(2, 6, 23, 0.55);
+    flex-shrink: 0;
+  }
+
+  .phone[data-theme="light"] {
+    --card-bg: #F8FAFC;
+    --card-border: rgba(15, 23, 42, 0.06);
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --accent: #0A6B8C;
+    --line: rgba(15, 23, 42, 0.06);
+    --warn: #B45309;
+    --card-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+    --status-ink: #0F172A;
+    --nav-ink: #0F172A;
+    --nav-muted: rgba(15, 23, 42, 0.45);
+    --home-bar: rgba(15, 23, 42, 0.75);
+    --scrim: rgba(0, 0, 0, 0.50);
+  }
+  .phone[data-theme="dark"] {
+    --card-bg: #151A23;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --accent: #6EE7B7;
+    --line: rgba(255, 255, 255, 0.08);
+    --warn: #FBBF24;
+    --card-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    --status-ink: #F8FAFC;
+    --nav-ink: #F8FAFC;
+    --nav-muted: rgba(248, 250, 252, 0.45);
+    --home-bar: rgba(248, 250, 252, 0.85);
+    --scrim: rgba(0, 0, 0, 0.72);
+  }
+
+  .screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 46px;
+    background: #0F172A;
+    isolation: isolate;
+  }
+
+  .wallpaper {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transform: scale(1.01);
+  }
+  .phone[data-theme="light"] .wallpaper {
+    background-image: url("../../app/assets/images/wallpaper/vase.jpg");
+  }
+  .phone[data-theme="dark"] .wallpaper {
+    background-image: url("../../app/assets/images/wallpaper/glaze.jpg");
+  }
+
+  .scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: var(--scrim);
+  }
+
+  .status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 6;
+    height: 54px;
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--status-ink);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+    pointer-events: none;
+  }
+  .status-right { display: flex; align-items: center; gap: 6px; }
+  .status-right svg { display: block; }
+
+  .island {
+    position: absolute;
+    top: 11px;
+    left: 50%;
+    z-index: 8;
+    width: 118px;
+    height: 34px;
+    border-radius: 20px;
+    background: #000;
+    transform: translateX(-50%);
+  }
+  .island::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    right: 13px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .sync-card {
+    width: 342px;
+    padding: 24px 24px 22px;
+    border-radius: 26px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    color: var(--text-primary);
+    font-family: var(--font-stack);
+  }
+
+  .card-head { display: flex; align-items: center; }
+  .card-head svg { width: 20px; height: 20px; display: block; color: var(--accent); }
+  .eyebrow {
+    margin-left: 8px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    color: var(--text-secondary);
+  }
+  .head-spacer { flex: 1; }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.8px solid var(--line);
+    border-top-color: var(--accent);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .card-title {
+    margin-top: 16px;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    line-height: 1.25;
+    color: var(--text-primary);
+  }
+
+  .card-sub {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .rule {
+    height: 0.5px;
+    margin-top: 20px;
+    background: var(--line);
+  }
+
+  .metric-label {
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    color: var(--text-secondary);
+  }
+
+  .bytes-value {
+    margin-top: 2px;
+    font-family: var(--number-font);
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    line-height: 1.1;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .waiting {
+    margin-top: 18px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+
+  .count-row {
+    margin-top: 16px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .count-value {
+    font-family: var(--number-font);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .bar {
+    position: relative;
+    height: 3.5px;
+    margin-top: 8px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--line);
+  }
+  .bar.indeterminate { margin-top: 16px; }
+  .bar-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.35s ease;
+  }
+  .bar.indeterminate .bar-fill {
+    width: 38%;
+    transition: none;
+    animation: sweep 1.4s ease-in-out infinite;
+  }
+  @keyframes sweep {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(300%); }
+  }
+
+  .card-footer {
+    margin-top: 18px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .phase {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .elapsed {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .last {
+    margin-top: 6px;
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    opacity: 0.82;
+  }
+  .last.warn {
+    color: var(--warn);
+    font-weight: 500;
+    opacity: 1;
+  }
+
+  .bottom-nav {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 7;
+    height: 86px;
+    padding: 10px 22px 22px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    color: var(--nav-ink);
+  }
+  .nav-item {
+    width: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--nav-muted);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .nav-item svg { width: 22px; height: 22px; display: block; }
+  .nav-item.active { color: var(--accent); font-weight: 600; }
+
+  .home-bar {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    z-index: 9;
+    width: 134px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--home-bar);
+    transform: translateX(-50%);
+    opacity: 0.8;
+  }
+
+  .phone-caption { text-align: center; }
+  .phone-caption strong {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1E293B;
+  }
+  .phone-caption span {
+    display: block;
+    margin-top: 3px;
+    font-size: 10.5px;
+    color: #748399;
+  }
+
+  .notes {
+    max-width: 860px;
+    margin: 30px auto 0;
+    padding: 16px 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    background: rgba(255, 255, 255, 0.48);
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: #5B6B7F;
+  }
+  .notes strong { color: #1E293B; font-weight: 600; }
+
+  @media (max-width: 900px) {
+    body { padding: 24px 14px 48px; }
+    .stage { gap: 30px; }
+    .phone { width: 390px; height: 824px; }
+    .sync-card { width: 326px; }
+  }
+  @media (max-width: 460px) {
+    .phone { width: 100%; max-width: 390px; height: auto; aspect-ratio: 390 / 824; }
+    .sync-card { width: calc(100% - 36px); padding: 20px; }
+    .card-title { font-size: 19px; }
+    .bytes-value { font-size: 27px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="page-head">
+    <div class="page-kicker">Cloud Sync · Loading State</div>
+    <h1>云端同步进度 · 交互原型</h1>
+    <p>左边是亮色清雅壁纸配浅色主题，右边是暗色琉璃壁纸配深色主题。同一张卡片，靠全屏压暗遮罩和不透明卡面保证可读性，不再被壁纸吃掉。</p>
+  </header>
+
+  <div class="toolbar">
+    <span class="toolbar-label">同步阶段</span>
+    <button class="state-btn" data-state="download" type="button">下载云端数据</button>
+    <button class="state-btn active" data-state="write" type="button">写入本机</button>
+    <button class="state-btn" data-state="upload" type="button">上传本机改动</button>
+    <button class="state-btn" data-state="stalled" type="button">停滞 52 秒</button>
+    <button class="state-btn" data-state="prepare" type="button">准备今日计划</button>
+    <span class="toolbar-spacer"></span>
+    <button class="tool-btn on" id="playToggle" type="button">暂停数字</button>
+    <button class="tool-btn ghost" id="resetBtn" type="button">重播</button>
+  </div>
+
+  <main class="stage">
+    <div class="phone-wrap">
+      <div class="phone" data-theme="light">
+        <div class="screen">
+          <div class="wallpaper"></div>
+          <div class="scrim"></div>
+
+          <div class="status-bar">
+            <span>10:48</span>
+            <span class="status-right">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                <rect x="0" y="8" width="3" height="4" rx="1"/>
+                <rect x="4.5" y="6" width="3" height="6" rx="1"/>
+                <rect x="9" y="3.5" width="3" height="8.5" rx="1"/>
+                <rect x="13.5" y="1" width="3" height="11" rx="1"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+                <path d="M1.5 4.5a9 9 0 0 1 13 0"/>
+                <path d="M4 7.2a5.6 5.6 0 0 1 8 0"/>
+                <circle cx="8" cy="10.2" r="1.2" fill="currentColor" stroke="none"/>
+              </svg>
+              <svg width="25" height="12" viewBox="0 0 25 12" fill="none" aria-hidden="true">
+                <rect x="0.5" y="1" width="21" height="10" rx="3" stroke="currentColor" stroke-opacity="0.4"/>
+                <rect x="2.2" y="2.7" width="16" height="6.6" rx="1.6" fill="currentColor"/>
+                <path d="M23 4.2v3.6a2 2 0 0 0 0-3.6Z" fill="currentColor" fill-opacity="0.55"/>
+              </svg>
+            </span>
+          </div>
+
+          <div class="island"></div>
+
+          <div class="overlay">
+            <div class="sync-card" id="card-light"></div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 5l9 4.5-9 4.5-9-4.5Z"/><path d="M6.5 11.2v4.1c0 1 2.2 2.2 5.5 2.2s5.5-1.2 5.5-2.2v-4.1"/></svg>
+              <span>学习</span>
+            </div>
+            <div class="nav-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h6a2 2 0 0 1 2 2V19a2 2 0 0 0-2-2H4V5.5Z"/><path d="M20 5.5h-6a2 2 0 0 0-2 2V19a2 2 0 0 1 2-2h6V5.5Z"/></svg>
+              <span>词表</span>
+            </div>
+            <div class="nav-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.2 4.2"/></svg>
+              <span>查词</span>
+            </div>
+            <div class="nav-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8h10a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-1.5L13 19.5V17h-2v2.5L8.5 17H7a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3Z"/><path d="M8 12.5h.01M12 12.5h.01M16 12.5h.01"/></svg>
+              <span>比赛</span>
+            </div>
+            <div class="nav-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5.2 20c.7-3.3 3.2-5.2 6.8-5.2s6.1 1.9 6.8 5.2"/></svg>
+              <span>我</span>
+            </div>
+          </div>
+
+          <div class="home-bar"></div>
+        </div>
+      </div>
+      <div class="phone-caption">
+        <strong>亮色壁纸 · 浅色主题</strong>
+        <span>清雅 · 1080×1922</span>
+      </div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone" data-theme="dark">
+        <div class="screen">
+          <div class="wallpaper"></div>
+          <div class="scrim"></div>
+
+          <div class="status-bar">
+            <span>10:48</span>
+            <span class="status-right">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                <rect x="0" y="8" width="3" height="4" rx="1"/>
+                <rect x="4.5" y="6" width="3" height="6" rx="1"/>
+                <rect x="9" y="3.5" width="3" height="8.5" rx="1"/>
+                <rect x="13.5" y="1" width="3" height="11" rx="1"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+                <path d="M1.5 4.5a9 9 0 0 1 13 0"/>
+                <path d="M4 7.2a5.6 5.6 0 0 1 8 0"/>
+                <circle cx="8" cy="10.2" r="1.2" fill="currentColor" stroke="none"/>
+              </svg>
+              <svg width="25" height="12" viewBox="0 0 25 12" fill="none" aria-hidden="true">
+                <rect x="0.5" y="1" width="21" height="10" rx="3" stroke="currentColor" stroke-opacity="0.4"/>
+                <rect x="2.2" y="2.7" width="16" height="6.6" rx="1.6" fill="currentColor"/>
+                <path d="M23 4.2v3.6a2 2 0 0 0 0-3.6Z" fill="currentColor" fill-opacity="0.55"/>
+              </svg>
+            </span>
+          </div>
+
+          <div class="island"></div>
+
+          <div class="overlay">
+            <div class="sync-card" id="card-dark"></div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 5l9 4.5-9 4.5-9-4.5Z"/><path d="M6.5 11.2v4.1c0 1 2.2 2.2 5.5 2.2s5.5-1.2 5.5-2.2v-4.1"/></svg>
+              <span>学习</span>
+            </div>
+            <div class="nav-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h6a2 2 0 0 1 2 2V19a2 2 0 0 0-2-2H4V5.5Z"/><path d="M20 5.5h-6a2 2 0 0 0-2 2V19a2 2 0 0 1 2-2h6V5.5Z"/></svg>
+              <span>词表</span>
+            </div>
+            <div class="nav-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.2 4.2"/></svg>
+              <span>查词</span>
+            </div>
+            <div class="nav-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8h10a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-1.5L13 19.5V17h-2v2.5L8.5 17H7a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3Z"/><path d="M8 12.5h.01M12 12.5h.01M16 12.5h.01"/></svg>
+              <span>比赛</span>
+            </div>
+            <div class="nav-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5.2 20c.7-3.3 3.2-5.2 6.8-5.2s6.1 1.9 6.8 5.2"/></svg>
+              <span>我</span>
+            </div>
+          </div>
+
+          <div class="home-bar"></div>
+        </div>
+      </div>
+      <div class="phone-caption">
+        <strong>暗色壁纸 · 深色主题</strong>
+        <span>琉璃 · 1080×2143</span>
+      </div>
+    </div>
+  </main>
+
+  <div class="notes">
+    <strong>说明：</strong>卡片宽度、字号、间距按 Flutter 的 <code>SyncProgressOverlay</code> 实际参数还原；两个手机的卡片是同一个组件在浅色/深色主题下的样子。点击上方阶段可切换状态，数字会自动前进，方便观察“数字在跳 = 没卡死”的效果；点“暂停数字”可停下来细看。
+  </div>
+</div>
+
+<script>
+  const STATE_DEFS = {
+    download: {
+      preparing: false,
+      stage: '正在下载你的云端数据',
+      bytesMb: 12.6,
+      done: 0,
+      total: 0,
+      showCount: false,
+      countLabel: '已处理记录',
+      elapsed: 84,
+      last: '刚刚有进展',
+      stalled: false
+    },
+    write: {
+      preparing: false,
+      stage: '正在把云端记录写入本机',
+      bytesMb: 38.2,
+      done: 12400,
+      total: 86321,
+      showCount: true,
+      countLabel: '已处理记录',
+      elapsed: 222,
+      last: '2 秒前有进展',
+      stalled: false
+    },
+    upload: {
+      preparing: false,
+      stage: '正在上传本机改动',
+      bytesMb: 41.8,
+      done: 8420,
+      total: 12000,
+      showCount: true,
+      countLabel: '已上传记录',
+      elapsed: 308,
+      last: '刚刚有进展',
+      stalled: false
+    },
+    stalled: {
+      preparing: false,
+      stage: '正在把云端记录写入本机',
+      bytesMb: 38.2,
+      done: 12400,
+      total: 86321,
+      showCount: true,
+      countLabel: '已处理记录',
+      elapsed: 391,
+      last: '已 52 秒没有新进展。如果超过 1 分钟仍没有变化，请检查网络后重试。',
+      stalled: true
+    },
+    prepare: {
+      preparing: true
+    }
+  };
+
+  const ICONS = {
+    cloud: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 18.5A4.5 4.5 0 0 1 6 9.6 6 6 0 0 1 17.7 8.8 4 4 0 0 1 17 16.5"/><path d="M9 14.5l3-3 3 3"/><path d="M12 11.5V18"/></svg>`,
+    hourglass: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 4 8 4 8 9s-8 5-8 9M16 3c0 4-8 4-8 9s8 5 8 9"/></svg>`
+  };
+
+  let currentKey = (() => {
+    const key = location.hash.replace('#', '');
+    return STATE_DEFS[key] ? key : 'write';
+  })();
+  let data = clone(STATE_DEFS[currentKey]);
+  let playing = true;
+  let progressTimer = null;
+  let clockTimer = null;
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function formatCount(value) {
+    return Number(value).toLocaleString('en-US');
+  }
+
+  function formatBytes(mb) {
+    if (mb >= 1024) return (mb / 1024).toFixed(2) + ' GB';
+    return (mb >= 10 ? mb.toFixed(1) : mb.toFixed(2)) + ' MB';
+  }
+
+  function formatTime(totalSeconds) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    return minutes + ':' + String(seconds).padStart(2, '0');
+  }
+
+  function percent() {
+    if (!data.total) return 0;
+    return Math.min(100, (data.done / data.total) * 100);
+  }
+
+  function syncCardHtml() {
+    const bytesBlock = data.bytesMb > 0
+      ? `<div class="metric-label">本次已下载</div>
+         <div class="bytes-value" data-role="bytes">${formatBytes(data.bytesMb)}</div>`
+      : `<div class="waiting">正在等待云端响应…</div>`;
+
+    const progressBlock = data.showCount
+      ? `<div class="count-row">
+           <span class="metric-label">${data.countLabel}</span>
+           <span class="count-value" data-role="count">${formatCount(data.done)} / ${formatCount(data.total)}</span>
+         </div>
+         <div class="bar"><span class="bar-fill" data-role="fill" style="width:${percent()}%"></span></div>`
+      : `<div class="bar indeterminate"><span class="bar-fill"></span></div>`;
+
+    return `
+      <div class="card-head">
+        ${ICONS.cloud}
+        <span class="eyebrow">端云同步</span>
+        <span class="head-spacer"></span>
+        <span class="spinner" aria-hidden="true"></span>
+      </div>
+      <h2 class="card-title">正在同步学习记录</h2>
+      <p class="card-sub">正在和云端核对学习记录，记录较多时可能要几分钟。下面的数字还在变化，就说明同步没有卡住；请保持应用在前台，不要退出。</p>
+      <div class="rule"></div>
+      ${bytesBlock}
+      ${progressBlock}
+      <div class="card-footer">
+        <span class="phase">${data.stage}</span>
+        <span class="elapsed" data-role="elapsed">已用时 ${formatTime(data.elapsed)}</span>
+      </div>
+      <div class="last ${data.stalled ? 'warn' : ''}" data-role="last">${data.last}</div>
+    `;
+  }
+
+  function prepareCardHtml() {
+    return `
+      <div class="card-head">
+        ${ICONS.hourglass}
+        <span class="eyebrow">今日计划</span>
+        <span class="head-spacer"></span>
+        <span class="spinner" aria-hidden="true"></span>
+      </div>
+      <h2 class="card-title">正在准备今日计划</h2>
+      <p class="card-sub">云端数据已就绪，正在生成本次学习计划，马上就好。</p>
+      <div class="bar indeterminate" style="margin-top:22px"><span class="bar-fill"></span></div>
+    `;
+  }
+
+  function render() {
+    document.querySelectorAll('.state-btn').forEach((button) => {
+      button.classList.toggle('active', button.dataset.state === currentKey);
+    });
+    document.querySelectorAll('.phone').forEach((phone) => {
+      const card = phone.querySelector('.sync-card');
+      card.innerHTML = data.preparing ? prepareCardHtml() : syncCardHtml();
+    });
+    updateDynamic();
+  }
+
+  function updateDynamic() {
+    document.querySelectorAll('.phone').forEach((phone) => {
+      if (data.preparing) return;
+      const bytes = phone.querySelector('[data-role="bytes"]');
+      if (bytes) bytes.textContent = formatBytes(data.bytesMb);
+
+      const count = phone.querySelector('[data-role="count"]');
+      if (count) count.textContent = formatCount(data.done) + ' / ' + formatCount(data.total);
+
+      const fill = phone.querySelector('[data-role="fill"]');
+      if (fill) fill.style.width = percent() + '%';
+
+      const elapsed = phone.querySelector('[data-role="elapsed"]');
+      if (elapsed) elapsed.textContent = '已用时 ' + formatTime(data.elapsed);
+
+      const last = phone.querySelector('[data-role="last"]');
+      if (last) {
+        last.textContent = data.last;
+        last.classList.toggle('warn', data.stalled);
+      }
+    });
+  }
+
+  function stopTimers() {
+    if (progressTimer) clearInterval(progressTimer);
+    if (clockTimer) clearInterval(clockTimer);
+    progressTimer = null;
+    clockTimer = null;
+  }
+
+  function startTimers() {
+    stopTimers();
+    if (!playing || data.preparing || currentKey === 'stalled') return;
+
+    progressTimer = setInterval(() => {
+      if (currentKey === 'download') {
+        data.bytesMb = Math.round((data.bytesMb + 0.3 + Math.random() * 0.8) * 10) / 10;
+        data.last = '刚刚有进展';
+      } else if (currentKey === 'write' || currentKey === 'upload') {
+        if (data.done < data.total) {
+          data.done = Math.min(data.total, data.done + 180 + Math.floor(Math.random() * 560));
+          data.last = '刚刚有进展';
+          if (data.done >= data.total) data.last = '正在做最后校验…';
+        }
+      }
+      updateDynamic();
+    }, 420);
+
+    clockTimer = setInterval(() => {
+      data.elapsed += 1;
+      updateDynamic();
+    }, 1000);
+  }
+
+  function setState(key) {
+    currentKey = key;
+    data = clone(STATE_DEFS[key]);
+    render();
+    startTimers();
+  }
+
+  document.querySelectorAll('.state-btn').forEach((button) => {
+    button.addEventListener('click', () => setState(button.dataset.state));
+  });
+
+  const playToggle = document.getElementById('playToggle');
+  playToggle.addEventListener('click', () => {
+    playing = !playing;
+    playToggle.textContent = playing ? '暂停数字' : '播放数字';
+    playToggle.classList.toggle('on', playing);
+    if (playing) startTimers();
+    else stopTimers();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    data = clone(STATE_DEFS[currentKey]);
+    render();
+    startTimers();
+  });
+
+  render();
+  startTimers();
+</script>
+</body>
+</html>

@@ -107,10 +107,11 @@ class AndroidDeviceController:
         self._run_adb(["shell", "svc", "data", state], check=False)
         time.sleep(1.0)
 
-    def launch_app(self, stop_first: bool = False):
+    def launch_app(self, stop_first: bool = False, grant: bool = True):
         if stop_first:
             self.stop_app()
-        self.grant_runtime_permissions()
+        if grant:
+            self.grant_runtime_permissions()
         self._run_adb([
             "shell", "monkey", "-p", APP_PACKAGE,
             "-c", "android.intent.category.LAUNCHER", "1",

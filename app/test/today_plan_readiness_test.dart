@@ -305,12 +305,12 @@ void main() {
     await pumpTodayPlan(tester);
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(SyncProgressOverlay), findsOneWidget);
-    expect(find.text('正在从云端同步'), findsOneWidget);
+    expect(find.text('正在同步学习记录'), findsOneWidget);
 
     // 旧的 60 秒超时会把用户放进一个 0/0 的空首页；现在必须继续显示同步进度
     await tester.pump(const Duration(seconds: 61));
     expect(find.byType(SyncProgressOverlay), findsOneWidget);
-    expect(find.text('正在从云端同步'), findsOneWidget);
+    expect(find.text('正在同步学习记录'), findsOneWidget);
     expect(find.text('开始学习'), findsNothing);
 
     networkProbe.complete(<String>[]);
