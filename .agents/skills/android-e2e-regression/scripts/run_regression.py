@@ -118,6 +118,7 @@ class Runner:
         self.auditor = None
         self.results = []
         self.snapshot_ready = False
+        self.dict_ids = []
         self.meanings = {}
         self._case_started = time.time()
         self._log_count = 0
@@ -308,18 +309,40 @@ class Runner:
                     self.capture("app_launched"))
 
     def _baseline(self) -> str:
-        """认出当前是欢迎页还是主界面；都认不出就按返回键逐层退出到能认出来为止。"""
-        for _ in range(4):
+        """认出当前是欢迎页还是主界面。
+
+        上次跑挂可能把 App 留在权限弹窗、二级页甚至后台，所以这里先保证 App
+        在前台，再逐层退出；实在收不干净就冷启动一次 —— 绝不在认不出的界面上瞎断言。
+        """
+        for _ in range(3):
+            if not self.device.is_app_in_foreground():
+                self.device.launch_app()
+                time.sleep(0.5)
             nodes = self.device.dump()
-            if self._has(nodes, ID_LOGIN_EMAIL_ENTRY) or "微信一键登录" in self._labels(nodes):
+            labels = self._labels(nodes)
+            if self._has(nodes, ID_LOGIN_EMAIL_ENTRY) or "微信一键登录" in labels:
                 return "welcome"
-            if "导入词书" in self._labels(nodes):
+            if "导入词书" in labels:
                 self._dismiss_import_dialog()
                 continue
             if self._has(nodes, ID_NAV_STUDY):
                 return "main"
+            if "麦克风权限" in labels:
+                deny = self.device.find_by_text("暂不授权", nodes)
+                if deny:
+                    self.device.tap_node(deny)
+                    time.sleep(0.4)
+                    continue
             self.device.press_key(4)
             time.sleep(0.6)
+
+        self.device.stop_app()
+        self.device.launch_app()
+        nodes = self.device.dump()
+        if self._has(nodes, ID_LOGIN_EMAIL_ENTRY) or "微信一键登录" in self._labels(nodes):
+            return "welcome"
+        if self._has(nodes, ID_NAV_STUDY):
+            return "main"
         return "unknown"
 
     def step_clean_state(self):
@@ -576,6 +599,7 @@ class Runner:
                 chosen, chosen_count = row, count
         if chosen is None:
             raise CaseFailure(f"没有找到不少于 {self.plan_words} 词的词书")
+        self.dict_ids = [chosen["rid"][len(ID_BOOK_ROW_PREFIX):]]
         print(f"[*] 选中 {chosen_count} 词的词书（在够用的里面挑词数最少的，导入最快）")
         self.device.tap_node(chosen)
         time.sleep(0.6)
@@ -592,26 +616,29 @@ class Runner:
                     else "词书保存导入后主页仍无学习入口",
                     self.capture("dict_imported"))
 
-    def step_set_plan(self):
-        print("\n--- [7] 每日计划 ---")
+    def _apply_plan(self, target_words: int) -> bool:
+        """在主页把今日词数设成 target_words，返回主页是否真的显示成这个数。"""
         plan_entry = self.device.wait(ID_HOME_PLAN, timeout=4)
         if plan_entry is None:
             raise CaseFailure("主页找不到今日词数入口")
         self.device.tap_node(plan_entry)
-        chip = self.device.wait(f"{ID_PLAN_WORDS_PREFIX}{self.plan_words}", timeout=3)
+        chip = self.device.wait(f"{ID_PLAN_WORDS_PREFIX}{target_words}", timeout=3)
         if chip is None:
-            raise CaseFailure(f"词量面板里没有 {self.plan_words} 词这一档")
+            raise CaseFailure(f"词量面板里没有 {target_words} 词这一档")
         self.device.tap_node(chip)
-
-        ok = False
         deadline = time.time() + 8
         while time.time() < deadline:
             nodes = self.device.dump()
             entry = self._node(nodes, ID_HOME_PLAN)
-            if entry and f"今日 {self.plan_words} 词" in " ".join(self.device.texts_within(entry, nodes)):
-                ok = True
-                break
+            if entry and f"今日 {target_words} 词" in " ".join(
+                    self.device.texts_within(entry, nodes)):
+                return True
             time.sleep(0.3)
+        return False
+
+    def step_set_plan(self):
+        print("\n--- [7] 每日计划 ---")
+        ok = self._apply_plan(self.plan_words)
         self.expect("每日学习计划定制", ok,
                     f"主页今日目标已确认为 {self.plan_words} 词" if ok
                     else f"主页今日目标没有变成 {self.plan_words} 词",
@@ -704,8 +731,13 @@ class Runner:
         # 反向用例：拿掉录音权限，切到「说释义」必须不崩且给出权限提示
         self._permission_case()
 
-        # 准备释义真值：先停进程拉一份快照，避免边学边读造成撕裂
-        self._prepare_meanings()
+        # 释义真值直接从生产库取（与客户端下发同源），不必为判一道题停进程拉 194MB 整库
+        if not self.dict_ids:
+            user = manage_e2e_account.check_user()
+            if user:
+                self.dict_ids = manage_e2e_account.get_user_dict_ids(user["id"])
+        self.meanings = manage_e2e_account.get_dict_meanings(self.dict_ids)
+        print(f"[*] 已取到 {len(self.meanings)} 个单词的释义，用来判定选择题对错")
 
         self._run_study_loop(self.plan_words)
 
@@ -782,20 +814,19 @@ class Runner:
             detail = "没有录音权限时切到语音作答，App 进程直接消失了"
         self.expect("拒绝录音权限不崩溃", ok, detail, self.capture("permission_denied"))
 
-    def _pid(self):
-        res = self.device._run_adb(["shell", "pidof", "com.nn.nnbdc.android"], check=False)
-        return res.stdout.strip()
-
-    def _prepare_meanings(self):
-        print("[*] 停进程拉取本地快照，读今日计划的单词释义（答对/答错的真值来源）")
+        # 权限说明弹窗点掉后仍可能被语音模式重新唤起，直接重启一次把界面收干净：
+        # 撤销权限本来就杀过一次进程，这里多一次重启换来的是确定的状态。
+        if "麦克风权限" in self._labels(self.device.dump()):
+            self.device.press_key(4)
+            time.sleep(0.4)
         self.device.stop_app()
-        self.auditor = LocalDbAuditor(self.serial)
-        self.auditor.pull_snapshot()
         self.device.launch_app()
         self._enter_study()
         self._switch_to_choice_mode()
-        self.meanings = self.auditor.meanings_by_spell()
-        print(f"[*] 本地可判定的单词释义 {len(self.meanings)} 个")
+
+    def _pid(self):
+        res = self.device._run_adb(["shell", "pidof", "com.nn.nnbdc.android"], check=False)
+        return res.stdout.strip()
 
     def _run_study_loop(self, expected_words: int, assert_cases: bool = True):
         """学完一整天的词。第二天复习时传 assert_cases=False：那些专项用例只做一次。"""
@@ -909,7 +940,10 @@ class Runner:
                 continue
 
             if options:
-                self.device.tap_node(options[0])
+                # 有地面真值就选对的那一项：像真的会做的用户一样，
+                # 答错会让 App 把整个环节重练一遍，白白多出十几张卡。
+                pick = correct if correct is not None else 0
+                self.device.tap_node(options[pick])
                 time.sleep(0.45)
                 answered += 1
                 last_header = header
@@ -1080,6 +1114,7 @@ class Runner:
         if not user:
             raise CaseFailure("生产库里找不到当前测试账号")
         self.device.stop_app()
+        self.auditor = LocalDbAuditor(self.serial)
         self.auditor.pull_snapshot()
         audit = self.auditor.audit_local_learning_data(user["id"])
         cloud_logs = manage_e2e_account.get_user_learning_logs(user["id"])
@@ -1106,10 +1141,12 @@ class Runner:
         self.auditor.push_snapshot()
         manage_e2e_account.time_travel_yesterday(user["id"])
         self.device.launch_app()
+        day2_words = max(2, self.plan_words // 2)
+        self._apply_plan(day2_words)
         self._enter_study()
         if self.device.wait(ID_STUDY_DONT_KNOW, timeout=10) is None:
             raise CaseFailure("跨天后进入学习没有出现复习卡片")
-        self._run_study_loop(self.plan_words, assert_cases=False)
+        self._run_study_loop(day2_words, assert_cases=False)
         badge = self.device.find_by_id(ID_BADGE_CLAIM)
         if badge:
             self.device.tap_node(badge)

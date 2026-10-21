@@ -82,7 +82,7 @@ class GameSfx {
   static const Map<SfxKind, _SfxRule> _rules = {
     SfxKind.hit: _SfxRule('monster/hit_bonk.wav', 900, 0.42, 265),
     SfxKind.throwWhoosh: _SfxRule('monster/throw_whoosh.wav', 1100, 0.26, 223),
-    SfxKind.cry: _SfxRule('monster/cry_whimper.wav', 1400, 0.59, 446,
+    SfxKind.cry: _SfxRule('monster/cry_whimper.wav', 1400, 0.59, 460,
         varySpeed: false),
     SfxKind.step: _SfxRule('monster/flee_step.wav', 1200, 0.23, 197),
   };

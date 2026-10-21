@@ -299,6 +299,35 @@ def time_travel_yesterday(user_id: str = None):
     """
     run_psql(sql)
 
+def get_dict_meanings(dict_ids: list) -> dict:
+    """从生产库直接取「单词 -> 释义列表」，给选择题判对错当地面真值。
+
+    客户端本地库里的 meaning_item 就是从这里下发的同一个表，
+    所以不必为了判一道题去把 194MB 的整库从手机里拉回来。
+    """
+    if not dict_ids:
+        return {}
+    quoted = ",".join(f"'{d}'" for d in dict_ids)
+    rows = run_psql(
+        "SELECT DISTINCT w.spell, m.meaning FROM dict_word dw "
+        "JOIN word w ON w.id = dw.word_id "
+        "JOIN meaning_item m ON m.word_id = w.id "
+        f"WHERE dw.dict_id IN ({quoted});"
+    )
+    result = {}
+    for line in rows.splitlines():
+        if "|" not in line:
+            continue
+        spell, meaning = line.split("|", 1)
+        result.setdefault(spell.strip(), []).append(meaning.strip())
+    return result
+
+
+def get_user_dict_ids(user_id: str) -> list:
+    rows = run_psql(f"SELECT dict_id FROM learning_dict WHERE user_id = '{user_id}';")
+    return [x.strip() for x in rows.splitlines() if x.strip()]
+
+
 def get_word_spells(word_ids: list) -> dict:
     """批量根据 word_id 从生产库查询单词拼写"""
     if not word_ids:
