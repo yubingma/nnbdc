@@ -189,7 +189,7 @@ class _SyncProgressOverlayState extends State<SyncProgressOverlay> {
         ),
         const SizedBox(height: 16),
         Text(
-          '正在同步学习记录',
+          '正在同步云端数据',
           style: TextStyle(
             fontSize: 21,
             fontWeight: FontWeight.w700,
@@ -199,8 +199,7 @@ class _SyncProgressOverlayState extends State<SyncProgressOverlay> {
         ),
         const SizedBox(height: 8),
         Text(
-          '正在和云端核对学习记录，记录较多时可能要几分钟。'
-          '下面的数字还在变化，就说明同步没有卡住；请保持应用在前台，不要退出。',
+          '同步完成前请保持应用在前台，不要退出。',
           style: TextStyle(fontSize: 12, height: 1.6, color: textSecondary),
         ),
         const SizedBox(height: 20),

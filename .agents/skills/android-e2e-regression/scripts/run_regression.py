@@ -759,8 +759,15 @@ class Runner:
         answered = 0
         last_header = ""
 
+        debug = bool(os.environ.get("E2E_DEBUG"))
         for turn in range(1, 400):
             nodes = self.device.dump()
+            if debug:
+                print(f"  [turn {turn}] header={self._header(nodes)!r} "
+                      f"options={len(self._options(nodes))} "
+                      f"next_word={self._has(nodes, ID_STUDY_NEXT_WORD)} "
+                      f"detail={self._has(nodes, ID_WORD_DETAIL)} "
+                      f"finish={self._has(nodes, ID_FINISH_PAGE)}")
             if self._has(nodes, ID_FINISH_PAGE) or self._has(nodes, ID_BADGE_CLAIM):
                 return
             if self._has(nodes, ID_DETAIL_NEXT_WORD):
@@ -774,6 +781,11 @@ class Runner:
                 # 详情页的「下一词」没就位时先点左上角返回
                 if not self.device.go_back(nodes):
                     raise CaseFailure("单词详情页既没有「下一词」也点不到返回")
+                continue
+            # 已经作答、等用户点「下一词」的状态：必须优先处理，
+            # 否则会一直在同一张卡上重复点选项（评分被反复改写）
+            if self._has(nodes, ID_STUDY_NEXT_WORD):
+                self.device.tap_id(ID_STUDY_NEXT_WORD, nodes)
                 continue
             if not self._has(nodes, ID_STUDY_DONT_KNOW):
                 time.sleep(0.25)
@@ -923,8 +935,10 @@ class Runner:
                     self.capture("online_sync_recovered"))
 
     def _online(self) -> bool:
-        res = self.device._run_adb(["shell", "dumpsys", "connectivity"], check=False)
-        return "VALIDATED" in res.stdout
+        """直接发一个 ICMP 包判定联网：dumpsys 里残留的 VALIDATED 关掉 Wi-Fi 后仍然在。"""
+        res = self.device._run_adb(
+            ["shell", "ping", "-c", "1", "-W", "3", "223.5.5.5"], check=False)
+        return res.returncode == 0
 
     def _wait_cloud_logs(self, min_count: int, timeout: float = 40) -> bool:
         user = manage_e2e_account.check_user()

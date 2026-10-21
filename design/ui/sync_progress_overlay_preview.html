@@ -493,6 +493,7 @@
   <div class="toolbar">
     <span class="toolbar-label">同步阶段</span>
     <button class="state-btn" data-state="download" type="button">下载云端数据</button>
+    <button class="state-btn" data-state="system" type="button">准备系统数据</button>
     <button class="state-btn active" data-state="write" type="button">写入本机</button>
     <button class="state-btn" data-state="upload" type="button">上传本机改动</button>
     <button class="state-btn" data-state="stalled" type="button">停滞 52 秒</button>
@@ -655,6 +656,18 @@
       last: '刚刚有进展',
       stalled: false
     },
+    system: {
+      preparing: false,
+      stage: '正在准备系统数据',
+      bytesMb: 38.2,
+      done: 24800,
+      total: 61200,
+      showCount: true,
+      countLabel: '已处理记录',
+      elapsed: 312,
+      last: '刚刚有进展',
+      stalled: false
+    },
     write: {
       preparing: false,
       stage: '正在把云端记录写入本机',
@@ -755,8 +768,8 @@
         <span class="head-spacer"></span>
         <span class="spinner" aria-hidden="true"></span>
       </div>
-      <h2 class="card-title">正在同步学习记录</h2>
-      <p class="card-sub">正在和云端核对学习记录，记录较多时可能要几分钟。下面的数字还在变化，就说明同步没有卡住；请保持应用在前台，不要退出。</p>
+      <h2 class="card-title">正在同步云端数据</h2>
+      <p class="card-sub">同步完成前请保持应用在前台，不要退出。</p>
       <div class="rule"></div>
       ${bytesBlock}
       ${progressBlock}
@@ -831,7 +844,7 @@
       if (currentKey === 'download') {
         data.bytesMb = Math.round((data.bytesMb + 0.3 + Math.random() * 0.8) * 10) / 10;
         data.last = '刚刚有进展';
-      } else if (currentKey === 'write' || currentKey === 'upload') {
+      } else if (currentKey === 'write' || currentKey === 'upload' || currentKey === 'system') {
         if (data.done < data.total) {
           data.done = Math.min(data.total, data.done + 180 + Math.floor(Math.random() * 560));
           data.last = '刚刚有进展';
