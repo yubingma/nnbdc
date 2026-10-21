@@ -90,6 +90,8 @@ class AndroidDeviceController:
     # ---------- 设备与环境 ----------
 
     def wake_up_and_unlock(self):
+        # 熄屏会让 Flutter 视图变成 0×0，uiautomator 抓到空树 —— 长跑必须常亮
+        self._run_adb(["shell", "svc", "power", "stayon", "true"], check=False)
         self._run_adb(["shell", "settings", "put", "system", "accelerometer_rotation", "0"])
         self._run_adb(["shell", "settings", "put", "system", "user_rotation", "0"])
         res = self._run_adb(["shell", "dumpsys", "power"])

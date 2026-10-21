@@ -81,6 +81,10 @@ void main() async {
       WidgetsFlutterBinding.ensureInitialized();
       logMark('ensureInitialized');
 
+      // 预取 Android 设备厂商，供后端日志区分华为/荣耀/小米/OPPO/vivo
+      await PlatformUtils.initAndroidDeviceInfo();
+      logMark('initAndroidDeviceInfo');
+
       // 初始化开发期性能哨兵
       PerformanceWatchdog.init();
       logMark('PerformanceWatchdog.init');

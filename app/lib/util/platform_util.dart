@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 class PlatformUtils {
   /// 测试专用：覆盖 ASR 支持判定（null = 按平台自动判断）。
@@ -110,9 +111,59 @@ class PlatformUtils {
     return false;
   }
 
+  /// Android 设备厂商，启动时由 [initAndroidDeviceInfo] 读取并归并。
+  static String? _androidVendor;
+
+  /// 启动时预取 Android 设备厂商，供后端日志把 Android 细分为
+  /// 华为/荣耀/小米/OPPO/vivo 等。只读 Build.BRAND 与 Build.MANUFACTURER，无需权限。
+  static Future<void> initAndroidDeviceInfo() async {
+    if (!isAndroid) return;
+    try {
+      const channel = MethodChannel('nnbdc/device_info');
+      final info = await channel.invokeMapMethod<String, String>('getAndroidVendor');
+      _androidVendor = normalizeAndroidVendor(info?['brand'], info?['manufacturer']);
+    } catch (e) {
+      debugPrint('读取 Android 设备厂商失败，后端日志将只显示 Android: $e');
+    }
+  }
+
+  /// 把 Build.BRAND / Build.MANUFACTURER 归并成日志里的厂商名。
+  /// 子品牌跟随母品牌：Redmi/POCO 归小米，iQOO 归 vivo，一加/realme 归 OPPO。
+  @visibleForTesting
+  static String? normalizeAndroidVendor(String? brand, String? manufacturer) {
+    final candidates = [brand, manufacturer]
+        .map((value) => value?.trim().toUpperCase() ?? '')
+        .where((value) => value.isNotEmpty)
+        .toList();
+    for (final key in candidates) {
+      final known = _androidVendorAliases[key];
+      if (known != null) return known;
+    }
+    return candidates.isEmpty ? null : _titleCase(candidates.first);
+  }
+
+  static String _titleCase(String value) => value[0] + value.substring(1).toLowerCase();
+
+  static const Map<String, String> _androidVendorAliases = {
+    'HUAWEI': 'Huawei',
+    'HONOR': 'Honor',
+    'XIAOMI': 'Xiaomi',
+    'REDMI': 'Xiaomi',
+    'POCO': 'Xiaomi',
+    'OPPO': 'OPPO',
+    'ONEPLUS': 'OPPO',
+    'REALME': 'OPPO',
+    'VIVO': 'vivo',
+    'IQOO': 'vivo',
+  };
+
   static String get platformLabel {
     if (isWeb) return 'Web';
-    if (isAndroid) return isZhuoyiTong ? 'Android (卓易通)' : 'Android';
+    if (isAndroid) {
+      final vendor = _androidVendor;
+      final zhuoyiTong = isZhuoyiTong ? ' (卓易通)' : '';
+      return vendor == null ? 'Android$zhuoyiTong' : 'Android/$vendor$zhuoyiTong';
+    }
     if (isIOS) return 'iOS';
     if (isMacOS) return 'macOS';
     if (isWindows) return 'Windows';

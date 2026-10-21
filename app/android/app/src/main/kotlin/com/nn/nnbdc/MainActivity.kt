@@ -2,6 +2,7 @@ package com.nn.nnbdc
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.annotation.NonNull
@@ -77,6 +78,28 @@ class MainActivity : FlutterActivity() {
         currentOcr.initChannel(flutterEngine)
 
         setupExternalFileChannel(flutterEngine)
+        setupDeviceInfoChannel(flutterEngine)
+    }
+
+    /**
+     * 设备信息通道。
+     *
+     * 只暴露设备厂商（Build.BRAND / Build.MANUFACTURER），供后端日志把 Android
+     * 细分为华为/荣耀/小米/OPPO/vivo；不读取任何用户隐私数据，也不需要权限。
+     */
+    private fun setupDeviceInfoChannel(flutterEngine: FlutterEngine) {
+        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nnbdc/device_info")
+        channel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getAndroidVendor" -> result.success(
+                    mapOf(
+                        "brand" to Build.BRAND,
+                        "manufacturer" to Build.MANUFACTURER,
+                    )
+                )
+                else -> result.notImplemented()
+            }
+        }
     }
 
     /**

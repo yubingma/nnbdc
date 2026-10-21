@@ -109,11 +109,12 @@ class CaseFailure(RuntimeError):
 
 class Runner:
     def __init__(self, serial=None, target_email="mmyybb3000@icloud.com",
-                 send_email=True, plan_words=5):
+                 send_email=True, plan_words=5, prepare_only=False):
         self.serial = serial
         self.target_email = target_email
         self.send_email = send_email
         self.plan_words = plan_words
+        self.prepare_only = prepare_only
         self.device = None
         self.auditor = None
         self.results = []
@@ -249,6 +250,9 @@ class Runner:
             self.step_navigate_tabs()
             self.step_select_book()
             self.step_set_plan()
+            if self.prepare_only:
+                print("\n[*] 准备阶段完成：账号已登录、词书已导入、今日计划已设好")
+                return True
             self.step_study_track()
             self.step_study()
             self.step_offline_sync()
@@ -1317,9 +1321,12 @@ def main():
     parser.add_argument("--no-email", action="store_true")
     parser.add_argument("--plan", type=int, default=5,
                         help="今天要学多少词（越少越快，默认 5）")
+    parser.add_argument("--prepare-only", action="store_true",
+                        help="只做到「登录 + 词书 + 今日计划」就停，供 integration_test 接手学单词")
     args = parser.parse_args()
     runner = Runner(serial=args.serial, target_email=args.email,
-                    send_email=not args.no_email, plan_words=args.plan)
+                    send_email=not args.no_email, plan_words=args.plan,
+                    prepare_only=args.prepare_only)
     sys.exit(0 if runner.run_all() else 1)
 
 
