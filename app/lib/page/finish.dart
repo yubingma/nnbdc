@@ -159,7 +159,9 @@ class FinishPageState extends State<FinishPage> {
         } else if (Config.enableXiaomiReview && await appCheck.isAppInstalled('com.xiaomi.market')) {
           marketAppUrl = "mimarket://details?id=com.nn.nnbdc.android";
         } else if (Config.enableOppoReview && (await appCheck.isAppInstalled('com.heytap.market') || await appCheck.isAppInstalled('com.oppo.market'))) {
-          marketAppUrl = "market://details?id=com.nn.nnbdc.android";
+          // OPPO 官方评论调起协议：直达本应用的评分/评论页，而非商店首页或应用详情页。
+          // pkg 必须是本应用自己的包名，商店只允许应用拉起自己的评论页（商店 versionCode >= 84000 支持）。
+          marketAppUrl = "oaps://mk/developer/comment?pkg=com.nn.nnbdc.android";
         } else if (Config.enableVivoReview && (await appCheck.isAppInstalled('com.bbk.appstore') || await appCheck.isAppInstalled('com.vivo.market'))) {
           marketAppUrl = "market://details?id=com.nn.nnbdc.android";
         } else if (Config.enableTencentReview && await appCheck.isAppInstalled('com.tencent.android.qqdownloader')) {
@@ -269,6 +271,17 @@ class FinishPageState extends State<FinishPage> {
       Global.logger.d('已请求 iOS/macOS 应用内评分');
     } catch (e) {
       Global.logger.w('请求 iOS/macOS 应用内评分失败: $e');
+    }
+  }
+
+  /// 打开应用市场里本应用的评分/评论页。
+  ///
+  /// launchUrl 在没有任何 Activity 承接该 scheme 时返回 false（例如商店版本过旧、
+  /// 不识评论调起协议）。这里必须显式告知用户，不能静默无反应。
+  Future<void> _openStoreReview(String url) async {
+    final launched = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ToastUtil.error('没能打开应用商店，请手动到商店搜索「泡泡单词」');
     }
   }
 
@@ -689,9 +702,7 @@ class FinishPageState extends State<FinishPage> {
                   iconColor: themeConfig.warmAccentColor,
                   title: '给个好评',
                   subtitle: '喜欢，就支持一下',
-                  onTap: () {
-                    launchUrl(Uri.parse(marketAppUrl!), mode: LaunchMode.externalApplication);
-                  },
+                  onTap: () => _openStoreReview(marketAppUrl!),
                 ),
               ],
               if (isAdmin) ...[

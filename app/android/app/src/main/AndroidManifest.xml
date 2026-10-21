@@ -8,6 +8,9 @@
              会让完成页的「给个好评」入口被静默判定为「市场未安装」而永不显示 -->
         <package android:name="com.huawei.appmarket" />
         <package android:name="com.hihonor.appmarket" />
+        <!-- OPPO/一加/realme 的软件商店：ColorOS 7 起为 com.heytap.market，更早为 com.oppo.market -->
+        <package android:name="com.heytap.market" />
+        <package android:name="com.oppo.market" />
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />

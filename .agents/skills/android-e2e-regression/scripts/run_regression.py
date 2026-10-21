@@ -109,7 +109,7 @@ class CaseFailure(RuntimeError):
 
 class Runner:
     def __init__(self, serial=None, target_email="mmyybb3000@icloud.com",
-                 send_email=True, plan_words=10):
+                 send_email=True, plan_words=5):
         self.serial = serial
         self.target_email = target_email
         self.send_email = send_email
@@ -1025,7 +1025,7 @@ class Runner:
         self._open_sync_page()
         self._tap_sync_now()
         saw_failure = False
-        deadline = time.time() + 20
+        deadline = time.time() + 12
         while time.time() < deadline:
             if "失败" in self._labels(self.device.dump()):
                 saw_failure = True
@@ -1315,8 +1315,8 @@ def main():
     parser.add_argument("--serial", default=None)
     parser.add_argument("--email", default="mmyybb3000@icloud.com")
     parser.add_argument("--no-email", action="store_true")
-    parser.add_argument("--plan", type=int, default=10,
-                        help="今天要学多少词（越少越快，默认 10）")
+    parser.add_argument("--plan", type=int, default=5,
+                        help="今天要学多少词（越少越快，默认 5）")
     args = parser.parse_args()
     runner = Runner(serial=args.serial, target_email=args.email,
                     send_email=not args.no_email, plan_words=args.plan)
