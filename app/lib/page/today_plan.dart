@@ -147,7 +147,6 @@ class TodayPlanPageState extends State<TodayPlanPage>
   /// 宠物头顶气泡台词文本（null 为不显示），作用域完全在页面内部。
   String? _petSpeechText;
   Timer? _petSpeechTimer;
-  Timer? _autoSpeechTimer;
   int? _lastPetSpeechIndex;
   bool _petFirstMet = false;
 
@@ -170,20 +169,8 @@ class TodayPlanPageState extends State<TodayPlanPage>
   }
 
   /// 点一下宠物：随机说一句解释它自己逻辑的话。
+  /// 宠物只在用户点击时开口，不主动说话。
   void _onPetTap() => _showPetSpeech();
-
-  /// 每次进入（或刷新）今日计划页，宠物主动蹦一句，不用点。
-  void _autoPetSpeech() {
-    if (!mounted) return;
-    // 等页面布局稳定再弹，避免刚切进来就抢注意力。
-    // 用可取消的 Timer（不是 Future.delayed）：页面在延时内被销毁时，
-    // 悬挂的定时器会让测试报「A Timer is still pending」。
-    _autoSpeechTimer?.cancel();
-    _autoSpeechTimer = Timer(const Duration(milliseconds: 520), () {
-      if (!mounted || _petSpeechText != null) return;
-      _showPetSpeech();
-    });
-  }
 
   void _showPetSpeech() {
     if (!mounted) return;
@@ -458,7 +445,6 @@ class TodayPlanPageState extends State<TodayPlanPage>
   @override
   void dispose() {
     planRouteObserver.unsubscribe(this);
-    _autoSpeechTimer?.cancel();
     _petSpeechTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _dakaSubscription?.cancel();
@@ -515,8 +501,6 @@ class TodayPlanPageState extends State<TodayPlanPage>
     } finally {
       _loadFuture = null;
     }
-    // 数据就绪后再让宠物开口：此时 _petMood 才是准的（能分清"没开始/学习中/已完成/断更"）
-    _autoPetSpeech();
   }
 
   /// 确保今日计划已就绪后再进入学习页：等在途的准备流程结束；若本日计划从未准备过，则主动准备一次。

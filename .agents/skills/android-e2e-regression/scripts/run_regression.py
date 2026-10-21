@@ -315,13 +315,14 @@ class Runner:
     def _baseline(self) -> str:
         """认出当前是欢迎页还是主界面。
 
-        上次跑挂可能把 App 留在权限弹窗、二级页甚至后台，所以这里先保证 App
-        在前台，再逐层退出；实在收不干净就冷启动一次 —— 绝不在认不出的界面上瞎断言。
+        上次跑挂、或者刚装完包首次启动时，App 可能还在闪屏（界面树是空的）。
+        这时绝不能按返回键——那会把 App 直接退到桌面。只有「有界面但认不出来」才逐层退出。
         """
-        for _ in range(3):
-            if not self.device.is_app_in_foreground():
-                self.device.launch_app()
-                time.sleep(0.5)
+        if not self.device.is_app_in_foreground():
+            self.device.launch_app()
+        deadline = time.time() + 25
+        back_presses = 0
+        while time.time() < deadline:
             nodes = self.device.dump()
             labels = self._labels(nodes)
             if self._has(nodes, ID_LOGIN_EMAIL_ENTRY) or "微信一键登录" in labels:
@@ -337,16 +338,27 @@ class Runner:
                     self.device.tap_node(deny)
                     time.sleep(0.4)
                     continue
+            if not labels or back_presses >= 3:
+                # 空界面＝还在启动，等着；已经退过三次还认不出就冷启动收场
+                if not labels:
+                    time.sleep(0.8)
+                    continue
+                break
             self.device.press_key(4)
+            back_presses += 1
             time.sleep(0.6)
 
         self.device.stop_app()
         self.device.launch_app()
-        nodes = self.device.dump()
-        if self._has(nodes, ID_LOGIN_EMAIL_ENTRY) or "微信一键登录" in self._labels(nodes):
-            return "welcome"
-        if self._has(nodes, ID_NAV_STUDY):
-            return "main"
+        deadline = time.time() + 20
+        while time.time() < deadline:
+            nodes = self.device.dump()
+            labels = self._labels(nodes)
+            if self._has(nodes, ID_LOGIN_EMAIL_ENTRY) or "微信一键登录" in labels:
+                return "welcome"
+            if self._has(nodes, ID_NAV_STUDY):
+                return "main"
+            time.sleep(0.8)
         return "unknown"
 
     def step_clean_state(self):
@@ -369,7 +381,32 @@ class Runner:
     def _labels(nodes):
         return " ".join(n["label"] for n in nodes if n["label"])
 
+    def _logged_in_user_id(self):
+        """从 App 偏好文件里读当前登录用户 id（debug 包可免 root 读取）。"""
+        res = self.device._run_adb(
+            ["shell", "run-as", "com.nn.nnbdc.android", "cat",
+             "shared_prefs/FlutterSharedPreferences.xml"], check=False)
+        if res.returncode != 0 or not res.stdout:
+            return None
+        match = re.search(r'name="flutter\.currentUserId"[^>]*>([^<]+)<', res.stdout)
+        return match.group(1).strip() if match else None
+
+    def _assert_own_account(self):
+        """注销前必须确认登录的是测试账号。
+
+        2026-10-21 事故：没有这层校验，测试直接把手机上登录的用户账号（昵称「马儿」）
+        注销掉了，数据被级联删除。宁可测试失败，也绝不能删别人的账号。
+        """
+        user = manage_e2e_account.check_user()
+        logged_in = self._logged_in_user_id()
+        if not user or not logged_in or logged_in != user["id"]:
+            raise CaseFailure(
+                "当前登录的不是测试账号，拒绝注销："
+                f"登录的 userId={logged_in or '读不到'}，"
+                f"e2etest 的 userId={user['id'] if user else '账号不存在'}")
+
     def _phone_unregister(self) -> bool:
+        self._assert_own_account()
         print("[*] 通过真机「注销账号」销毁旧账号...")
         self._goto_me_tab()
         self._open_settings_section()
@@ -452,8 +489,12 @@ class Runner:
                 return n
         return None
 
-    def step_login(self):
-        print("\n--- [4] 真机注册登录 ---")
+    def _day_is_fresh(self) -> bool:
+        """主页状态行还写着「未开始」才算今天没动过；开过工的计划会被锁死。"""
+        return "未开始" in self._labels(self.device.dump())
+
+    def _login_mechanics(self, log_code_case: bool = True):
+        """手机端输入邮箱验证码登录。代码只走一遍，验证码用例只在第一次记录。"""
         entry = self.device.wait(ID_LOGIN_EMAIL_ENTRY, timeout=5)
         if entry is None:
             raise CaseFailure("未能在欢迎页找到「邮箱登录」入口")
@@ -472,7 +513,7 @@ class Runner:
         self.device.tap_node(email_field)
         self.device.clear_text_input(60)
         self.device.input_text(E2E_EMAIL)
-        time.sleep(1.2)  # 输入框有防抖，要等它渲染出「获取」按钮
+        time.sleep(1.2)
 
         send = self.device.wait(ID_SEND_CODE, timeout=4)
         if send is None:
@@ -486,9 +527,12 @@ class Runner:
             code = manage_e2e_account.get_latest_code()
             if code:
                 break
-        self.expect("截获生产验证码", bool(code),
-                    f"生产库中取到最新验证码 {code}" if code else "生产库中没有取到验证码",
-                    self.capture("code_intercepted"))
+        if log_code_case:
+            self.expect("截获生产验证码", bool(code),
+                        f"生产库中取到最新验证码 {code}" if code else "生产库中没有取到验证码",
+                        self.capture("code_intercepted"))
+        elif not code:
+            raise CaseFailure("重新登录时没能取到验证码")
 
         fields = [n for n in self.device.dump() if n["class"] == "android.widget.EditText"]
         if len(fields) < 2:
@@ -503,24 +547,31 @@ class Runner:
             self.device.tap_node(submit)
 
         deadline = time.time() + 60
-        ok = False
         while time.time() < deadline:
             time.sleep(0.5)
             nodes = self.device.dump()
-            # 新账号登录后 App 会先自动导入一本起步词书（模态弹窗盖住主界面），
-            # 看到弹性窗也算已经进入 App，接着把它关掉即可。
             if self._has(nodes, ID_NAV_STUDY):
-                ok = True
                 break
             if "导入词书" in self._labels(nodes):
-                ok = True
                 break
-        shot = self.capture("login_success")
-        self.expect("真实用户注册与登录", ok,
-                    "手机端输入邮箱验证码完成注册并进入 App" if ok else "登录后未进入 App",
-                    shot)
+        else:
+            raise CaseFailure("登录后未进入 App")
         manage_e2e_account.grant_e2e_admin()
         self._dismiss_import_dialog()
+
+    def step_login(self):
+        print("\n--- [4] 真机注册登录 ---")
+        self._login_mechanics()
+        # 账号在云端是留存的：如果今天已经开过工（上次跑挂、或别的检查用过这个账号），
+        # 计划会被锁定、词数设不了，整个流程就走不下去。这里注销重登一次，保证从零开始。
+        if not self._day_is_fresh():
+            print("[*] 这个账号今天已经开过工，注销后重新登录，保证今日从零开始")
+            self._phone_unregister()
+            self._login_mechanics(log_code_case=False)
+        self.expect("真实用户注册与登录", self._day_is_fresh(),
+                    "手机端输入邮箱验证码完成注册并进入 App，今日尚未开始"
+                    if self._day_is_fresh() else "登录后今日计划仍是已开始状态，无法从零跑一遍",
+                    self.capture("login_success"))
 
     def _dismiss_import_dialog(self, timeout: float = 180):
         """关掉「导入词书」进度弹窗（系统级模态，只能按文案认）。"""
@@ -532,7 +583,6 @@ class Runner:
             nodes = self.device.dump()
             if "导入词书" not in self._labels(nodes):
                 return
-            # 导入完成前没有「完成」，一出现就点，别干等弹窗自己消失
             for label in ("完成", "确定", "知道了"):
                 hit = self.device.find_by_text(label, nodes)
                 if hit:
@@ -1123,13 +1173,17 @@ class Runner:
         audit = self.auditor.audit_local_learning_data(user["id"])
         cloud_logs = manage_e2e_account.get_user_learning_logs(user["id"])
         cloud_words = manage_e2e_account.get_user_learning_words(user["id"])
+        cloud_dakas = manage_e2e_account.get_user_dakas(user["id"])
+        cloud_stats = manage_e2e_account.get_user_daily_stats(user["id"])
         aligned, detail = self.auditor.verify_local_and_cloud_alignment(
-            cloud_logs, cloud_words, user["id"])
+            cloud_logs, cloud_words, user["id"],
+            cloud_dakas=cloud_dakas, cloud_daily_stats=cloud_stats)
         ok = (audit["total_logs"] > 0 and not audit["duplicate_violations"]
               and aligned)
         self.audited_logs = audit["logs"]
         self.expect("本地Db与FSRS算法审计", ok,
-                    f"本地 {audit['total_logs']} 条评分全部合法、无 2000ms 重复评分，{detail}"
+                    f"本地 {audit['total_logs']} 条评分、{len(cloud_dakas)} 天打卡、"
+                    f"{len(cloud_stats)} 天学习统计：{detail}"
                     if ok else f"审计不通过：{detail}",
                     self.capture("local_db_audit"))
         self.snapshot_ready = True
@@ -1146,7 +1200,13 @@ class Runner:
         manage_e2e_account.time_travel_yesterday(user["id"])
         self.device.launch_app()
         day2_words = max(2, self.plan_words // 2)
-        self._apply_plan(day2_words)
+        try:
+            self._apply_plan(day2_words)
+        except CaseFailure as exc:
+            # 第二天的词数只影响跑多久，不影响「能不能接着学、能不能再打一次卡」；
+            # 计划已经锁定就按原计划学，不把提速手段当断言。
+            print(f"[!] 第二天词数没设成 {day2_words}（{exc}），按当前计划继续")
+            day2_words = self.plan_words
         self._enter_study()
         if self.device.wait(ID_STUDY_DONT_KNOW, timeout=10) is None:
             raise CaseFailure("跨天后进入学习没有出现复习卡片")

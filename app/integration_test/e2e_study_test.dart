@@ -43,8 +43,9 @@ void main() {
       await _settle(tester);
     }
 
-    // 2. 关掉新手语音引导，切到选择题
-    await _dismissVoiceGuide(tester);
+    // 2. 先关掉新手语音引导蒙层。它是模态的，会把底下答题卡片的语义树挡住，
+    //    所以必须关在「等卡片」之前，否则会一直等不到卡片。
+    await _dismissVoiceGuide(tester, waitForIt: true);
     await _waitFor(tester, () => find.bySemanticsIdentifier('e2e_study_dont_know').evaluate().isNotEmpty,
         label: '出现答题卡片', timeout: const Duration(seconds: 90));
     await _switchToChoice(tester);
@@ -194,13 +195,30 @@ Future<void> _switchToChoice(WidgetTester tester) async {
   }
 }
 
-Future<void> _dismissVoiceGuide(WidgetTester tester) async {
-  final guide = find.textContaining('你说，我来听');
-  if (guide.evaluate().isEmpty) return;
-  final button = find.text('开始学习');
-  if (button.evaluate().isNotEmpty) {
-    await tester.tap(button.last);
+/// 关掉新手语音引导蒙层「你说，我来听」。
+///
+/// 两个坑：一是蒙层上的按钮文案虽然是「开始学习」，但可能是 RichText，
+/// `find.text` 未必命中；二是它是模态的，弹着的时候底下卡片的语义树会被挡住，
+/// 所以必须「先关它，再等卡片」。关不掉就报错，绝不带着它空转。
+Future<void> _dismissVoiceGuide(WidgetTester tester, {bool waitForIt = false}) async {
+  final deadline = DateTime.now().add(Duration(seconds: waitForIt ? 10 : 1));
+  var attempts = 0;
+  while (true) {
+    final guide = find.textContaining('你说，我来听');
+    if (guide.evaluate().isEmpty) {
+      if (DateTime.now().isAfter(deadline)) return;
+      await _sleep(tester, const Duration(milliseconds: 200));
+      continue;
+    }
+    if (attempts++ >= 6) fail('语音引导蒙层关不掉，后续作答会被它挡住');
+    final byText = find.textContaining('开始学习');
+    if (byText.evaluate().isNotEmpty) {
+      await tester.tap(byText.last);
+    } else {
+      await tester.tapAt(const Offset(40, 300));
+    }
     await _settle(tester);
+    if (find.textContaining('你说，我来听').evaluate().isEmpty) return;
   }
 }
 

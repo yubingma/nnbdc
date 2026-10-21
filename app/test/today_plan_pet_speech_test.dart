@@ -166,6 +166,10 @@ void main() {
 
     final state = tester.state<TodayPlanPageState>(find.byType(TodayPlanPage));
 
+    // 进入页面不主动开口：等过原来的自动台词延时后，气泡仍为空
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(state.petSpeechTextForTest, isNull, reason: '宠物不应主动说话，只有点击才开口');
+
     // 手动调用点击宠物触发说话
     state.onPetTapForTest();
     await tester.pump();
@@ -184,7 +188,7 @@ void main() {
     // 验证状态已被清空
     expect(state.petSpeechTextForTest, isNull, reason: '收起后气泡文本应为 null');
 
-    // 排空异步 Timer（防抖同步 200ms 与自动台词 520ms）
+    // 排空异步 Timer（防抖同步 200ms 与气泡自动收起 2600ms）
     await tester.pump(const Duration(seconds: 3));
   });
 }

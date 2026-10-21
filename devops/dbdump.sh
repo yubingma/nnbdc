@@ -2,7 +2,8 @@
 # 使用 Docker 容器内的 pg_dump 命令进行 PostgreSQL 数据库备份
 # 容器名: pg
 # 备份文件压缩后输出到宿主机: /var/nnbdc/dbdump/
-# 每次备份后只保留最新的 2 个备份（含本次产生的备份）
+# 每次备份后只保留最新的 3 个备份（含本次产生的备份）
+# 由 root 的 crontab 每天 04:00 自动触发
 
 set -o pipefail
 
@@ -20,7 +21,7 @@ if ! docker exec pg pg_dump -Umyb bdc | gzip > "$BACKUP_FILE"; then
     exit 1
 fi
 
-# 只保留最新的 2 个备份，删除更早的
-ls -1t "$DUMP_DIR"/bdc_*.sql* | tail -n +3 | while read -r f; do
+# 只保留最新的 3 个备份，删除更早的
+ls -1t "$DUMP_DIR"/bdc_*.sql* | tail -n +4 | while read -r f; do
     rm -f "$f"
 done

@@ -181,7 +181,7 @@ def get_user_learning_logs(user_id: str = None) -> list:
         user_id = user["id"]
 
     sql = f"""
-    SELECT l.id, l.word_id, COALESCE(w.spell, 'unknown'), l.rating, l.stability, l.difficulty, l.scheduled_days, l.create_time
+    SELECT l.id, l.word_id, COALESCE(w.spell, 'unknown'), l.rating, l.stability, l.difficulty, l.scheduled_days, l.create_time, l.elapsed_days
     FROM learning_log l
     LEFT JOIN word w ON l.word_id = w.id
     WHERE l.user_id = '{user_id}'
@@ -199,13 +199,53 @@ def get_user_learning_logs(user_id: str = None) -> list:
                 "id": parts[0],
                 "word_id": parts[1],
                 "spell": parts[2],
-                "rating": int(parts[3]) if parts[3].isdigit() else 0,
-                "stability": float(parts[4]) if parts[4] else 0.0,
-                "difficulty": float(parts[5]) if parts[5] else 0.0,
-                "scheduled_days": int(parts[6]) if parts[6].isdigit() else 0,
-                "create_time": parts[7]
+                "rating": int(parts[3]) if parts[3].lstrip("-").isdigit() else None,
+                "stability": float(parts[4]) if parts[4] else None,
+                "difficulty": float(parts[5]) if parts[5] else None,
+                "scheduled_days": int(parts[6]) if parts[6].lstrip("-").isdigit() else None,
+                "create_time": parts[7],
+                "elapsed_days": int(parts[8]) if len(parts) > 8 and parts[8].lstrip("-").isdigit() else None,
             })
     return logs
+
+def get_user_dakas(user_id: str = None) -> list:
+    """云端打卡记录：日期 + 文案。"""
+    if not user_id:
+        user = check_user()
+        if not user:
+            return []
+        user_id = user["id"]
+    out = run_psql(
+        f"SELECT for_learning_date, COALESCE(text, '') FROM daka "
+        f"WHERE user_id = '{user_id}' ORDER BY for_learning_date;")
+    rows = []
+    for line in out.splitlines():
+        if "|" not in line:
+            continue
+        day, text = line.split("|", 1)
+        rows.append({"date": day.strip()[:10], "text": text.strip()})
+    return rows
+
+
+def get_user_daily_stats(user_id: str = None) -> list:
+    """云端每日学习统计：日期 + 复习条数。"""
+    if not user_id:
+        user = check_user()
+        if not user:
+            return []
+        user_id = user["id"]
+    out = run_psql(
+        f"SELECT date, COALESCE(review_count, 0) FROM user_study_daily_stat "
+        f"WHERE user_id = '{user_id}' ORDER BY date;")
+    rows = []
+    for line in out.splitlines():
+        if "|" not in line:
+            continue
+        day, count = line.split("|", 1)
+        rows.append({"date": day.strip()[:10],
+                     "review_count": int(count) if count.strip().isdigit() else 0})
+    return rows
+
 
 def get_user_learning_words(user_id: str = None) -> list:
     """获取指定用户在云端的单词记忆状态表（用于核验 state、reps、scheduled_days）"""

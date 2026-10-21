@@ -13,6 +13,7 @@
 
 import os
 import sqlite3
+from datetime import datetime
 import subprocess
 from typing import Dict, List, Optional, Tuple
 
@@ -173,9 +174,125 @@ class LocalDbAuditor:
             "mastered_words": [{"word_id": r[0]} for r in mastered],
         }
 
+    def local_dakas(self, user_id: str) -> List[Dict]:
+        """本地打卡：把 epoch 秒换成 YYYY-MM-DD，和云端按日期对齐。"""
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT for_learning_date, COALESCE(text_content, '') FROM dakas "
+                "WHERE user_id = ?", (user_id,)).fetchall()
+        finally:
+            conn.close()
+        result = []
+        for epoch, text in rows:
+            day = datetime.fromtimestamp(int(epoch)).strftime("%Y-%m-%d") if epoch else ""
+            result.append({"date": day, "text": (text or "").strip()})
+        return result
+
+    def local_daily_stats(self, user_id: str) -> List[Dict]:
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT date, COALESCE(review_count, 0) FROM user_study_daily_stats "
+                "WHERE user_id = ?", (user_id,)).fetchall()
+        finally:
+            conn.close()
+        result = []
+        for epoch, count in rows:
+            day = datetime.fromtimestamp(int(epoch)).strftime("%Y-%m-%d") if epoch else ""
+            result.append({"date": day, "review_count": int(count or 0)})
+        return result
+
+    @staticmethod
+    def _same_number(a, b, tolerance: float = 1e-6) -> bool:
+        if a is None or b is None:
+            return a is b
+        try:
+            fa, fb = float(a), float(b)
+        except (TypeError, ValueError):
+            return a == b
+        return abs(fa - fb) <= tolerance * max(1.0, abs(fa), abs(fb))
+
+    def diff_logs(self, local_logs: List[Dict], cloud_logs: List[Dict],
+                  max_detail: int = 3) -> List[str]:
+        """逐条、逐字段比对评分流水：先比有哪些条，再比同一条里的数值。"""
+        issues: List[str] = []
+        local_by_id = {str(x["id"]): x for x in local_logs}
+        cloud_by_id = {str(x["id"]): x for x in cloud_logs}
+        only_local = sorted(set(local_by_id) - set(cloud_by_id))
+        only_cloud = sorted(set(cloud_by_id) - set(local_by_id))
+        if only_local:
+            issues.append(f"本地有 {len(only_local)} 条流水云端没有（如 {only_local[:max_detail]}）")
+        if only_cloud:
+            issues.append(f"云端有 {len(only_cloud)} 条流水本地没有（如 {only_cloud[:max_detail]}）")
+
+        mismatches: List[str] = []
+        for log_id in sorted(set(local_by_id) & set(cloud_by_id)):
+            local, cloud = local_by_id[log_id], cloud_by_id[log_id]
+            for field, label in (("rating", "评分"), ("stability", "稳定性"),
+                                 ("difficulty", "难度"),
+                                 ("scheduled_days", "复习间隔"),
+                                 ("elapsed_days", "经过天数")):
+                lv, cv = local.get(field), cloud.get(field)
+                if lv is None and cv is None:
+                    continue
+                if not self._same_number(lv, cv):
+                    mismatches.append(
+                        f"{local.get('spell') or log_id} 的{label}: 本地={lv} 云端={cv}")
+        if mismatches:
+            issues.append(f"{len(mismatches)} 处字段值端云不一致："
+                          + "；".join(mismatches[:max_detail]))
+        return issues
+
+    def diff_dakas(self, local_dakas: List[Dict], cloud_dakas: List[Dict],
+                   max_detail: int = 3) -> List[str]:
+        issues: List[str] = []
+        local_by_day = {d["date"]: d for d in local_dakas if d["date"]}
+        cloud_by_day = {d["date"]: d for d in cloud_dakas if d["date"]}
+        only_local = sorted(set(local_by_day) - set(cloud_by_day))
+        only_cloud = sorted(set(cloud_by_day) - set(local_by_day))
+        if only_local:
+            issues.append(f"本地有 {len(only_local)} 天打卡云端没有: {only_local[:max_detail]}")
+        if only_cloud:
+            issues.append(f"云端有 {len(only_cloud)} 天打卡本地没有: {only_cloud[:max_detail]}")
+        text_diffs = []
+        for day in sorted(set(local_by_day) & set(cloud_by_day)):
+            lt = local_by_day[day]["text"]
+            ct = cloud_by_day[day]["text"]
+            if lt != ct:
+                text_diffs.append(f"{day} 文案 本地={lt[:24]!r} 云端={ct[:24]!r}")
+        if text_diffs:
+            issues.append(f"{len(text_diffs)} 天打卡文案端云不一致：" + "；".join(text_diffs[:max_detail]))
+        return issues
+
+    def diff_daily_stats(self, local_stats: List[Dict], cloud_stats: List[Dict],
+                         max_detail: int = 3) -> List[str]:
+        """只比复习条数：专注时长是本地一直在跑的计数器，同步时点不同必然有差。"""
+        issues: List[str] = []
+        local_by_day = {d["date"]: d for d in local_stats if d["date"]}
+        cloud_by_day = {d["date"]: d for d in cloud_stats if d["date"]}
+        only_local = sorted(set(local_by_day) - set(cloud_by_day))
+        only_cloud = sorted(set(cloud_by_day) - set(local_by_day))
+        if only_local:
+            issues.append(f"本地有 {len(only_local)} 天学习统计云端没有: {only_local[:max_detail]}")
+        if only_cloud:
+            issues.append(f"云端有 {len(only_cloud)} 天学习统计本地没有: {only_cloud[:max_detail]}")
+        diffs = []
+        for day in sorted(set(local_by_day) & set(cloud_by_day)):
+            lv = local_by_day[day]["review_count"]
+            cv = cloud_by_day[day]["review_count"]
+            if lv != cv:
+                diffs.append(f"{day} 复习条数 本地={lv} 云端={cv}")
+        if diffs:
+            issues.append(f"{len(diffs)} 天复习条数端云不一致：" + "；".join(diffs[:max_detail]))
+        return issues
+
     def verify_local_and_cloud_alignment(self, cloud_logs: List[Dict],
                                          cloud_words: List[Dict],
-                                         user_id: str) -> Tuple[bool, str]:
+                                         user_id: str,
+                                         cloud_dakas: List[Dict] = None,
+                                         cloud_daily_stats: List[Dict] = None
+                                         ) -> Tuple[bool, str]:
         local = self.audit_local_learning_data(user_id)
         issues: List[str] = []
         if local["total_logs"] != len(cloud_logs):
@@ -191,8 +308,17 @@ class LocalDbAuditor:
                 issues.append(f"复习间隔未生效 scheduled_days={log['scheduled_days']} (log {log['id']})")
             if log["stability"] <= 0:
                 issues.append(f"稳定性异常 stability={log['stability']} (log {log['id']})")
+        # 逐字段值比对：条数对上不代表数值对上
+        issues.extend(self.diff_logs(local["logs"], cloud_logs))
+        if cloud_dakas is not None:
+            issues.extend(self.diff_dakas(self.local_dakas(user_id), cloud_dakas))
+        if cloud_daily_stats is not None:
+            issues.extend(self.diff_daily_stats(self.local_daily_stats(user_id),
+                                                cloud_daily_stats))
+
         passed = not issues
-        detail = "端云数据完全自洽，FSRS 评分与复习间隔全部对齐" if passed else "；".join(issues)
+        detail = ("条数与逐字段取值全部一致：评分流水、打卡日期与文案、每日复习条数都对得上"
+                  if passed else "；".join(issues))
         return passed, detail
 
     # ---------- 跨天时间旅行 ----------
