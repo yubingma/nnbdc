@@ -524,7 +524,7 @@ class SubscriptionUtil {
     }
   }
 
-  /// 检查用户是否为会员（优先使用本地用户字段判定）
+  /// 检查用户是否享有会员能力（用于功能权限与配额，优先使用本地用户字段判定）
   static bool isPremium() {
     final user = Global.getLoggedInUser();
     if (user == null) {
@@ -536,20 +536,59 @@ class SubscriptionUtil {
       return true;
     }
 
+    // 非 iOS 平台尚无会员付费入口，功能上一律放行。放行不等于拥有会员身份，见 [hasMembership]
+    if (!Platform.isIOS) {
+      return true;
+    }
+
+    return _isPremiumEffective(user);
+  }
+
+  /// 用户是否真正拥有会员身份（与平台无关）
+  ///
+  /// 与 [isPremium] 的区别：非 iOS 平台没有会员付费入口，[isPremium] 为了让功能不被限制而对
+  /// 所有人返回 true；但「功能放行」不等于「拥有会员身份」。个人中心据此决定是否展示会员信息
+  /// （Android 版上架审核要求新用户看不到任何会员相关内容），在「意见建议」里输入活动码兑换
+  /// 获得的会员由这里判真。
+  static bool hasMembership() {
+    final user = Global.getLoggedInUser();
+    if (user == null) {
+      return false;
+    }
+
+    if (user.isAdmin == true || user.isSuperAdmin == true) {
+      return true;
+    }
+
     return _isPremiumEffective(user);
   }
 
   /// 检查并强制执行会员限制（委托至 UserPrivilegeManager）
   static Future<void> checkAndEnforceMemberLimits() => UserPrivilegeManager.checkAndEnforceMemberLimits();
 
-  /// 有效会员判定（包含“强制视为会员”逻辑；边界情况偏向会员）
+  /// 计算「强制会员」（管理端“强制会员”与活动码兑换共用）是否仍然有效，以及到期时刻。
+  ///
+  /// 会员能力判定与个人中心的状态条展示共用这一套算法，避免两边各说各话。
+  /// [expireTime] 为 null 表示永久；时长为空、无法解析或没有起算时间时按永久放行（边界偏向会员）。
+  static ({bool active, DateTime? expireTime}) resolveForcedMembership({
+    required bool enabled,
+    required String? duration,
+    required DateTime? updateTime,
+  }) {
+    if (!enabled) {
+      return (active: false, expireTime: null);
+    }
+    final durationMs = duration == null ? null : _parseDurationMillis(duration);
+    if (durationMs == null || updateTime == null) {
+      return (active: true, expireTime: null);
+    }
+    final expireTime = updateTime.add(Duration(milliseconds: durationMs));
+    return (active: durationMs > 0 && expireTime.isAfter(AppClock.now()), expireTime: expireTime);
+  }
+
+  /// 有效会员判定（只看会员字段，包含“强制视为会员”逻辑；边界情况偏向会员）
   static bool _isPremiumEffective(User user) {
     final now = AppClock.now();
-
-    // 非ios平台, 暂时都视为会员 
-    if (!Platform.isIOS) {
-      return true;
-    }
 
     // 1) 通用会员到期时间 (包含微信/支付宝/全渠道支付)
     try {
@@ -576,28 +615,13 @@ class SubscriptionUtil {
       return true;
     }
 
-    // 2) 强制视为会员
+    // 3) 强制视为会员
     try {
-      if (user.premiumOverrideEnabled != true) {
-        return false;
-      }
-      if (user.premiumOverrideDuration == null) {
-        return true; // 永久
-      }
-      final updateTime = user.premiumOverrideUpdateTime;
-      if (updateTime == null) {
-        return true; // 元数据缺失，偏向会员
-      }
-
-      final durationMs = _parseDurationMillis(user.premiumOverrideDuration!);
-      if (durationMs == null) {
-        return true; // 无法解析，偏向会员
-      }
-      if (durationMs <= 0) {
-        return false;
-      }
-      final expireTime = updateTime.add(Duration(milliseconds: durationMs));
-      return expireTime.isAfter(now);
+      return resolveForcedMembership(
+        enabled: user.premiumOverrideEnabled == true,
+        duration: user.premiumOverrideDuration,
+        updateTime: user.premiumOverrideUpdateTime,
+      ).active;
     } catch (_) {
       return true;
     }

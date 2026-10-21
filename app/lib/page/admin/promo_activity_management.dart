@@ -625,7 +625,7 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
                         title: const Text('在“我的”页面展示兑换框', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                         subtitle: Text(
                           _showRedeemUi
-                              ? '已开启：“我的”页面显示兑换码输入框及兑换按钮'
+                              ? '已开启：“我的”页面显示兑换码输入框及兑换按钮（Android 非会员不展示，请在“意见建议”兑换）'
                               : '已关闭：“我的”页面隐藏兑换输入框（推荐：用户可在“意见建议”输入兑换码静默兑换）',
                           style: TextStyle(
                             fontSize: 12,

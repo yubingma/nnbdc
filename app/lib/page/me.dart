@@ -807,6 +807,13 @@ class MePageState extends State<MePage> implements RefreshableTab {
     }
   }
 
+  /// 「我的」页面是否展示会员信息。
+  ///
+  /// Android 版尚无会员充值入口，应用商店审核要求新用户看不到任何会员相关内容，
+  /// 因此只有真正拥有会员身份（例如在「意见建议」里输入活动码兑换获得）的用户才展示；
+  /// iOS 有订阅入口，维持原样对所有人可见。
+  bool get _shouldShowMembershipInfo => !PlatformUtils.isAndroid || SubscriptionUtil.hasMembership();
+
   /// 获取当前用户账户类型信息（用于UI展示和排查）
   Map<String, dynamic> _getUserAccountTypeInfo() {
     if (Global.isGuest || loggedInUser == null) {
@@ -852,28 +859,28 @@ class MePageState extends State<MePage> implements RefreshableTab {
     }
 
     if (isOverride) {
-      final updateTime = loggedInUser?.premiumOverrideUpdateTime;
-      final duration = loggedInUser?.premiumOverrideDuration;
-      if (duration == null) {
+      // 与 SubscriptionUtil.hasMembership 共用同一套强制会员有效期算法，避免两边各说各话
+      final override = SubscriptionUtil.resolveForcedMembership(
+        enabled: true,
+        duration: loggedInUser?.premiumOverrideDuration,
+        updateTime: loggedInUser?.premiumOverrideUpdateTime,
+      );
+      final expireTime = override.expireTime;
+      if (expireTime == null) {
         return {
           'type': '永久会员',
           'desc': '永久有效',
           'isPremium': true,
           'tag': '永久VIP',
         };
-      } else if (updateTime != null) {
-        final ms = _parseDurationMillis(duration);
-        if (ms != null && ms > 0) {
-          final expireTime = updateTime.add(Duration(milliseconds: ms));
-          final isValid = expireTime.isAfter(DateTime.now());
-          return {
-            'type': isValid ? '限时会员' : '会员已过期',
-            'desc': '有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日',
-            'isPremium': isValid,
-            'tag': isValid ? '限时VIP' : '已过期',
-          };
-        }
       }
+      final isValid = override.active;
+      return {
+        'type': isValid ? '限时会员' : '会员已过期',
+        'desc': '有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日',
+        'isPremium': isValid,
+        'tag': isValid ? '限时VIP' : '已过期',
+      };
     }
 
     if (loggedInUser?.vipExpireDate != null) {
@@ -906,40 +913,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
       'isPremium': false,
       'tag': '普通用户',
     };
-  }
-
-  /// 解析形如：10天 / 360秒 / 15分钟 的时长字符串，返回毫秒；解析失败返回 null
-  int? _parseDurationMillis(String duration) {
-    final s = duration.trim();
-    if (s.isEmpty) return null;
-    final reg = RegExp(r'^(\d+)\s*(毫秒|ms|秒|s|分钟|分|m|小时|时|h|天|日|d)$', caseSensitive: false);
-    final m = reg.firstMatch(s);
-    if (m == null) return null;
-    final value = int.tryParse(m.group(1)!);
-    if (value == null) return null;
-    final unit = (m.group(2) ?? '').toLowerCase();
-    switch (unit) {
-      case '毫秒':
-      case 'ms':
-        return value;
-      case '秒':
-      case 's':
-        return value * 1000;
-      case '分钟':
-      case '分':
-      case 'm':
-        return value * 60 * 1000;
-      case '小时':
-      case '时':
-      case 'h':
-        return value * 60 * 60 * 1000;
-      case '天':
-      case '日':
-      case 'd':
-        return value * 24 * 60 * 60 * 1000;
-      default:
-        return null;
-    }
   }
 
   /// 弹出会员专属特权展示弹窗
@@ -1228,7 +1201,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (SubscriptionUtil.isPremium()) ...[
+                            if (SubscriptionUtil.hasMembership()) ...[
                               const SizedBox(width: 4),
                               const Icon(Icons.verified, color: Color(0xFF2196F3), size: 16),
                             ],
@@ -1423,85 +1396,89 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 ],
               ),
 
-              const SizedBox(height: 12),
-              Divider(
-                height: 1,
-                thickness: 0.5,
-                color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
-              ),
-              const SizedBox(height: 10),
+              if (_shouldShowMembershipInfo) ...[
+                const SizedBox(height: 12),
+                Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                ),
+                const SizedBox(height: 10),
 
-              // 1.3 VIP / 账户类型状态条 (纯净底色平铺)
-              Builder(builder: (context) {
-                final accountInfo = _getUserAccountTypeInfo();
-                final isPremium = accountInfo['isPremium'] as bool;
-                final accountType = accountInfo['type'] as String;
-                final accountDesc = accountInfo['desc'] as String?;
-                final accountTag = accountInfo['tag'] as String? ?? (isPremium ? 'PRO' : 'USER');
+                // 1.3 会员 / 账户类型状态条 (纯净底色平铺)
+                Builder(builder: (context) {
+                  final accountInfo = _getUserAccountTypeInfo();
+                  final isPremium = accountInfo['isPremium'] as bool;
+                  final accountType = accountInfo['type'] as String;
+                  final accountDesc = accountInfo['desc'] as String?;
+                  final accountTag = accountInfo['tag'] as String? ?? (isPremium ? 'PRO' : 'USER');
 
-                final displayText = (accountDesc != null && accountDesc.isNotEmpty)
-                    ? '$accountType · $accountDesc'
-                    : '账户类型：$accountType';
+                  final displayText = (accountDesc != null && accountDesc.isNotEmpty)
+                      ? '$accountType · $accountDesc'
+                      : '账户类型：$accountType';
 
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    _showPrivilegesDialog(context, accountInfo);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
-                          decoration: BoxDecoration(
-                            color: accentColor,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            accountTag,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Roboto',
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      _showPrivilegesDialog(context, accountInfo);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            displayText,
-                            style: TextStyle(
-                              color: textColor.withValues(alpha: 0.85),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w400,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              isPremium ? '特权' : (PlatformUtils.isIOS ? '升级特权' : '详情'),
-                              style: TextStyle(
-                                color: accentColor,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
+                            child: Text(
+                              accountTag,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'Roboto',
                               ),
                             ),
-                            const SizedBox(width: 2),
-                            Icon(Icons.arrow_forward_ios_rounded, size: 10, color: accentColor.withValues(alpha: 0.8)),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              displayText,
+                              style: TextStyle(
+                                color: textColor.withValues(alpha: 0.85),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isPremium ? '特权' : (PlatformUtils.isIOS ? '升级特权' : '详情'),
+                                style: TextStyle(
+                                  color: accentColor,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(Icons.arrow_forward_ios_rounded, size: 10, color: accentColor.withValues(alpha: 0.8)),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
-              if (_activePromo?.showRedeemUi == true) ...[
+                  );
+                }),
+              ],
+              // 兑换框属于会员区域，与会员信息同一道闸门：Android 新用户一律看不到，
+              // 兑换只能走「意见建议」，避免商店审核把兑换当成会员充值入口
+              if (_shouldShowMembershipInfo && _activePromo?.showRedeemUi == true) ...[
                 const SizedBox(height: 8),
                 _PromoRedemptionWidget(
                   activePromo: _activePromo,

@@ -346,6 +346,8 @@
 | 等级 | `level` | 用户学习等级阶梯规则 | |
 | 系统参数 | `sys_param` | 全局运行参数，例如图片根目录 `imgBaseDir` | |
 | 订阅 / VIP | `user` 表 | 会员与订阅信息 | |
+| 会员身份 | `SubscriptionUtil.hasMembership()`（`app/lib/util/subscription_util.dart:553`）；强制会员有效期算法 `resolveForcedMembership`（同文件 573 行） | 用户是否真正拥有会员权益：管理员、通用会员有效期（`user.vip_expire_date`）、苹果订阅、活动码兑换（`user.premium_override_*`） | 与「会员放行」是两回事：非 iOS 平台尚无付费入口，`SubscriptionUtil.isPremium()` 对所有人返回 true 只是为了放开功能限制，**不代表拥有会员身份**。「我的」页面据此决定是否展示会员信息（展示闸门 `_shouldShowMembershipInfo` 见 `app/lib/page/me.dart:815`）：Android 只对拥有会员身份的用户展示，iOS 因为有订阅入口对所有人展示 |
+| 会员放行 | `SubscriptionUtil.isPremium()` / `UserPrivilegeManager.isPremium`（`app/lib/util/subscription_util.dart:528`） | 功能权限与配额上把用户当作会员对待（管理员、真实会员，以及非 iOS 平台的一律放行） | 只用于功能开关与配额，**不能拿来判断会员身份** |
 | 支付订单 | `pay_order` | 微信 / 支付宝 / 苹果 IAP 流水 | |
 | 兑换码 | `promo_redemption` / `promo_activity` | 营销活动与核销记录 | |
 | 站内信 | `msg` | 系统通知 / 同桌消息 / 活动提醒 | |
