@@ -606,7 +606,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
     final rowRadius = BorderRadius.circular(12);
 
-    return Material(
+    final Widget row = Material(
       color: isSelected ? accentColor.withValues(alpha: isDarkMode ? 0.16 : 0.07) : Colors.transparent,
       borderRadius: rowRadius,
       child: InkWell(
@@ -699,6 +699,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           ),
         ),
       ),
+    );
+    // 每本词书挂带 id 的稳定标识，真机自动化据此枚举词书行并读取其词数文案
+    return Semantics(
+      identifier: 'e2e_book_row_${dict.id}',
+      button: true,
+      child: row,
     );
   }
 
@@ -1677,17 +1683,21 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             ),
           ),
           const SizedBox(width: 12),
-          ElevatedButton.icon(
-            onPressed: save,
-            icon: const Icon(Icons.check_rounded, size: 17),
-            label: const Text('保存'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: accentColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-              textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          Semantics(
+            identifier: 'e2e_book_save',
+            button: true,
+            child: ElevatedButton.icon(
+              onPressed: save,
+              icon: const Icon(Icons.check_rounded, size: 17),
+              label: const Text('保存'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: accentColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],

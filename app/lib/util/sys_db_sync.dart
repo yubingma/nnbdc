@@ -4,6 +4,7 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/services/sync_progress.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/util/sync.dart';
@@ -52,6 +53,7 @@ Future<void> syncSysDb() async {
 
     // 4. 拉取增量日志（本地缺表时附带缺失表清单，服务端会额外补上这几张表的全量）
     Global.logger.i("📥 开始拉取系统数据增量 - 本地: $localVersion, 远程: $remoteVersion, 补表: $missingTables");
+    syncProgress.value = const SyncProgress(phase: 'FETCHING SYSTEM DATA');
     var logsResult = await Api.client.getNewSysDbLogs(localVersion, missingTables.join(','));
     if (!logsResult.success) {
       Global.logger.e("❌ 获取系统数据日志失败: ${logsResult.msg}");
@@ -77,7 +79,21 @@ Future<void> syncSysDb() async {
 
     // 5. 应用日志到本地数据库（应用前按表依赖优先级排序）
     _sortSysLogs(remoteLogs);
-    await applySysDbLogs(remoteLogs);
+    syncProgress.value = SyncProgress(
+      phase: 'WRITING SYSTEM DATA',
+      done: 0,
+      total: remoteLogs.length,
+    );
+    await applySysDbLogs(
+      remoteLogs,
+      onProgress: (done, total) {
+        syncProgress.value = SyncProgress(
+          phase: 'WRITING SYSTEM DATA',
+          done: done,
+          total: total,
+        );
+      },
+    );
 
     // 6. 更新本地版本
     await db.sysDbVersionDao.saveVersion(
@@ -135,7 +151,12 @@ Future<List<String>> findMissingSystemTables() async {
 /// 公开以便单测直接注入日志（与用户数据同步的 [doSyncUserDb] 同一思路）——
 /// 该函数此前无任何测试覆盖，导致「DELETE 日志 record 为空时解析失败、
 /// 整条删除被静默跳过」的线上问题未被发现。
-Future<void> applySysDbLogs(List<SysDbLogDto> logs) async {
+///
+/// [onProgress] 每处理 50 条回调一次（含最后一条），让首屏同步进度能显示数字。
+Future<void> applySysDbLogs(
+  List<SysDbLogDto> logs, {
+  void Function(int done, int total)? onProgress,
+}) async {
   final db = MyDatabase.instance;
   Set<String> affectedBaseDictIds = {};
   // 本批有单词被删除的词书：删除会改变单词数，需要在本批结束时重算一次 wordCount。
@@ -143,7 +164,8 @@ Future<void> applySysDbLogs(List<SysDbLogDto> logs) async {
   final Set<String> deletedDictIds = <String>{};
 
   await db.transaction(() async {
-    for (var log in logs) {
+    for (var i = 0; i < logs.length; i++) {
+      final log = logs[i];
       try {
         // DELETE 日志只靠 recordId 定位删除目标，record 为空（服务端历史日志曾写入空串），
         // 此时解析 record 会抛 FormatException 导致该条删除被整体跳过。
@@ -309,6 +331,9 @@ Future<void> applySysDbLogs(List<SysDbLogDto> logs) async {
       } catch (e, stackTrace) {
         Global.logger.e('应用系统数据日志失败 - 表: ${log.tblName}, ID: ${log.recordId}', error: e, stackTrace: stackTrace);
         // 继续处理下一条日志，不中断整个同步
+      }
+      if (onProgress != null && (i % 50 == 0 || i == logs.length - 1)) {
+        onProgress(i + 1, logs.length);
       }
     }
   });

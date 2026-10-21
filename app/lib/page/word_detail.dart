@@ -1835,6 +1835,9 @@ class WordDetailPageState extends State<WordDetailPage>
                         isWide ? Alignment.centerRight : Alignment.center,
                     child: Material(
                       color: Colors.transparent,
+                        child: Semantics(
+                          identifier: 'e2e_detail_next_word',
+                          button: true,
                       child: InkWell(
                         key: const Key('detail_next_word_btn'),
                         borderRadius: BorderRadius.circular(8),
@@ -1896,6 +1899,7 @@ class WordDetailPageState extends State<WordDetailPage>
                                 ),
                         ),
                       ),
+                          ),
                     ),
                   );
                 },
@@ -4932,13 +4936,17 @@ class WordDetailPageState extends State<WordDetailPage>
 
     return AppScaffold(
       vibrancy: PageVibrancy.wordDetail,
-      body: SafeArea(
-        bottom: false,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          child: (!dataLoaded)
-              ? const Center(child: CircularProgressIndicator())
-              : renderPage(),
+      body: Semantics(
+        identifier: 'e2e_word_detail',
+        container: true,
+        child: SafeArea(
+          bottom: false,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+            child: (!dataLoaded)
+                ? const Center(child: CircularProgressIndicator())
+                : renderPage(),
+          ),
         ),
       ),
     );

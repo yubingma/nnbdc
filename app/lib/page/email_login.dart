@@ -434,17 +434,21 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          TextButton(
-                            onPressed: (_countdown > 0 || _isSendingCode) ? null : sendVerificationCode,
-                            style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFF0EA5E9),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              backgroundColor: const Color(0xFF0EA5E9).withValues(alpha: 0.1),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            ),
-                            child: Text(
-                              _isSendingCode ? '...' : (_countdown > 0 ? '${_countdown}s' : '获取'),
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          Semantics(
+                            identifier: 'e2e_send_code',
+                            button: true,
+                            child: TextButton(
+                              onPressed: (_countdown > 0 || _isSendingCode) ? null : sendVerificationCode,
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFF0EA5E9),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                backgroundColor: const Color(0xFF0EA5E9).withValues(alpha: 0.1),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
+                              child: Text(
+                                _isSendingCode ? '...' : (_countdown > 0 ? '${_countdown}s' : '获取'),
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                              ),
                             ),
                           ),
                         ],
@@ -471,19 +475,23 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                           ),
                         ],
                       ),
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : loginBtnPressed,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          elevation: 0,
-                          shadowColor: Colors.transparent,
-                        ),
-                        child: Text(
-                          _isLoading ? '登录中...' : '登录',
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, letterSpacing: 2, fontFamily: 'NotoSansSC'),
+                      child: Semantics(
+                        identifier: 'e2e_login_submit',
+                        button: true,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : loginBtnPressed,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            elevation: 0,
+                            shadowColor: Colors.transparent,
+                          ),
+                          child: Text(
+                            _isLoading ? '登录中...' : '登录',
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, letterSpacing: 2, fontFamily: 'NotoSansSC'),
+                          ),
                         ),
                       ),
                     ),

@@ -271,21 +271,25 @@ class BadgeAwardDialog extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4F46E5),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: Semantics(
+                      identifier: 'e2e_badge_claim',
+                      button: true,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4F46E5),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          onEquip?.call();
+                        },
+                        child: const Text('开心收下'),
                       ),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        onEquip?.call();
-                      },
-                      child: const Text('开心收下'),
                     ),
                   ),
                 ],

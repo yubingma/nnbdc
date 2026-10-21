@@ -213,7 +213,9 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     return Expanded(
       // 底栏只有图标、没有文字，必须显式给出语义标签：
       // 否则读屏软件念不出这一排按钮各自是什么，自动化也无从定位。
+      // identifier 会写进无障碍树的 resource-id，供真机端到端测试稳定定位。
       child: Semantics(
+        identifier: 'e2e_nav_${tab.key}',
         label: tab.label,
         button: true,
         selected: isSelected,

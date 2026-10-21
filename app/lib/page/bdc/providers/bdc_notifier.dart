@@ -719,6 +719,7 @@ class BdcNotifier extends _$BdcNotifier {
       Future.delayed(Duration.zero, () {
         final nextBtn = MinimalFlowButton(
           label: '下一组',
+          identifier: 'e2e_study_next_group',
           onTap: () async {
             StudyAudioSessionController.instance.keepMicrophoneWarm = true;
             await StudyBo().completeListStepForCurrentBatch();

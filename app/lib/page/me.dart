@@ -1780,7 +1780,11 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         _isSettingsExpanded = !_isSettingsExpanded;
                       });
                     },
-                    child: Padding(
+                    child: Semantics(
+                      identifier: 'e2e_me_settings',
+                      button: true,
+                      container: false,
+                      child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1867,6 +1871,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             ],
                           ),
                         ],
+                      ),
                       ),
                     ),
                   ),
@@ -2141,6 +2146,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             icon: Icons.cloud_sync_outlined,
                             iconColor: const Color(0xFF0284C7),
                             title: '云同步状态',
+                            identifier: 'e2e_me_sync',
                             trailingText: _syncStatus == SyncStatus.syncing
                                 ? '同步中...'
                                 : (_syncStatus == SyncStatus.failed ? '同步失败' : '已是最新'),
@@ -2246,6 +2252,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             isDestructive: true,
                             iconColor: const Color(0xFFEF4444),
                             title: '注销账号',
+                            identifier: 'e2e_me_unregister',
                             onTap: () => showUnRegisterDlg(),
                             showDivider: loggedInUser?.isAdmin == true,
                           ),
@@ -3207,6 +3214,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
     bool isDestructive = false,
     Color? iconColor,
     bool showDivider = true,
+    String? identifier,
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
@@ -3252,7 +3260,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
       );
     }
 
-    return InkWell(
+    final Widget tile = InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -3292,6 +3300,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
         ),
       ),
     );
+    if (identifier == null) return tile;
+    return Semantics(identifier: identifier, button: true, child: tile);
   }
 
   void _onSyncStatusChanged() {

@@ -858,8 +858,10 @@ Future<bool> uploadLogsInBatches({
   }
 
   var version = startVersion;
+  var uploadedRecords = 0;
   for (var i = 0; i < batches.length; i++) {
-    syncProgress.value = SyncProgress(phase: 'UPLOADING CHANGES', done: i, total: batches.length);
+    syncProgress.value =
+        SyncProgress(phase: 'UPLOADING CHANGES', done: uploadedRecords, total: logs.length);
     final batch = batches[i];
     final result = await upload(version, batch);
     if (!result.success) {
@@ -869,6 +871,9 @@ Future<bool> uploadLogsInBatches({
     }
     version = result.data!;
     await onBatchUploaded(version, batch);
+    uploadedRecords += batch.length;
+    syncProgress.value =
+        SyncProgress(phase: 'UPLOADING CHANGES', done: uploadedRecords, total: logs.length);
   }
   return true;
 }
@@ -1271,6 +1276,7 @@ Future<void> syncDb() async {
   try {
     Global.logger.i("🔄 开始数据库同步流程");
     syncProgress.value = const SyncProgress(phase: 'CHECKING SYSTEM DATA');
+    resetSyncReceivedBytes();
 
     // 检查网络连接
     final networkUtil = NetworkUtil();

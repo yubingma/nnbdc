@@ -12,6 +12,7 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/prefs.dart';
+import 'package:nnbdc/widget/sync_progress_overlay.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -285,8 +286,34 @@ void main() {
     await pumpUntil(tester, find.text('开始学习'));
 
     expect(find.text('开始学习'), findsOneWidget, reason: '本地已有今日计划词，必须先把页面渲染出来');
-    expect(find.text('LOADING PLAN'), findsNothing, reason: '不得因为云端同步在途而把页面挡在加载态');
+    expect(find.byType(SyncProgressOverlay), findsNothing,
+        reason: '不得因为云端同步在途而把页面挡在加载态');
 
     await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
+  });
+
+  testWidgets('重装后同步超过 60 秒仍未完成：首屏继续显示同步进度，不进入空首页', (tester) async {
+    await seedEmptyTodayPlan('test_user_id');
+
+    // 卡住网络探测，模拟云端日志很多、同步要数分钟才结束
+    final networkProbe = Completer<dynamic>();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+      (MethodCall methodCall) => networkProbe.future,
+    );
+
+    await pumpTodayPlan(tester);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(SyncProgressOverlay), findsOneWidget);
+    expect(find.text('正在从云端同步'), findsOneWidget);
+
+    // 旧的 60 秒超时会把用户放进一个 0/0 的空首页；现在必须继续显示同步进度
+    await tester.pump(const Duration(seconds: 61));
+    expect(find.byType(SyncProgressOverlay), findsOneWidget);
+    expect(find.text('正在从云端同步'), findsOneWidget);
+    expect(find.text('开始学习'), findsNothing);
+
+    networkProbe.complete(<String>[]);
+    await tester.pump(const Duration(seconds: 60));
   });
 }

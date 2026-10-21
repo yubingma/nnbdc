@@ -644,6 +644,7 @@ class FinishPageState extends State<FinishPage> {
                   icon: Icons.add_circle_outline_rounded,
                   iconColor: themeConfig.primaryColor,
                   title: '再来一组',
+                  identifier: 'e2e_finish_extra',
                   subtitle: '趁状态正好，再背 ${StudyBo.batchSize} 个单词',
                   onTap: _startExtraStudy,
                 ),
@@ -655,6 +656,7 @@ class FinishPageState extends State<FinishPage> {
                 icon: Icons.wysiwyg_rounded,
                 iconColor: themeConfig.primaryColor,
                 title: '前往词表',
+                identifier: 'e2e_finish_word_list',
                 subtitle: '复习今日学习的单词',
                 onTap: () => context.go('/index', extra: IndexPageArgs(1)),
               ),
@@ -718,8 +720,9 @@ class FinishPageState extends State<FinishPage> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    String? identifier,
   }) {
-    return InkWell(
+    final Widget item = InkWell(
       key: key,
       onTap: onTap,
       child: Padding(
@@ -763,6 +766,8 @@ class FinishPageState extends State<FinishPage> {
         ),
       ),
     );
+    if (identifier == null) return item;
+    return Semantics(identifier: identifier, button: true, child: item);
   }
 
   Widget _buildActionDivider(AppThemeConfig themeConfig) {
@@ -892,7 +897,11 @@ class FinishPageState extends State<FinishPage> {
       vibrancy: PageVibrancy.finish,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context.themeConfig),
-      body: renderPage(),
+      body: Semantics(
+        identifier: 'e2e_finish_page',
+        container: true,
+        child: renderPage(),
+      ),
     );
   }
 

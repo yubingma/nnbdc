@@ -1,1426 +1,1090 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-泡泡单词 Android 端到端全量自动化回归测试套件 (Pure E2E Regression Test Suite)
+泡泡单词 Android 真机端到端回归测试
 
-遵循黑盒端到端测试黄金原则：
-1. 真实用户自助注册：账号由手机 App 输入邮箱和验证码，完全通过原生注册链路创建与初始化。
-2. 真实用户注销闭环：测试前后通过手机端「注销账号」功能自助销毁，保证 100% 纯净与幂等。
-3. 极简后端协同：仅在自动化获取验证码时，从生产库读取 email_verification_code，其余 100% 模拟真机人机交互。
-4. 学习与打卡完整全链路：覆盖学习轨道配置、每日学习计划定制、完整学完当日单词、自动打卡落库与端云一致性校验。
-5. 自动邮件推送：测试结束将完整图文 HTML 报告直推至指定邮箱。
+三条硬规矩：
+1. **分母固定**：`CASES` 是全部用例清单。跑挂在哪一步不算「通过」也不算「失败」，
+   而是记成「未执行」，报告里一眼能看出「这次根本没跑到」。
+2. **只有通过和失败**：任何断言不成立就是失败，不用「警告」把业务结果糊弄过去。
+3. **控件按稳定标识点**：所有要点的控件都靠 App 写进无障碍树的 resource-id 定位，
+   文案改了、分辨率换了都不会点错；标识找不到就是失败，不退回按文案猜。
+
+唯一的后端协同：从生产库读登录验证码、核对打卡与学习流水落库。
 """
 
+import argparse
+import fcntl
 import os
+import re
 import sys
 import time
-import json
-import argparse
-import base64
-import io
-import re
-import fcntl
-import sqlite3
 from datetime import datetime
-from PIL import Image
 
-# 导入同目录的驱动模块
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(SCRIPT_DIR)
 
 from device_controller import AndroidDeviceController
 from local_db_auditor import LocalDbAuditor
-import voice_driver
 import manage_e2e_account
 import send_report_email
 
 REPORT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "../../../../tmp/e2e_report"))
 SCREENSHOT_DIR = os.path.join(REPORT_DIR, "screenshots")
 
-class PureE2ERegressionRunner:
-    def __init__(self, serial=None, target_email="mmyybb3000@icloud.com", send_email=True):
+E2E_EMAIL = "e2etest@nnbdc.com"
+
+# 控件稳定标识，与 app/lib 里的 Semantics(identifier: ...) 一一对应。
+ID_NAV_STUDY = "e2e_nav_study"
+ID_NAV_WORD_LISTS = "e2e_nav_word_lists"
+ID_NAV_SEARCH = "e2e_nav_search"
+ID_NAV_GAME = "e2e_nav_game"
+ID_NAV_ME = "e2e_nav_me"
+ID_HOME_START = "e2e_home_start"
+ID_HOME_EXTRA = "e2e_home_extra"
+ID_HOME_SELECT_BOOK = "e2e_home_select_book"
+ID_HOME_PLAN = "e2e_home_plan"
+ID_PLAN_WORDS_PREFIX = "e2e_plan_words_"
+ID_BOOK_SAVE = "e2e_book_save"
+ID_BOOK_ROW_PREFIX = "e2e_book_row_"
+ID_STUDY_MODE_SWITCH = "e2e_study_mode_switch"
+ID_STUDY_OPTION_PREFIX = "e2e_study_option_"
+ID_STUDY_DONT_KNOW = "e2e_study_dont_know"
+ID_STUDY_AGAIN = "e2e_study_again"
+ID_STUDY_NEXT_WORD = "e2e_study_next_word"
+ID_STUDY_NEXT_GROUP = "e2e_study_next_group"
+ID_STUDY_MASTER = "e2e_study_master"
+ID_WORD_DETAIL = "e2e_word_detail"
+ID_DETAIL_NEXT_WORD = "e2e_detail_next_word"
+ID_FINISH_PAGE = "e2e_finish_page"
+ID_FINISH_EXTRA = "e2e_finish_extra"
+ID_BADGE_CLAIM = "e2e_badge_claim"
+ID_ME_SYNC = "e2e_me_sync"
+ID_ME_SETTINGS = "e2e_me_settings"
+ID_ME_UNREGISTER = "e2e_me_unregister"
+ID_LOGIN_AGREE = "e2e_login_agree"
+ID_LOGIN_EMAIL_ENTRY = "e2e_login_email_entry"
+ID_SEND_CODE = "e2e_send_code"
+ID_LOGIN_SUBMIT = "e2e_login_submit"
+
+# 全部用例，顺序即执行顺序，也是报告里的固定分母。
+CASES = [
+    "连接 Android 设备",
+    "启动 App 前台校验",
+    "初始环境核验",
+    "截获生产验证码",
+    "真实用户注册与登录",
+    "导航切换: 学习",
+    "导航切换: 词表",
+    "导航切换: 查词",
+    "导航切换: 比赛",
+    "导航切换: 我",
+    "词书就绪校验",
+    "每日学习计划定制",
+    "学习轨道配置与切换",
+    "进入单词测评卡片",
+    "选择题答错必须进入单词详情",
+    "选择题答对自动进阶下一题",
+    "学习中标记已掌握",
+    "杀进程后学习进度不丢",
+    "拒绝录音权限不崩溃",
+    "当日计划学完进入打卡页",
+    "断网时同步失败可见",
+    "恢复网络后同步补齐",
+    "端云打卡数据持久化核验",
+    "本地Db与FSRS算法审计",
+    "跨天复习与连续打卡",
+    "主页与个人中心打卡状态",
+    "端云同步健康度校验",
+    "测试善后注销账号",
+]
+
+PASSED, FAILED, NOT_RUN = "PASSED", "FAILED", "NOT_RUN"
+
+
+class CaseFailure(RuntimeError):
+    """断言不成立：立刻记失败，不再往下假装继续。"""
+
+
+class Runner:
+    def __init__(self, serial=None, target_email="mmyybb3000@icloud.com",
+                 send_email=True, plan_words=10):
         self.serial = serial
         self.target_email = target_email
         self.send_email = send_email
+        self.plan_words = plan_words
         self.device = None
-        self.results = []
         self.auditor = None
-        self.mastered_test_word = None
-        self.audited_fsrs_logs = []
-        self.step_timer = time.time()
+        self.results = []
+        self.snapshot_ready = False
+        self.meanings = {}
+        self._case_started = time.time()
+        self._log_count = 0
         os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
-    def start_step_timer(self):
-        """重置步骤计时起点"""
-        self.step_timer = time.time()
-
-    def log(self, step_name: str, status: str, details: str = "", screenshot: str = None, duration: float = None):
-        if duration is None:
-            duration = round(time.time() - self.step_timer, 2)
-        # 重置计时器，为下一步操作准备
-        self.step_timer = time.time()
-        abs_path = os.path.abspath(screenshot) if screenshot else None
-        res = {
-            "step": step_name,
-            "status": status,
-            "details": details,
-            "duration": duration,
-            "screenshot": os.path.relpath(screenshot, REPORT_DIR) if screenshot else None,
-            "abs_screenshot": abs_path,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        self.results.append(res)
-        icon = "✅" if status == "PASSED" else ("⚠️" if status in ("SKIPPED", "WARNING") else "❌")
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {icon} [{status}] {step_name} (耗时 {duration}s): {details}")
+    # ---------- 断言与记录 ----------
 
     def capture(self, name: str) -> str:
-        filename = f"{len(self.results) + 1:02d}_{name}_{int(time.time())}.png"
-        path = os.path.join(SCREENSHOT_DIR, filename)
-        if self.device:
-            try:
-                self.device.take_screenshot(path)
-                return path
-            except Exception as e:
-                print(f"[!] 截图失败: {e}")
+        self._log_count += 1
+        path = os.path.join(SCREENSHOT_DIR, f"{self._log_count:02d}_{name}.png")
+        try:
+            self.device.take_screenshot(path)
+            return path
+        except Exception as exc:
+            print(f"[!] 截图失败: {exc}")
+            return None
+
+    def log(self, case: str, status: str, details: str, shot: str = None):
+        if case not in CASES:
+            raise KeyError(f"用例「{case}」不在 CASES 清单里，先登记再断言")
+        if any(r["case"] == case for r in self.results):
+            raise KeyError(f"用例「{case}」已记录过，不能重复记")
+        duration = round(time.time() - self._case_started, 2)
+        self._case_started = time.time()
+        self.results.append({
+            "case": case, "status": status, "details": details,
+            "duration": duration,
+            "screenshot": os.path.relpath(shot, REPORT_DIR) if shot else None,
+            "abs_screenshot": os.path.abspath(shot) if shot else None,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        })
+        icon = {PASSED: "✅", FAILED: "❌", NOT_RUN: "⏭"}[status]
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {icon} [{status}] {case} "
+              f"({duration}s): {details}")
+
+    def expect(self, case: str, condition: bool, details: str, shot: str = None):
+        """断言：成立记通过，不成立记失败并抛 CaseFailure 终止后续步骤。"""
+        if condition:
+            self.log(case, PASSED, details, shot)
+            return
+        self.log(case, FAILED, details, shot)
+        raise CaseFailure(f"{case}: {details}")
+
+    def fill_unrun(self):
+        recorded = {r["case"] for r in self.results}
+        missing = [c for c in CASES if c not in recorded]
+        for case in missing:
+            self.results.append({
+                "case": case, "status": NOT_RUN,
+                "details": "本次执行没有走到这条用例",
+                "duration": 0.0, "screenshot": None, "abs_screenshot": None,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            })
+        self.results.sort(key=lambda r: CASES.index(r["case"]))
+
+    # ---------- 界面小工具 ----------
+
+    @staticmethod
+    def _has(nodes, rid: str) -> bool:
+        return any(n["rid"] == rid for n in nodes)
+
+    @staticmethod
+    def _node(nodes, rid: str):
+        for n in nodes:
+            if n["rid"] == rid:
+                return n
         return None
 
+    @staticmethod
+    def _header(nodes) -> str:
+        for n in nodes:
+            label = n["label"]
+            if "组" in label and "/" in label:
+                return label.replace("\n", " ")
+        return ""
+
+    def _options(self, nodes):
+        return sorted(
+            (n for n in nodes if n["rid"].startswith(ID_STUDY_OPTION_PREFIX)),
+            key=lambda n: n["rid"],
+        )
+
+    def _current_word(self, nodes):
+        """卡片顶部那个大号英文词。汉译英时卡片不显示英文，返回 None。"""
+        candidates = []
+        for n in nodes:
+            label = n["label"]
+            if not re.fullmatch(r"[a-zA-Z][a-zA-Z' -]{1,24}", label):
+                continue
+            if not n["center"]:
+                continue
+            match = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", n["bounds"])
+            if not match:
+                continue
+            x1, y1, x2, y2 = map(int, match.groups())
+            if y1 < 250 or y2 > 700 or (x2 - x1) < 150:
+                continue
+            candidates.append(n["label"])
+        return candidates[0] if candidates else None
+
+    @staticmethod
+    def _pick_correct_option(option_texts, meanings):
+        """用本地库里的真实释义判定哪个选项是对的；判不出唯一答案就返回 None。"""
+        scores = []
+        for text in option_texts:
+            scores.append(sum(1 for m in meanings if m and m in text))
+        if not scores or max(scores) < 1:
+            return None
+        best = scores.index(max(scores))
+        if scores.count(max(scores)) > 1:
+            return None
+        return best
+
+    # ---------- 流程 ----------
+
     def run_all(self) -> bool:
-        start_time = time.time()
-        print("==================================================")
-        print("🚀 开始执行 Android 纯黑盒端到端回归测试 (30词+FSRS+跨天+ASR+已掌握)")
-        print("==================================================")
-
+        started = time.time()
+        self._case_started = started
+        print("=" * 60)
+        print(f"🚀 泡泡单词真机端到端回归（计划 {self.plan_words} 词，"
+              f"{len(CASES)} 条用例）")
+        print("=" * 60)
         try:
-            # 1. Android 真机连接与点亮
-            self.step_1_connect_device()
-
-            # 2. 启动 App 并前台校验
-            self.step_2_launch_app()
-
-            # 3. 确保初始纯净状态（若有遗留账号则通过真机注销）
-            self.step_3_ensure_clean_state()
-
-            # 4. 手机端原生自主注册与验证码登录
-            self.step_4_register_and_login()
-
-            # 5. 底部主导航遍历
-            self.step_5_navigate_tabs()
-
-            # 6. 新用户选词书生效
-            self.step_6_select_word_book()
-
-            # 7. 学习轨道核心体验与配置回归
-            self.step_7_study_track_regression()
-
-            # 8. 每日学习计划定制（核验并保持 30 词标准计划）
-            self.step_8_set_daily_words_plan(target_words=30)
-
-            # 9. 完整学完 30 词计划与打卡全流程 (含 Mac 物理 ASR 发音 + 抽样已掌握)
-            self.step_9_complete_daily_study_and_daka()
-
-            # 10. 本地 SQLite 深度审计与端云对齐核验 (FSRS 评分, scheduled_days, DuplicateGrade 排查)
-            self.step_10_audit_local_db_and_fsrs()
-
-            # 11. 跨天时间旅行与复习词流转打卡核验 (Day 2 连续打卡)
-            self.step_11_cross_day_time_travel_regression()
-
-            # 12. 主页与个人中心打卡状态核验
-            self.step_12_verify_daka_home_status()
-
-            # 13. 端云同步与个人中心健康度校验
-            self.step_13_sync_verification()
-
-            # 14. 测试闭环收尾：真机自助注销账号（还原未登录态）
-            self.step_14_teardown_unregister()
-
-        except Exception as e:
-            self.log("测试流程异常中断", "FAILED", f"异常详情: {str(e)}", self.capture("fatal_error"))
+            self.step_connect()
+            self.step_launch()
+            self.step_clean_state()
+            self.step_login()
+            self.step_navigate_tabs()
+            self.step_select_book()
+            self.step_set_plan()
+            self.step_study_track()
+            self.step_study()
+            self.step_offline_sync()
+            self.step_audit()
+            self.step_cross_day()
+            self.step_home_status()
+            self.step_sync_status()
+            self.step_teardown()
+        except CaseFailure as exc:
+            # 抛异常时如果还没落地任何断言，也要把这条用例记成失败，绝不能悄悄变成「未执行」
+            pending = [c for c in CASES if c not in {r["case"] for r in self.results}]
+            if pending:
+                self.log(pending[0], FAILED, str(exc) or "断言不成立",
+                         self.capture("case_failed"))
+        except Exception as exc:
             import traceback
             traceback.print_exc()
+            # 意料之外的异常：给当前这条还没落地的用例记失败，剩余用例记未执行
+            pending = [c for c in CASES if c not in {r["case"] for r in self.results}]
+            if pending:
+                self.log(pending[0], FAILED, f"执行中抛出异常: {exc}",
+                         self.capture("unexpected_error"))
 
-        # 生成 HTML 报告与邮件推送
-        total_time = round(time.time() - start_time, 1)
-        passed_count = sum(1 for r in self.results if r["status"] == "PASSED")
-        failed_count = sum(1 for r in self.results if r["status"] == "FAILED")
-        report_path = self.generate_html_report(total_time, passed_count, failed_count)
+        self.fill_unrun()
+        total = round(time.time() - started, 1)
+        passed = sum(1 for r in self.results if r["status"] == PASSED)
+        failed = sum(1 for r in self.results if r["status"] == FAILED)
+        skipped = sum(1 for r in self.results if r["status"] == NOT_RUN)
+        report = self.generate_report(total, passed, failed, skipped)
+        if self.send_email:
+            self.send_report(report, total, passed, failed, skipped)
+        print("\n" + "=" * 60)
+        print(f"🏁 结束：通过 {passed} / 失败 {failed} / 未执行 {skipped}，耗时 {total}s")
+        print(f"📄 报告: {report}")
+        print("=" * 60)
+        return failed == 0 and skipped == 0
 
-        if self.send_email and self.target_email:
-            self.step_15_send_report_email(report_path, total_time, passed_count, failed_count)
-
-        print("\n==================================================")
-        print(f"🏁 回归测试结束！耗时: {total_time}s | 通过: {passed_count} | 失败: {failed_count}")
-        print(f"📊 报告地址: {report_path}")
-        print("==================================================")
-        return failed_count == 0
-
-    def step_1_connect_device(self):
-        print("\n--- [Step 1] 连接 Android 手机 ---")
+    def step_connect(self):
+        print("\n--- [1] 连接设备 ---")
         self.device = AndroidDeviceController(self.serial)
-        w, h = self.device.get_screen_size()
+        width, height = self.device.get_screen_size()
         self.device.wake_up_and_unlock()
-        shot = self.capture("device_connected")
-        self.log("连接 Android 设备", "PASSED", f"已连接序列号={self.device.serial}, 分辨率={w}x{h}", shot)
+        self.log("连接 Android 设备", PASSED,
+                 f"已连接 {self.device.serial}，分辨率 {width}x{height}",
+                 self.capture("device_connected"))
 
-    def step_2_launch_app(self):
-        print("\n--- [Step 2] 启动泡泡单词 App ---")
-        self.device.launch_app(stop_first=False)
-        time.sleep(2)
+    def step_launch(self):
+        print("\n--- [2] 启动 App ---")
+        self.device.launch_app()
+        # 首次启动的隐私政策弹窗
+        agree = self.device.wait_by_text_any(["同意并继续"], timeout=3)
+        if agree:
+            self.device.tap_node(agree)
+        ok = self.device.wait_foreground(timeout=15)
+        self.expect("启动 App 前台校验", ok,
+                    "App 已在前台运行" if ok else "App 未能进入前台",
+                    self.capture("app_launched"))
 
-        if not self.device.is_app_in_foreground():
-            print("[*] 重新冷启动 App...")
-            self.device.launch_app(stop_first=True)
-            time.sleep(3)
-
-        # 自动处理首次启动的「服务协议与隐私政策」弹窗
+    def _baseline(self) -> str:
+        """认出当前是欢迎页还是主界面；都认不出就按返回键逐层退出到能认出来为止。"""
         for _ in range(4):
-            agree_btn = self.device.find_element(text="同意并继续")
-            if agree_btn:
-                print("[*] 检测到隐私政策弹窗，自动点击「同意并继续」...")
-                self.device.click_element(agree_btn)
-                time.sleep(2)
-                break
-            time.sleep(1)
-
-        shot = self.capture("app_launched")
-        if self.device.is_app_in_foreground():
-            self.log("启动 App 前台校验", "PASSED", "泡泡单词已在前台平稳运行", shot)
-        else:
-            self.log("启动 App 前台校验", "FAILED", "未能将 App 置于前台", shot)
-            raise RuntimeError("App 启动失败")
-
-    def _do_phone_unregister(self) -> bool:
-        """纯黑盒真实用户操作：从个人中心注销当前账号"""
-        # 0. 连续按返回键，确保从任何二级页面、弹窗或软键盘退回四大主导航页
-        for _ in range(4):
-            if self.device.find_element(text="我", exact=True):
-                break
+            nodes = self.device.dump()
+            if self._has(nodes, ID_LOGIN_EMAIL_ENTRY) or "微信一键登录" in self._labels(nodes):
+                return "welcome"
+            if "导入词书" in self._labels(nodes):
+                self._dismiss_import_dialog()
+                continue
+            if self._has(nodes, ID_NAV_STUDY):
+                return "main"
             self.device.press_key(4)
-            time.sleep(0.5)
+            time.sleep(0.6)
+        return "unknown"
 
-        # 1. 切换到「我」Tab
-        if not self.device.wait_and_click(text="我", timeout=5, exact=True):
-            print("[!] 未能点击「我」Tab")
-            return False
-        time.sleep(1.5)
+    def step_clean_state(self):
+        print("\n--- [3] 初始环境 ---")
+        state = self._baseline()
+        if state == "welcome":
+            self.log("初始环境核验", PASSED, "当前为纯净未登录欢迎页",
+                     self.capture("welcome_page"))
+            return
+        if state == "unknown":
+            raise CaseFailure("既不在欢迎页也不在主界面，按返回键也退不出来")
+        self._phone_unregister()
+        self.expect("初始环境核验", self._baseline() == "welcome",
+                    "已通过真机注销回到欢迎页", self.capture("after_unregister"))
 
-        # 2. 向上滑动查找「设置与工具」并点击展开
-        settings_section = self.device.scroll_and_find("设置与工具", max_swipes=4, swipe_up=True)
-        if not settings_section:
-            print("[!] 未找到「设置与工具」区域")
-            return False
+    @staticmethod
+    def _labels(nodes):
+        return " ".join(n["label"] for n in nodes if n["label"])
 
-        print("[*] 点击展开「设置与工具」...")
-        self.device.click_element(settings_section)
-        time.sleep(1.5)
-
-        # 3. 向上滑动查找「注销账号」列表项（注销账号在展开区域的最底部）
-        w, h = self.device.get_screen_size()
-        unreg_btn = None
-        for _ in range(5):
-            self.device.swipe(w // 2, int(h * 0.8), w // 2, int(h * 0.3), duration_ms=400)
-            time.sleep(1)
-            unreg_btn = self.device.find_element(text="注销账号")
-            if unreg_btn and unreg_btn.get("center"):
+    def _phone_unregister(self) -> bool:
+        print("[*] 通过真机「注销账号」销毁旧账号...")
+        self._goto_me_tab()
+        self._open_settings_section()
+        for _ in range(4):
+            if self.device.wait(ID_ME_UNREGISTER, timeout=1.5):
                 break
-        if not unreg_btn:
-            print("[!] 未找到「注销账号」按钮")
+            self.device.swipe_up(0.8, 0.3, 300)
+        node = self.device.find_by_id(ID_ME_UNREGISTER)
+        if not node:
             return False
-
-        print("[*] 点击「注销账号」列表项...")
-        self.device.click_element(unreg_btn)
-        time.sleep(1.5)
-
-        # 4. 定位输入框并输入 okay
-        edit_texts = [n for n in self.device.dump_ui_hierarchy() if n["class"] == "android.widget.EditText"]
-        if not edit_texts:
-            print("[!] 未找到注销确认输入框")
+        self.device.tap_node(node)
+        field = self._first_edit_text()
+        if not field:
             return False
-
-        self.device.click_element(edit_texts[0])
-        time.sleep(0.5)
+        self.device.tap_node(field)
         self.device.clear_text_input(10)
         self.device.input_text("okay")
+        time.sleep(0.4)
+        confirm = self.device.wait_by_text_any(["确认注销", "确定"], timeout=3)
+        if confirm:
+            self.device.tap_node(confirm)
+        # 等回到欢迎页
+        return self.device.wait(ID_LOGIN_EMAIL_ENTRY, timeout=10) is not None
+
+    def _goto_me_tab(self):
+        node = self.device.wait(ID_NAV_ME, timeout=5)
+        if node:
+            self.device.tap_node(node)
+            time.sleep(0.3)
+
+    def _open_settings_section(self):
+        node = self.device.find_by_id(ID_ME_SETTINGS)
+        if node:
+            self.device.tap_node(node)
+            time.sleep(0.4)
+
+    def _first_edit_text(self):
+        for n in self.device.dump():
+            if n["class"] == "android.widget.EditText":
+                return n
+        return None
+
+    def step_login(self):
+        print("\n--- [4] 真机注册登录 ---")
+        entry = self.device.wait(ID_LOGIN_EMAIL_ENTRY, timeout=5)
+        if entry is None:
+            raise CaseFailure("未能在欢迎页找到「邮箱登录」入口")
+        agree = self.device.find_by_id(ID_LOGIN_AGREE)
+        if agree is None:
+            raise CaseFailure("欢迎页找不到协议勾选行")
+        self.device.tap_node(agree)
+        time.sleep(0.3)
+        self.device.tap_node(entry)
         time.sleep(0.8)
 
-        # 5. 点击「确认注销」或「确定」
-        confirm_btn = self.device.find_element(text="确认注销") or self.device.find_element(text="确定")
-        if not confirm_btn:
-            self.device.press_key(4)  # 隐藏软键盘
-            time.sleep(1)
-            confirm_btn = self.device.find_element(text="确认注销") or self.device.find_element(text="确定")
-
-        if not confirm_btn:
-            print("[!] 未找到「确认注销」按钮")
-            return False
-
-        print("[*] 点击「确认注销」按钮...")
-        self.device.click_element(confirm_btn)
-        time.sleep(3)
-        return True
-
-    def trigger_immediate_sync(self):
-        """通过进入客户端「云同步状态」界面触发原生端云即时同步并安全返回"""
-        print("[*] 正在通过客户端「云同步状态」界面触发原生端云即时同步...")
-        self.device.ensure_app_foreground()
-
-        if not self.device.wait_and_click(text="我", timeout=4, exact=True):
-            print("[!] 未能切换至「我」Tab 触发同步")
-            return
-        time.sleep(1.0)
-
-        # 检查是否已能看见「云同步状态」
-        sync_tile = self.device.find_element(text="云同步状态")
-        if not sync_tile:
-            settings_section = self.device.find_element(text="设置与工具")
-            if settings_section:
-                self.device.click_element(settings_section)
-                time.sleep(1.0)
-            w, h = self.device.get_screen_size()
-            self.device.swipe(w // 2, int(h * 0.8), w // 2, int(h * 0.3), duration_ms=400)
-            time.sleep(1.0)
-            sync_tile = self.device.find_element(text="云同步状态")
-
-        if sync_tile:
-            print("[*] 点击「云同步状态」进入同步页面执行 immediate sync...")
-            self.device.click_element(sync_tile)
-            time.sleep(3.5)
-            # 点击页面左上角返回按钮 (78, 140) 安全返回「我」页面，绝不按系统返回键退出 App
-            self.device.click(78, 140)
-            time.sleep(1.0)
-            self.device.ensure_app_foreground()
-            print("[*] 端云即时同步执行完毕，已安全返回「我」页面。")
-        else:
-            print("[!] 未找到「云同步状态」菜单，按常规 Tab 切换触发")
-            self.device.wait_and_click(text="学习", timeout=2, exact=True)
-            time.sleep(1.5)
-            self.device.wait_and_click(text="我", timeout=2, exact=True)
-            time.sleep(1.5)
-
-    def step_3_ensure_clean_state(self):
-        print("\n--- [Step 3] 环境纯净度检查与初始重置 ---")
-        time.sleep(1)
-        # 检查是否已在登录页
-        if self.device.find_element(text="微信一键登录") or self.device.find_element(text="邮箱登录"):
-            shot = self.capture("already_in_login_page")
-            self.log("初始环境核验", "PASSED", "当前已处于纯净未登录欢迎页，具备冷启动条件", shot)
-            return
-
-        # 如果当前在主界面，检查并注销当前账号
-        print("[*] 检测到当前处于登录态，正在通过手机端注销账号重置环境...")
-        success = self._do_phone_unregister()
-        shot = self.capture("after_initial_unregister")
-        if success and (self.device.find_element(text="微信一键登录") or self.device.find_element(text="邮箱登录")):
-            self.log("真机自助注销重置", "PASSED", "成功通过真机注销账号功能销毁旧账号并退回登录页", shot)
-        else:
-            print("[!] 真机注销未完全退回登录页，执行云端安全清理与本地数据清除...")
-            manage_e2e_account.purge_e2e_user_db_only()
-            self.device.clear_app_data()
-            self.device.launch_app(stop_first=True)
-            time.sleep(3)
-            # 处理冷启动后的服务协议与隐私政策弹窗
-            for _ in range(5):
-                agree_btn = self.device.find_element(text="同意并继续")
-                if agree_btn:
-                    print("[*] 首次冷启动自动点击「同意并继续」...")
-                    self.device.click_element(agree_btn)
-                    time.sleep(2)
-                    break
-                time.sleep(0.5)
-            shot = self.capture("after_fallback_purge")
-            self.log("真机重置状态核验", "PASSED", "已恢复纯净未登录状态", shot)
-
-    def step_4_register_and_login(self):
-        print("\n--- [Step 4] 手机端自主注册与验证码登录 ---")
-        time.sleep(1)
-
-        # 0. 自动处理可能存在的「服务协议与隐私政策」弹窗
-        for _ in range(3):
-            agree_btn = self.device.find_element(text="同意并继续")
-            if agree_btn:
-                print("[*] 检测到隐私政策弹窗，自动点击「同意并继续」...")
-                self.device.click_element(agree_btn)
-                time.sleep(2)
-                break
-            time.sleep(0.5)
-
-        # 1. 若当前在欢迎页，先勾选底部的用户协议与隐私政策
-        if self.device.find_element(text="微信一键登录"):
-            print("[*] 欢迎页先勾选服务协议与隐私政策单选框...")
-            self.device.click(210, 2173)
-            time.sleep(0.5)
-
-            # 点击欢迎页下方的「邮箱登录」按钮
-            email_login_btn = self.device.find_element(text="邮箱登录")
-            if not email_login_btn:
-                self.device.press_key(4)
-                time.sleep(1)
-                email_login_btn = self.device.find_element(text="邮箱登录")
-
-            if not email_login_btn:
-                shot = self.capture("email_login_btn_missing")
-                self.log("邮箱登录入口定位", "FAILED", "未能在当前屏幕找到「邮箱登录」按钮", shot)
-                raise RuntimeError("找不到邮箱登录按钮")
-
-            print("[*] 点击「邮箱登录」进入表单页...")
-            self.device.click_element(email_login_btn)
-            time.sleep(1.5)
-
-        # 清理历史旧验证码并填入测试邮箱 e2etest@nnbdc.com
         manage_e2e_account.clear_old_codes()
+        email_field = self._first_edit_text()
+        if not email_field:
+            raise CaseFailure("邮箱登录页没有可输入的邮箱框")
+        self.device.tap_node(email_field)
+        self.device.clear_text_input(60)
+        self.device.input_text(E2E_EMAIL)
+        time.sleep(1.2)  # 输入框有防抖，要等它渲染出「获取」按钮
 
-        edit_texts = [n for n in self.device.dump_ui_hierarchy() if n["class"] == "android.widget.EditText"]
-        if edit_texts:
-            print("[*] 正在输入邮箱: e2etest@nnbdc.com...")
-            self.device.click_element(edit_texts[0])
-            time.sleep(0.5)
-            self.device.clear_text_input(60)
-            self.device.input_text("e2etest@nnbdc.com")
-            # 关键：不按返回键！等待 2.5 秒触发 _checkLocalEmail 防抖并动态渲染出获取验证码按钮
-            time.sleep(2.5)
+        send = self.device.wait(ID_SEND_CODE, timeout=4)
+        if send is None:
+            raise CaseFailure("未找到「获取」验证码按钮")
+        self.device.tap_node(send)
 
-        # 4. 点击「获取」验证码按钮
-        print("[*] 点击「获取」验证码...")
-        get_btn = self.device.find_element(text="获取")
-        if not get_btn:
-            w, h = self.device.get_screen_size()
-            self.device.click(w // 2, h // 4)
-            time.sleep(1.5)
-            get_btn = self.device.find_element(text="获取")
-
-        if not get_btn:
-            shot = self.capture("get_code_btn_missing")
-            self.log("获取验证码按钮定位", "FAILED", "未能在当前屏幕找到「获取」验证码按钮", shot)
-            raise RuntimeError("找不到获取验证码按钮")
-
-        self.device.click_element(get_btn)
-
-        # 5. 从生产数据库截获刚刚生成的有效验证码（唯一连库操作）
-        print("[*] 正在从生产数据库截获最新验证码...")
         code = None
-        for _ in range(10):
-            time.sleep(1.5)
+        deadline = time.time() + 15
+        while time.time() < deadline:
+            time.sleep(0.8)
             code = manage_e2e_account.get_latest_code()
             if code:
                 break
+        self.expect("截获生产验证码", bool(code),
+                    f"生产库中取到最新验证码 {code}" if code else "生产库中没有取到验证码",
+                    self.capture("code_intercepted"))
 
-        if not code:
-            shot = self.capture("code_intercept_failed")
-            self.log("截获生产验证码", "FAILED", "未能在生产库中截获验证码", shot)
-            raise RuntimeError("未生成验证码")
-
-        shot = self.capture("code_intercepted")
-        self.log("截获生产验证码", "PASSED", f"已从生产库读取最新验证码: {code}", shot)
-
-        # 6. 在手机端输入验证码
-        edit_texts = [n for n in self.device.dump_ui_hierarchy() if n["class"] == "android.widget.EditText"]
-        if len(edit_texts) >= 2:
-            self.device.click_element(edit_texts[1])
-            time.sleep(0.5)
-            self.device.clear_text_input(10)
-            self.device.input_text(code)
-            time.sleep(0.8)
-            # 点击顶部空白安全区（邮箱登录标题位置），主动收起软键盘并解除输入法焦点，防止遮挡登录按钮或吞掉点击
-            self.device.click(540, 700)
-            time.sleep(0.5)
-
-        # 7. 点击「登录」
-        print("[*] 点击「登录」提交...")
-        submit_btn = self.device.find_element(text="登录")
-        if submit_btn:
-            self.device.click_element(submit_btn)
-        else:
-            self.device.click(540, 1635)
-
-        # 8. 轮询等待登录成功并进入主页（支持未点中补点及初次数据同步）
-        is_in_main = False
-        start_wait = time.time()
-        while time.time() - start_wait < 45:
-            time.sleep(1.5)
-            elements = self.device.dump_ui_hierarchy()
-            labels = [el.get("label", "") for el in elements]
-            texts = [el.get("text", "") for el in elements]
-            all_txt = " ".join(labels + texts)
-
-            if "学习" in all_txt or "词表" in all_txt or "今日专注" in all_txt:
-                is_in_main = True
-                break
-
-            if "登录中..." in all_txt:
-                print("[*] 正在向服务端注册并同步初始数据...")
-
-            # 若 2.5 秒后依然停留在未响应的「登录」按钮，且无「登录中...」，说明被系统焦点/动画吞掉点击，自动补点
-            if "登录" in all_txt and "登录中..." not in all_txt and (time.time() - start_wait > 2.5):
-                print("[*] 检测到登录按钮未响应，正在自动补点「登录」...")
-                self.device.click(540, 1635)
-
-        shot = self.capture("login_success")
-        if is_in_main:
-            self.log("真实用户注册与登录", "PASSED", "手机端输入邮箱验证码完成注册，成功冷启动进入主页", shot)
-            manage_e2e_account.grant_e2e_admin()
-        else:
-            self.log("真实用户注册与登录", "FAILED", "登录提交后未能进入主页面", shot)
-            raise RuntimeError("登录后未进入主页面")
-
-    def step_5_navigate_tabs(self):
-        print("\n--- [Step 5] 底部主导航遍历回归 ---")
-        tabs = [
-            ("词表", "词书列表与选词桌", "word_lists"),
-            ("查词", "权威词典快速查词", "search"),
-            ("我", "个人中心与功能收纳", "me"),
-            ("学习", "背单词核心主页", "study")
-        ]
-
-        for tab_name, desc, tag in tabs:
-            clicked = self.device.wait_and_click(text=tab_name, timeout=2, exact=True)
-            time.sleep(0.4)
-            shot = self.capture(f"tab_{tag}")
-            if clicked:
-                self.log(f"导航切换: {tab_name}", "PASSED", f"成功切入 {desc}", shot)
-            else:
-                self.log(f"导航切换: {tab_name}", "FAILED", f"未能点击 Tab「{tab_name}」", shot)
-
-    def step_6_select_word_book(self):
-        print("\n--- [Step 6] 选词书核心链路回归 ---")
-        self.device.wait_and_click(text="学习", timeout=2, exact=True)
+        fields = [n for n in self.device.dump() if n["class"] == "android.widget.EditText"]
+        if len(fields) < 2:
+            raise CaseFailure("验证码输入框没有出现")
+        self.device.tap_node(fields[1])
+        self.device.clear_text_input(10)
+        self.device.input_text(code)
         time.sleep(0.4)
 
-        # 主页已展示学习入口，说明账号已有生效词书，无需重选
-        if self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习"):
-            shot = self.capture("dict_already_present")
-            self.log("词书就绪校验", "PASSED", "当前账号已具备生效词书，主页已展示学习入口", shot)
-            return
+        submit = self.device.find_by_id(ID_LOGIN_SUBMIT)
+        if submit:
+            self.device.tap_node(submit)
 
-        select_dict_btn = self.device.find_element(text="选择词书")
-        if not select_dict_btn:
-            select_dict_btn = self.device.scroll_and_find("选择词书", max_swipes=2, swipe_up=True)
-        if not select_dict_btn:
-            shot = self.capture("dict_entry_missing")
-            self.log("词书选择入口定位", "FAILED", "主页既无学习入口也无「选择词书」按钮", shot)
-            raise RuntimeError("找不到词书选择入口")
-
-        print("[*] 新用户无有效词书，进入词书页挑一本真实词书...")
-        self.device.click_element(select_dict_btn)
-        time.sleep(2.5)
-
-        # 词书按分类页签组织（自定义/大学/高中/初中/小学/留学...），切到「大学」页签后再挑
-        uni_tab = self.device.find_element(text="大学", only_clickable=True)
-        if uni_tab:
-            self.device.click_element(uni_tab)
-            time.sleep(1.5)
-
-        # 只挑词数为正的真实词书：0 词的生词本会让主页停在「词书单词量不足」
-        book = None
-        for node in self.device.dump_ui_hierarchy():
-            match = re.search(r"([\d,]+)\s*词", node.get("label") or "")
-            if node.get("clickable") and match and int(match.group(1).replace(",", "")) > 0:
-                book = node
+        deadline = time.time() + 60
+        ok = False
+        while time.time() < deadline:
+            time.sleep(0.5)
+            nodes = self.device.dump()
+            # 新账号登录后 App 会先自动导入一本起步词书（模态弹窗盖住主界面），
+            # 看到弹性窗也算已经进入 App，接着把它关掉即可。
+            if self._has(nodes, ID_NAV_STUDY):
+                ok = True
                 break
-        if not book:
-            shot = self.capture("dict_book_missing")
-            self.log("词书列表定位", "FAILED", "当前分类页签下未找到词数为正的词书", shot)
-            raise RuntimeError("词书列表无可选词书")
-        print(f"[*] 选中词书: {(book.get('label') or '').replace(chr(10), ' / ')}")
-        self.device.click_element(book)
+            if "导入词书" in self._labels(nodes):
+                ok = True
+                break
+        shot = self.capture("login_success")
+        self.expect("真实用户注册与登录", ok,
+                    "手机端输入邮箱验证码完成注册并进入 App" if ok else "登录后未进入 App",
+                    shot)
+        manage_e2e_account.grant_e2e_admin()
+        self._dismiss_import_dialog()
+
+    def _dismiss_import_dialog(self, timeout: float = 180):
+        """关掉「导入词书」进度弹窗（系统级模态，只能按文案认）。"""
+        nodes = self.device.dump()
+        if "导入词书" not in self._labels(nodes):
+            return
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            nodes = self.device.dump()
+            if "导入词书" not in self._labels(nodes):
+                return
+            # 导入完成前没有「完成」，一出现就点，别干等弹窗自己消失
+            for label in ("完成", "确定", "知道了"):
+                hit = self.device.find_by_text(label, nodes)
+                if hit:
+                    self.device.tap_node(hit)
+                    time.sleep(0.6)
+                    return
+            time.sleep(0.8)
+
+    def step_navigate_tabs(self):
+        print("\n--- [5] 底部导航 ---")
+        tabs = [
+            (ID_NAV_WORD_LISTS, "词表"),
+            (ID_NAV_SEARCH, "查词"),
+            (ID_NAV_GAME, "比赛"),
+            (ID_NAV_ME, "我"),
+            (ID_NAV_STUDY, "学习"),
+        ]
+        for rid, name in tabs:
+            node = self.device.wait(rid, timeout=4)
+            self.expect(f"导航切换: {name}", node is not None,
+                        f"点到底栏「{name}」并完成切换" if node else f"底栏没有「{name}」")
+            self.device.tap_node(node)
+            time.sleep(0.25)
+
+    def step_select_book(self):
+        print("\n--- [6] 词书 ---")
+        self._dismiss_import_dialog()
+        if self.device.wait(ID_HOME_START, timeout=3):
+            self.log("词书就绪校验", PASSED, "当前账号已有生效词书，主页已有学习入口",
+                     self.capture("dict_ready"))
+            return
+        entry = self.device.wait(ID_HOME_SELECT_BOOK, timeout=3)
+        if entry is None:
+            raise CaseFailure("主页既没有学习入口也没有「选择词书」")
+        self.device.tap_node(entry)
         time.sleep(1.0)
 
-        save_btn = self.device.find_element(text="保存")
-        if not save_btn:
-            shot = self.capture("dict_save_missing")
-            self.log("词书保存按钮定位", "FAILED", "词书页未找到「保存」按钮", shot)
-            raise RuntimeError("找不到词书保存按钮")
-        self.device.click_element(save_btn)
-        time.sleep(2.0)
+        # 默认停在「自定义」页签，里面只有 0 词的生词本；切到「大学」才有成规模的词书
+        uni = self.device.wait_by_text_any(["大学"], timeout=4)
+        if uni:
+            self.device.tap_node(uni)
+            time.sleep(0.8)
+        rows = self.device.find_all_by_id_prefix(ID_BOOK_ROW_PREFIX)
+        if not rows:
+            raise CaseFailure("词书列表里没有任何词书行")
 
-        # 首次选中词书要把词书内容下载到本地；导入弹窗标题形如「导入词书 (0/2)」，等它消失再继续
-        time.sleep(2.5)
+        nodes = self.device.dump()
+        chosen = None
+        chosen_count = None
+        for row in rows:
+            text = " ".join(self.device.texts_within(row, nodes))
+            match = re.search(r"([\d,]+)\s*词", text)
+            if not match:
+                continue
+            count = int(match.group(1).replace(",", ""))
+            # 挑词数最少但够今天计划的词书：导入最快，又不至于单词量不足
+            if count >= self.plan_words and (chosen_count is None or count < chosen_count):
+                chosen, chosen_count = row, count
+        if chosen is None:
+            raise CaseFailure(f"没有找到不少于 {self.plan_words} 词的词书")
+        print(f"[*] 选中 {chosen_count} 词的词书（词数最少，导入最快）")
+        self.device.tap_node(chosen)
+        time.sleep(0.5)
+
+        save = self.device.wait(ID_BOOK_SAVE, timeout=3)
+        if save is None:
+            raise CaseFailure("词书页没有「保存」按钮")
+        self.device.tap_node(save)
+
+        # 导入弹窗是系统级进度对话框，只能按文案等它消失
         deadline = time.time() + 300
-        while time.time() < deadline and self.device.find_element(text="导入词书"):
-            time.sleep(3)
-        if self.device.find_element(text="导入词书"):
-            shot = self.capture("dict_import_timeout")
-            self.log("词书导入", "FAILED", "词书导入超过 300 秒仍未完成", shot)
-            raise RuntimeError("词书导入超时")
-        done_btn = self.device.find_element(text="完成")
-        if done_btn:
-            self.device.click_element(done_btn)
-            time.sleep(2.0)
-        shot = self.capture("dict_imported")
+        while time.time() < deadline:
+            nodes = self.device.dump()
+            if "导入词书" not in self._labels(nodes):
+                break
+            time.sleep(1.0)
+        nodes = self.device.dump()
+        if "导入词书" in self._labels(nodes):
+            raise CaseFailure("词书导入超过 300 秒仍未完成")
+        for label in ("完成", "确定"):
+            hit = self.device.find_by_text(label)
+            if hit:
+                self.device.tap_node(hit)
+                break
+        ok = self.device.wait(ID_HOME_START, timeout=10) is not None
+        self.expect("词书就绪校验", ok,
+                    f"已导入 {chosen_count} 词的词书，主页出现学习入口" if ok else "导入后主页仍无学习入口",
+                    self.capture("dict_imported"))
 
-        self.device.wait_and_click(text="学习", timeout=3, exact=True)
-        time.sleep(1.5)
-        if self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习"):
-            self.log("新用户选词书", "PASSED", "已选中真实词书并完成导入，主页恢复学习入口", shot)
-        else:
-            self.log("新用户选词书", "FAILED", "词书已保存并导入，但主页仍未出现学习入口", shot)
-            raise RuntimeError("选词书后主页仍未出现学习入口")
+    def step_set_plan(self):
+        print("\n--- [7] 每日计划 ---")
+        plan_entry = self.device.wait(ID_HOME_PLAN, timeout=4)
+        if plan_entry is None:
+            raise CaseFailure("主页找不到今日词数入口")
+        self.device.tap_node(plan_entry)
+        chip = self.device.wait(f"{ID_PLAN_WORDS_PREFIX}{self.plan_words}", timeout=3)
+        if chip is None:
+            raise CaseFailure(f"词量面板里没有 {self.plan_words} 词这一档")
+        self.device.tap_node(chip)
 
-    def step_7_study_track_regression(self):
-        print("\n--- [Step 7] 学习轨道核心体验与配置回归 ---")
-        self.device.wait_and_click(text="学习", timeout=2, exact=True)
+        ok = False
+        deadline = time.time() + 8
+        while time.time() < deadline:
+            nodes = self.device.dump()
+            entry = self._node(nodes, ID_HOME_PLAN)
+            if entry and f"今日 {self.plan_words} 词" in " ".join(self.device.texts_within(entry, nodes)):
+                ok = True
+                break
+            time.sleep(0.3)
+        self.expect("每日学习计划定制", ok,
+                    f"主页今日目标已确认为 {self.plan_words} 词" if ok
+                    else f"主页今日目标没有变成 {self.plan_words} 词",
+                    self.capture("plan_configured"))
+
+    def step_study_track(self):
+        print("\n--- [8] 学习轨道 ---")
+        card = None
+        for _ in range(3):
+            nodes = self.device.dump()
+            for n in nodes:
+                if n["clickable"] and ("新词轨道" in n["label"] or "旧词轨道" in n["label"]):
+                    card = n
+                    break
+            if card:
+                break
+            self.device.swipe_up(0.55, 0.75, 300)
+        if card is None:
+            raise CaseFailure("主页找不到学习轨道卡片")
+        self.device.tap_node(card)
+        time.sleep(0.5)
+        nodes = self.device.dump()
+        labels = self._labels(nodes)
+        ok = "答对后环节" in labels or "答错后环节" in labels
+        self.expect("学习轨道配置与切换", ok,
+                    "展开轨道编辑态，看到答对/答错后环节" if ok else "轨道卡片点了但没有环节配置",
+                    self.capture("study_track"))
+        self.device.press_key(4)  # 收起编辑态
+        time.sleep(0.3)
+
+    # ---------- 学习主循环 ----------
+
+    def _enter_study(self):
+        start = self.device.wait(ID_HOME_START, timeout=6) or self.device.wait(ID_HOME_EXTRA, timeout=1)
+        if start is None:
+            raise CaseFailure("主页没有「开始学习/继续学习」")
+        self.device.tap_node(start)
+        confirm = self.device.wait_by_text_any(["马上开始"], timeout=2)
+        if confirm:
+            self.device.tap_node(confirm)
+
+    def step_study(self):
+        print("\n--- [9] 学完当日计划 ---")
+        self.device.tap_id(ID_NAV_STUDY)
         time.sleep(0.4)
+        self._enter_study()
 
-        # 主页「学习轨道」区域内每条轨道卡片自带调整入口，旧版的「调整轨道」汇总按钮已下线
-        track_card = self.device.scroll_and_find("新词轨道", max_swipes=4, swipe_up=True) or \
-                     self.device.scroll_and_find("旧词轨道", max_swipes=2, swipe_up=True)
-        if not track_card:
-            shot = self.capture("study_track_entry_missing")
-            self.log("学习轨道入口定位", "WARNING", "主页未找到「新词轨道/旧词轨道」卡片，跳过该用例", shot)
-            return
+        if self.device.wait(ID_STUDY_DONT_KNOW, timeout=8) is None:
+            raise CaseFailure("进入学习后没有出现答题卡片")
 
-        label = (track_card.get("label") or "").replace(chr(10), " / ")
-        print(f"[*] 点击轨道卡片「{label}」进入编辑态...")
-        self.device.click_element(track_card)
+        nodes = self.device.dump()
+        header = self._header(nodes)
+        self.expect("进入单词测评卡片", bool(header),
+                    f"已呈现单词卡片：{header}", self.capture("study_card"))
+
+        # 切到选择题：这样「答对/答错」才有明确可判的选项
+        if not self._options(nodes):
+            self.device.tap_id(ID_STUDY_MODE_SWITCH)
+            time.sleep(0.6)
+            nodes = self.device.dump()
+
+        # 反向用例：拿掉录音权限，切到「说释义」必须给出权限提示且不崩
+        self._permission_case()
+
+        # 准备释义真值：先停进程拉一份快照，避免边学边读造成撕裂
+        self._prepare_meanings()
+
+        self._run_study_loop(self.plan_words)
+
+        # 完成页可能盖着勋章弹窗
+        badge = self.device.find_by_id(ID_BADGE_CLAIM)
+        if badge:
+            self.device.tap_node(badge)
+            time.sleep(0.5)
+        reached = self.device.wait(ID_FINISH_PAGE, timeout=5) is not None
+        self.expect("当日计划学完进入打卡页", reached,
+                    "学完当日计划并自动进入完成打卡页" if reached else "没有进入完成打卡页",
+                    self.capture("finish_page"))
+
+    def _permission_case(self):
+        print("[*] 反向用例：撤销录音权限后切到语音作答")
+        self.device.set_permission("android.permission.RECORD_AUDIO", False)
+        pid_before = self._pid()
+        # 切到「说释义」会申请麦克风
+        self.device.tap_id(ID_STUDY_MODE_SWITCH)
         time.sleep(1.2)
-        shot = self.capture("study_track_edit")
-
-        # 编辑态会展开该条轨道的环节配置（答对后环节 / 答错后环节）
-        if self.device.find_element(text="答对后环节") or self.device.find_element(text="答错后环节"):
-            self.log("学习轨道配置与切换", "PASSED", "已进入轨道编辑态，核验到答对/答错后环节节点", shot)
-        else:
-            self.log("学习轨道配置与切换", "WARNING", "已点击轨道卡片但未识别到轨道环节节点", shot)
-
-        self.device.press_key(4)
-        time.sleep(1)
-        self.device.ensure_app_foreground()
-
-    def step_8_set_daily_words_plan(self, target_words: int = 30):
-        print(f"\n--- [Step 8] 每日学习计划定制（核验并设定为 {target_words} 词） ---")
-        self.device.wait_and_click(text="学习", timeout=2, exact=True)
-        time.sleep(1)
-
-        def read_target_words():
-            """从主页大仪表盘读取今日目标词数（文案形如「目标 30 词」）"""
-            for node in self.device.dump_ui_hierarchy():
-                match = re.search(r"目标\s*(\d+)\s*词", (node.get("label") or "").replace(chr(10), " "))
-                if match:
-                    return int(match.group(1))
-            return None
-
-        actual = read_target_words()
-        if actual is None:
-            w, h = self.device.get_screen_size()
-            self.device.swipe(w // 2, int(h * 0.4), w // 2, int(h * 0.8), 350)
-            time.sleep(1)
-            actual = read_target_words()
-
-        shot = self.capture("daily_plan_configured")
-        if actual == target_words:
-            self.log("每日学习计划定制", "PASSED", f"主页今日目标确认为 {actual} 词", shot)
-        else:
-            self.log("每日学习计划定制", "WARNING", f"主页今日目标为 {actual} 词，未达预期 {target_words} 词", shot)
-
-    def step_9_complete_daily_study_and_daka(self):
-        print("\n--- [Step 9] 完整学完 30 词计划与打卡全流程 (含 ASR 物理发音 + 抽样掌握) ---")
-        self.device.wait_and_click(text="学习", timeout=2, exact=True)
-        time.sleep(1)
-
-        # 1. 点击「开始学习」
-        start_btn = (self.device.find_element(text="开始学习") or 
-                     self.device.find_element(text="继续学习") or
-                     self.device.scroll_and_find("开始学习", max_swipes=2, swipe_up=True))
-        if not start_btn:
-            shot = self.capture("start_study_btn_missing")
-            self.log("发起背单词", "FAILED", "主页未展示「开始学习」按钮", shot)
-            raise RuntimeError("未展示开始学习按钮")
-
-        print("[*] 点击「开始学习」...")
-        self.device.click_element(start_btn)
-        time.sleep(2)
-
-        # 处理「开启今日学习旅程」弹窗
-        confirm_start_btn = self.device.find_element(text="马上开始")
-        if confirm_start_btn:
-            print("[*] 点击「马上开始」确认开启今日学习...")
-            self.device.click_element(confirm_start_btn)
-            time.sleep(2)
-
-        # 自动处理可能弹出的系统麦克风/录音权限请求（如「仅在使用中允许」）
-        self.device.dismiss_system_dialogs()
-
-        # 处理新手语音引导蒙层「你说，我来听」
-        guide_btn = self.device.find_element(text="开始学习")
-        if guide_btn:
-            print("[*] 点击语音新手引导蒙层「开始学习」...")
-            self.device.click_element(guide_btn)
-            time.sleep(2)
-
-        self.device.dismiss_system_dialogs()
-
-        shot = self.capture("first_word_study_page")
-        self.log("进入单词测评卡片", "PASSED", "已顺利呈现单词卡片、音标与释义选项", shot)
-
-        # 2. 循环做题直到全部学完 30 词触发完成页（高速纯内存加权流转）
-        print("[*] 正在执行单词答题流转（单帧内存解析 + 物理发音 ASR 拾音 + 抽样已掌握 + 手动修改评分测试）...")
-        in_finish_page = False
-        max_turns = 200
-        mastered_tested = False
-        rating_modify_tested = False
-
-        for turn in range(1, max_turns + 1):
-            time.sleep(0.35)
-
-            # 每轮只单次获取真机 UI 树，后续所有判断全部走内存检索
-            nodes = self.device.dump_ui_hierarchy()
-            all_text_joined = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in nodes)
-
-            # 1. 检查是否已自动跳转至完成打卡页（/finish）或弹出成就勋章弹窗
-            has_finish_marker = any(k in all_text_joined for k in (
-                "学习完成", "打卡成功", "已打卡", "打卡成果", "今日已打卡", 
-                "再来一组", "生成打卡海报", "前往词表", "恭喜斩获新勋章", "开心收下", "百发百中"
-            ))
-            if has_finish_marker:
-                in_finish_page = True
-                print(f"[*] 第 {turn} 步：检测到已完成当日全部计划，成功进入完成打卡页（含勋章奖励）！")
-                # 若当前界面有成就奖励「开心收下」，点击收下勋章奖励
-                claim_btn = self.device.find_element(text="开心收下", nodes=nodes)
-                if claim_btn:
-                    print("[*] 点击「开心收下」领取成就奖励并关闭勋章弹窗...")
-                    self.device.click_element(claim_btn)
-                    time.sleep(2.0)
-                else:
-                    time.sleep(2.0)
-                break
-
-            # 2. 如果检测到意外弹出的「记忆历史」等对话框遮罩，按返回键优雅收起
-            if any(n.get("text") == "记忆历史" for n in nodes) or "记忆历史" in all_text_joined and "下次复习:" in all_text_joined:
-                print(f"[*] 第 {turn} 步：检测到「记忆历史」对话框，按返回键收起...")
-                self.device.press_key(4)
-                time.sleep(0.5)
-                continue
-
-            # 3. 检查是否处于「本组小结」过渡卡片
-            next_group_btn = self.device.find_element(text="下一组", nodes=nodes)
-            if next_group_btn:
-                print(f"[*] 第 {turn} 步：处于本组小结，点击「下一组」推进...")
-                self.device.click_element(next_group_btn)
-                time.sleep(0.8)
-                continue
-
-            # 4. 检查是否有「下一词」流转动作（正常用户看完全文/答案后，自然点击下一词继续往下学）
-            next_word_btn = self.device.find_element(text="下一词", nodes=nodes)
-            if next_word_btn:
-                self.device.click_element(next_word_btn)
-                time.sleep(0.8)
-                continue
-
-            # 5. 专项交互测试：手动改变评分测试（只要底栏出现测评结果且未测试过时触发）
-            if not rating_modify_tested and (3 <= turn <= 30) and ("测评结果" in all_text_joined):
-                print(f"[*] [专项测试] 触发手动改变评分测试：点击底栏测评结果...")
-                shot_before = self.capture("before_manual_rating_modify")
-                # 寻找包含「测评结果」的节点
-                rating_panel = None
-                for n in nodes:
-                    txt = (n.get("text") or "") + " " + (n.get("label") or "")
-                    if "测评结果" in txt and n.get("center") and n["center"][1] > 1500:
-                        rating_panel = n
-                        break
-
-                if rating_panel and rating_panel.get("center"):
-                    self.device.click_element(rating_panel)
-                else:
-                    self.device.click(310, 2000)
-                time.sleep(1.2)
-
-                dialog_nodes = self.device.dump_ui_hierarchy()
-                dialog_text = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in dialog_nodes)
-                if "修改今日评分" in dialog_text or "良好" in dialog_text:
-                    shot_dialog = self.capture("manual_rating_modify_dialog")
-                    good_opt = self.device.find_element(text="良好", exact=True, nodes=dialog_nodes)
-                    if good_opt:
-                        print("[*] 成功呼出「修改今日评分」对话框，点击切换为「良好」...")
-                        self.device.click_element(good_opt)
-                        # 留出 1.2 秒让客户端异步计算 FSRS、落库并刷新凭据
-                        time.sleep(1.2)
-
-                        after_nodes = self.device.dump_ui_hierarchy()
-                        after_text = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in after_nodes)
-                        shot_after = self.capture("after_manual_rating_modify")
-
-                        if "良好" in after_text:
-                            self.log("手动修改评分交互测试", "PASSED", 
-                                     "点击底部测评结果呼出「修改今日评分」对话框，成功将评分由「忘记」手动修正为「良好」，界面复习间隔实时联动推迟", shot_after)
-                        else:
-                            self.log("手动修改评分交互测试", "PASSED", 
-                                     "成功唤起「修改今日评分」对话框并成功提交「良好」评分", shot_after)
-                    else:
-                        print("[!] 对话框中未定位到「良好」选项，按返回键收起对话框...")
-                        self.device.press_key(4)
-                        time.sleep(0.5)
-                else:
-                    print("[!] 点击测评结果未弹出修改今日评分对话框，跳过本专项测试...")
-
-                # 关键保障：单次测试立即置为 True，绝不重试阻塞后续正常做题！
-                rating_modify_tested = True
-                time.sleep(0.5)
-                continue
-
-            # 6. 抽样测试「掌握」按钮（在第 8~18 步之间触发一次）
-            if not mastered_tested and (8 <= turn <= 18):
-                master_btn = self.device.find_element(text="掌握", nodes=nodes)
-                if master_btn:
-                    spell_candidates = [
-                        n.get("text", "") for n in nodes 
-                        if re.match(r'^[a-zA-Z]{2,20}$', n.get("text", "")) 
-                        and n.get("text") not in ("En", "Ch", "List", "Good", "Easy", "Hard")
-                    ]
-                    current_spell = spell_candidates[0] if spell_candidates else "sample_mastered"
-                    print(f"[*] [抽样测试] 点击右上角「掌握」按钮，标记单词 [{current_spell}] 为已掌握...")
-                    self.device.click_element(master_btn)
-                    self.mastered_test_word = current_spell
-                    mastered_tested = True
-                    time.sleep(0.8)
-                    shot_m = self.capture("word_marked_mastered")
-                    self.log("学习中标记已掌握", "PASSED", f"成功对单词 [{current_spell}] 触发掌握流转并播放飞入动画", shot_m)
-                    continue
-
-            # 7. 物理发音作答尝试（针对语音/单词卡片，通过 Mac 扬声器驱动手机麦克风 ASR）
-            spell_nodes = [
-                n for n in nodes 
-                if re.match(r'^[a-zA-Z]{2,20}$', n.get("text", "")) 
-                and n.get("center") and n["center"][1] < 1200
-            ]
-            if spell_nodes and turn % 4 == 0:
-                target_spell = spell_nodes[0].get("text", "")
-                print(f"[*] [Mac 物理发音] 朗读单词: {target_spell}，驱动真机 ASR 拾音...")
-                voice_driver.speak_out(target_spell)
-                time.sleep(0.8)
-                continue
-
-            # 8. 题目等待作答状态（无下一词）：优先选择题作答
-            excluded_labels = (
-                "不认识", "再学学", "说释义", "说发音", "显示翻译", "默写", "掌握", "报错", "回看",
-                "拼写", "提示", "清除", "选择题"
-            )
-            choice_candidates = [
-                n for n in nodes
-                if n.get("clickable") and n.get("bounds")
-                and 1250 <= n.get("center", (0, 0))[1] <= 1800
-                and not (n.get("text") or "").strip().isdigit()
-                and n.get("label") not in excluded_labels
-                and n.get("text") not in excluded_labels
-                and not any(k in (n.get("text") or "") or k in (n.get("label") or "") for k in ("测评结果", "下次复习", "记忆历史", "关闭"))
-            ]
-
-            if choice_candidates:
-                target_choice = choice_candidates[-1]
-                self.device.click_element(target_choice)
-                time.sleep(0.8)
-                continue
-
-            # 9. 题目等待作答状态（初见测评无选项）：用户点击「再学学」或「不认识」查看释义
-            study_again_btn = self.device.find_element(text="再学学", nodes=nodes)
-            dont_know_btn = self.device.find_element(text="不认识", nodes=nodes)
-
-            if study_again_btn:
-                self.device.click_element(study_again_btn)
-                time.sleep(0.8)
-                continue
-            elif dont_know_btn:
-                self.device.click_element(dont_know_btn)
-                time.sleep(0.8)
-                continue
+        nodes = self.device.dump()
+        dialog = [n for n in nodes
+                  if n.get("package") and n["package"] != "com.nn.nnbdc.android"
+                  and any(k in n["label"] for k in ("允许", "禁止", "使用"))]
+        pid_after = self._pid()
+        alive = bool(pid_after) and pid_after == pid_before
+        if dialog:
+            deny = next((n for n in dialog if "禁止" in n["label"] or "不允许" in n["label"]), None)
+            if deny:
+                self.device.tap_node(deny)
             else:
-                time.sleep(0.4)
+                self.device.press_key(4)
+            time.sleep(0.5)
+        self.device.set_permission("android.permission.RECORD_AUDIO", True)
+        self.expect("拒绝录音权限不崩溃", alive,
+                    "撤销录音权限后 App 进程未重启，且系统权限弹窗正常出现" if dialog and alive
+                    else ("App 未崩溃，但没看到系统权限弹窗" if alive
+                          else "撤销录音权限后 App 进程消失（崩溃）"),
+                    self.capture("permission_denied"))
+        # 切回选择题继续作答
+        self.device.tap_id(ID_STUDY_MODE_SWITCH)
+        time.sleep(0.5)
 
-        shot = self.capture("daka_finish_page")
-        if in_finish_page:
-            self.log("当日30词学完进入打卡页", "PASSED", "30词各环节深度答题完成，自动跳转至完成打卡页（FinishPage）", shot)
-        else:
-            self.log("当日30词学完进入打卡页", "WARNING", "已执行多轮流转，尝试触发打卡结算", shot)
+    def _pid(self):
+        res = self.device._run_adb(["shell", "pidof", "com.nn.nnbdc.android"], check=False)
+        return res.stdout.strip()
 
-        # 3. 从完成页返回主页，并通过「云同步状态」界面强制触发原生端云即时同步
-        print("[*] 点击完成页左上角返回按钮退出完成页并返回主页...")
-        self.device.click(78, 140)
-        time.sleep(2.0)
-        self.device.ensure_app_foreground()
-        print("[*] 触发原生端云即时同步，确保打卡数据即时上报生产库...")
-        self.trigger_immediate_sync()
-
-        # 4. 生产数据库打卡数据一致性核验（轮询等待端云即时同步落库）
-        print("[*] 正在从生产数据库校验当天的 daka 打卡数据记录...")
-        daka_rec = None
-        for attempt in range(8):
-            time.sleep(1.5)
-            daka_rec = manage_e2e_account.check_user_daka()
-            if daka_rec:
-                break
-            print(f"[*] 等待生产库打卡记录写入同步 (尝试 {attempt + 1}/8)...")
-
-        if daka_rec:
-            daka_date = daka_rec.get("for_learning_date", "")
-            daka_txt = daka_rec.get("text", "")
-            self.log("端云打卡数据持久化核验", "PASSED", f"生产库 daka 表确认落库成功: 业务日={daka_date}, 打卡文本={daka_txt}", shot)
-        else:
-            self.log("端云打卡数据持久化核验", "WARNING", "生产库暂未检索到当前打卡记录（可能等待周期同步）", shot)
-
-    def step_10_audit_local_db_and_fsrs(self):
-        print("\n--- [Step 10] 本地 SQLite 深度审计与 FSRS 算法核验 ---")
-        print("[*] 正在触发真机增量同步（切入「我」与「学习」），确保本地流水向云端同步完毕...")
-        self.device.wait_and_click(text="我", timeout=2, exact=True)
-        time.sleep(1.5)
-        self.device.wait_and_click(text="学习", timeout=2, exact=True)
-        time.sleep(3.0)
-
+    def _prepare_meanings(self):
+        print("[*] 停进程拉取本地快照，读今日计划的单词释义（答对/答错的真值来源）")
+        self.device.stop_app()
         self.auditor = LocalDbAuditor(self.serial)
-        print("[*] 正在从真机应用沙盒提取本地 db.sqlite 与 WAL 日志...")
-        self.auditor.pull_local_db()
+        self.auditor.pull_snapshot()
+        self.device.launch_app()
+        self._enter_study()
+        self.meanings = self.auditor.meanings_by_spell()
+        print(f"[*] 本地可判定的单词释义 {len(self.meanings)} 个")
 
-        local_audit = self.auditor.audit_local_learning_data()
-        self.audited_fsrs_logs = local_audit["logs"]
-        print(f"[*] 本地审计完成: 累计记录评分流水={local_audit['total_logs']}条, 记忆词数={local_audit['total_learning_words']}")
+    def _run_study_loop(self, expected_words: int):
+        wrong_tested = False
+        correct_tested = False
+        mastered_tested = False
+        kill_tested = False
+        answered = 0
+        last_header = ""
 
-        # 1. 评分合规性检查 (rating 必须属于 1~4)
-        ratings = [log["rating"] for log in local_audit["logs"]]
-        all_valid_ratings = all(r in (1, 2, 3, 4) for r in ratings) if ratings else False
+        for turn in range(1, 400):
+            nodes = self.device.dump()
+            if self._has(nodes, ID_FINISH_PAGE) or self._has(nodes, ID_BADGE_CLAIM):
+                return
+            if self._has(nodes, ID_DETAIL_NEXT_WORD):
+                self.device.tap_id(ID_DETAIL_NEXT_WORD)
+                continue
+            if self._has(nodes, ID_STUDY_NEXT_GROUP):
+                self.device.tap_id(ID_STUDY_NEXT_GROUP)
+                time.sleep(0.4)
+                continue
+            if self._has(nodes, ID_WORD_DETAIL):
+                # 详情页的「下一词」没就位时先点左上角返回
+                if not self.device.go_back(nodes):
+                    raise CaseFailure("单词详情页既没有「下一词」也点不到返回")
+                continue
+            if not self._has(nodes, ID_STUDY_DONT_KNOW):
+                time.sleep(0.25)
+                continue
 
-        # 2. 下次复习天数自洽性 (scheduled_days 必须为正整数且 stability > 0)
-        all_valid_schedules = all(log["scheduled_days"] > 0 and log["stability"] > 0 for log in local_audit["logs"]) if local_audit["logs"] else False
+            header = self._header(nodes)
+            options = self._options(nodes)
 
-        # 3. 检查 2000ms 重复评分违规 (DuplicateGradeViolation)
-        dup_count = len(local_audit["duplicate_violations"])
+            if not options:
+                # 非选择题卡片：不认识 → 看答案 → 下一词
+                self.device.tap_id(ID_STUDY_DONT_KNOW)
+                continue
 
-        # 4. 核验「已掌握」词书本地落库
-        local_mastered = [w["word_id"] for w in local_audit["mastered_words"]]
-        mastered_ok = len(local_mastered) > 0
+            word = self._current_word(nodes)
+            option_texts = [" ".join(self.device.texts_within(o, nodes)) for o in options]
+            meanings = self.meanings.get(word) if word else None
+            correct = self._pick_correct_option(option_texts, meanings) if meanings else None
 
-        # 5. 端云对齐校验 (对比生产库)
+            if options and correct is not None and not wrong_tested:
+                wrong_index = next(i for i in range(len(options)) if i != correct)
+                self.device.tap_node(options[wrong_index])
+                landed = self.device.wait(ID_WORD_DETAIL, timeout=4) or self.device.find_by_id(ID_DETAIL_NEXT_WORD)
+                self.expect("选择题答错必须进入单词详情", landed is not None,
+                            f"故意选错「{word}」的释义，App 进入单词详情页展示正确释义"
+                            if landed else "故意选错后没有进入单词详情页，答错没有任何反馈",
+                            self.capture("wrong_answer_detail"))
+                wrong_tested = True
+                continue
+
+            if options and correct is not None and not correct_tested:
+                before = header
+                self.device.tap_node(options[correct])
+                advanced = False
+                deadline = time.time() + 4
+                while time.time() < deadline:
+                    after_nodes = self.device.dump()
+                    if self._has(after_nodes, ID_WORD_DETAIL):
+                        break
+                    if self._header(after_nodes) != before:
+                        advanced = True
+                        break
+                    time.sleep(0.2)
+                self.expect("选择题答对自动进阶下一题", advanced,
+                            f"按本地释义选中「{word}」的正确释义后自动进入下一题"
+                            if advanced else "选中正确释义后没有进入下一题",
+                            self.capture("correct_answer_advance"))
+                correct_tested = True
+                continue
+
+            if not mastered_tested and self.device.find_by_id(ID_STUDY_MASTER, nodes):
+                spell = self._current_word(nodes) or "本词"
+                self.device.tap_id(ID_STUDY_MASTER, nodes)
+                mastered_tested = True
+                time.sleep(0.6)
+                self.log("学习中标记已掌握", PASSED, f"对「{spell}」点了「掌握」",
+                         self.capture("marked_mastered"))
+                continue
+
+            if options:
+                self.device.tap_node(options[0])
+                answered += 1
+                last_header = header
+
+                if (not kill_tested and answered >= 3):
+                    self._kill_case(header)
+                    kill_tested = True
+                continue
+
+        raise CaseFailure(f"学习流转超过 400 步仍未结束（最后位置：{last_header}）")
+
+    def _kill_case(self, header_before: str):
+        print("[*] 反向用例：学习途中最粗暴地结束进程，看进度是否还在")
+        match = re.search(r"(\d+)/(\d+)", header_before)
+        pos_before = int(match.group(1)) if match else 0
+        self.device.stop_app()
+        time.sleep(0.5)
+        self.device.launch_app()
+        self._enter_study()
+        node = self.device.wait(ID_STUDY_DONT_KNOW, timeout=10)
+        nodes = self.device.dump() if node is None else None
+        header_after = self._header(self.device.dump() if nodes is None else nodes)
+        match_after = re.search(r"(\d+)/(\d+)", header_after)
+        pos_after = int(match_after.group(1)) if match_after else 0
+        ok = node is not None and pos_after >= pos_before
+        self.expect("杀进程后学习进度不丢", ok,
+                    f"杀进程前在 {header_before}，重启后仍在 {header_after}"
+                    if ok else f"杀进程前在 {header_before}，重启后回到 {header_after or '未知页面'}",
+                    self.capture("after_kill_restart"))
+
+    # ---------- 端云同步 ----------
+
+    def _open_sync_page(self):
+        """我 → 设置与工具 → 云同步状态。进这个页面本身就会触发一次原生同步。"""
+        self._goto_me_tab()
+        self._open_settings_section()
+        tile = self.device.find_by_id(ID_ME_SYNC)
+        if tile is None:
+            self.device.swipe_up(0.8, 0.4, 300)
+            tile = self.device.find_by_id(ID_ME_SYNC)
+        if tile is None:
+            raise CaseFailure("个人中心找不到「云同步状态」")
+        self.device.tap_node(tile)
+        time.sleep(1.2)
+
+    def _force_sync(self):
+        self._open_sync_page()
+        time.sleep(2.0)
+        if not self.device.go_back():
+            raise CaseFailure("同步页退不回来（左上角没有返回按钮）")
+        time.sleep(0.3)
+
+    def step_offline_sync(self):
+        print("\n--- [10] 断网 / 恢复 ---")
+        self.device.set_network(False)
+        if self._online():
+            raise CaseFailure("无法把设备切到断网状态")
+
+        self._open_sync_page()
+        saw_failure = False
+        deadline = time.time() + 15
+        while time.time() < deadline:
+            if "失败" in self._labels(self.device.dump()):
+                saw_failure = True
+                break
+            time.sleep(0.8)
+        self.expect("断网时同步失败可见", saw_failure,
+                    "断网后同步状态明确报出失败，没有假报成已同步"
+                    if saw_failure else "断网后同步页面没有任何失败提示（假报成功）",
+                    self.capture("offline_sync_failed"))
+        if not self.device.go_back():
+            raise CaseFailure("同步页退不回来")
+
+        self.device.set_network(True)
+        deadline = time.time() + 25
+        while time.time() < deadline and not self._online():
+            time.sleep(1.0)
+        if not self._online():
+            raise CaseFailure("恢复网络失败，后续无法继续")
+        self._force_sync()
+        self._force_sync()
+
+        ok = self._wait_cloud_logs(self.plan_words, timeout=40)
+        self.expect("恢复网络后同步补齐", ok,
+                    f"恢复网络并触发同步后，云端已有学习流水（至少 {self.plan_words} 条计划内记录）"
+                    if ok else "恢复网络并触发同步后，云端仍没有学习流水",
+                    self.capture("online_sync_recovered"))
+
+    def _online(self) -> bool:
+        res = self.device._run_adb(["shell", "dumpsys", "connectivity"], check=False)
+        return "VALIDATED" in res.stdout
+
+    def _wait_cloud_logs(self, min_count: int, timeout: float = 40) -> bool:
+        user = manage_e2e_account.check_user()
+        if not user:
+            return False
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            cloud_logs = manage_e2e_account.get_user_learning_logs(user["id"])
+            if len(cloud_logs) >= min_count:
+                return True
+            time.sleep(1.5)
+        return False
+
+    # ---------- 本地审计 ----------
+
+    def step_audit(self):
+        print("\n--- [11] 本地库与 FSRS 审计 ---")
+        self.device.stop_app()
+        self.auditor.pull_snapshot()
+        audit = self.auditor.audit_local_learning_data()
         user = manage_e2e_account.check_user()
         cloud_logs = manage_e2e_account.get_user_learning_logs(user["id"]) if user else []
         cloud_words = manage_e2e_account.get_user_learning_words(user["id"]) if user else []
-        aligned, align_detail = self.auditor.verify_local_and_cloud_alignment(cloud_logs, cloud_words)
+        aligned, detail = self.auditor.verify_local_and_cloud_alignment(cloud_logs, cloud_words)
+        ok = (audit["total_logs"] > 0 and not audit["duplicate_violations"]
+              and aligned)
+        self.audited_logs = audit["logs"]
+        self.expect("本地Db与FSRS算法审计", ok,
+                    f"本地 {audit['total_logs']} 条评分全部合法、无 2000ms 重复评分，{detail}"
+                    if ok else f"审计不通过：{detail}",
+                    self.capture("local_db_audit"))
+        self.snapshot_ready = True
 
-        shot = self.capture("local_db_audit_passed")
-        if all_valid_ratings and all_valid_schedules and dup_count == 0 and aligned:
-            self.log("本地DB与FSRS算法审计", "PASSED", 
-                     f"本地{len(ratings)}条评分全部合规(1~4)，下次复习天数均大于0，零重复计分违规，端云数据100%对齐", shot)
-        else:
-            self.log("本地DB与FSRS算法审计", "WARNING", 
-                     f"评分合规={all_valid_ratings}, 间隔合规={all_valid_schedules}, 重复计分={dup_count}, 对齐状态={align_detail}", shot)
+    def step_cross_day(self):
+        print("\n--- [12] 跨天 ---")
+        changed = self.auditor.shift_one_day_back()
+        if changed <= 0:
+            raise CaseFailure("本地库没有可前移的打卡/学习记录，无法模拟跨天")
+        self.auditor.push_snapshot()
+        manage_e2e_account.time_travel_yesterday()
+        self.device.launch_app()
+        self._enter_study()
+        if self.device.wait(ID_STUDY_DONT_KNOW, timeout=10) is None:
+            raise CaseFailure("跨天后进入学习没有出现复习卡片")
+        self._run_study_loop(self.plan_words)
+        badge = self.device.find_by_id(ID_BADGE_CLAIM)
+        if badge:
+            self.device.tap_node(badge)
+        self._force_sync()
 
-    def step_11_cross_day_time_travel_regression(self):
-        print("\n--- [Step 11] 跨天时间旅行与复习词流转打卡核验 ---")
         user = manage_e2e_account.check_user()
-        if not user:
-            self.log("跨天时间旅行模拟", "FAILED", "无法获取当前测试用户")
-            return
+        daka_count = 0
+        if user:
+            deadline = time.time() + 20
+            while time.time() < deadline:
+                row = manage_e2e_account.run_psql(
+                    f"SELECT count(*) FROM daka WHERE user_id = '{user['id']}';")
+                if row and row.strip().isdigit():
+                    daka_count = int(row.strip())
+                    if daka_count >= 2:
+                        break
+                time.sleep(1.5)
+        self.expect("跨天复习与连续打卡", daka_count >= 2,
+                    f"把本地与云端时钟前移一天后完成复习，生产库已有连续 {daka_count} 天打卡"
+                    if daka_count >= 2 else f"跨天复习完成后生产库只有 {daka_count} 天打卡",
+                    self.capture("cross_day_daka"))
 
-        uid = user["id"]
-        print("[*] 正在执行端云时间旅行（Time Travel）：将云端与本地沙盒打卡和学习记录同步前推 1 天...")
-        # 1. 云端数据库前推 1 天
-        manage_e2e_account.time_travel_yesterday(uid)
+    def step_home_status(self):
+        print("\n--- [13] 主页打卡状态 ---")
+        self.device.tap_id(ID_NAV_STUDY)
+        time.sleep(0.8)
+        nodes = self.device.dump()
+        stamp = any(k in self._labels(nodes) for k in ("今日已打卡", "目标已锁定", "再来一组"))
+        self.expect("主页与个人中心打卡状态", stamp,
+                    "主页仪表盘已盖印「今日已打卡」" if stamp else "主页没有任何打卡印记",
+                    self.capture("home_daka"))
 
-        # 2. 本地沙盒 SQLite 前推 1 天（通过停进程 -> pull -> update -> push -> 重启）
-        self.device.stop_app()
-        time.sleep(1.0)
-        tt_db = os.path.join(self.auditor.work_dir, "e2e_tt.sqlite")
-        self.device._run_adb(["shell", "run-as", "com.nn.nnbdc.android", "cp", "app_flutter/db.sqlite", "/sdcard/e2e_tt.sqlite"])
-        self.device._run_adb(["pull", "/sdcard/e2e_tt.sqlite", tt_db])
-        if os.path.exists(tt_db):
-            conn = sqlite3.connect(tt_db)
-            c = conn.cursor()
-            c.execute("UPDATE dakas SET for_learning_date = for_learning_date - 86400, create_time = create_time - 86400, update_time = update_time - 86400;")
-            c.execute("UPDATE learning_words SET last_learning_date = last_learning_date - 86400, update_time = update_time - 86400;")
-            c.execute("UPDATE user_study_daily_stats SET date = date - 86400, update_time = update_time - 86400;")
-            conn.commit()
-            conn.close()
-            self.device._run_adb(["push", tt_db, "/sdcard/e2e_tt.sqlite"])
-            self.device._run_adb(["shell", "run-as", "com.nn.nnbdc.android", "cp", "/sdcard/e2e_tt.sqlite", "app_flutter/db.sqlite"])
-            self.device._run_adb(["shell", "run-as", "com.nn.nnbdc.android", "rm", "-f", "app_flutter/db.sqlite-wal", "app_flutter/db.sqlite-shm"])
-            print("[*] 本地 SQLite 打卡与学习记录已成功前推 86400 秒（1天）！")
+    def step_sync_status(self):
+        print("\n--- [14] 同步健康度 ---")
+        self._goto_me_tab()
+        time.sleep(0.5)
+        nodes = self.device.dump()
+        labels = self._labels(nodes)
+        bad = "同步失败" in labels or "网络异常" in labels
+        self.expect("端云同步健康度校验", not bad,
+                    "个人中心各卡片正常，无同步失败告警" if not bad else "个人中心出现同步失败告警",
+                    self.capture("sync_status"))
 
-        # 3. 重新拉起 App，直接进入主界面
-        self.device.launch_app(stop_first=False)
-        time.sleep(3.0)
-        self.device.wait_and_click(text="学习", timeout=4, exact=True)
-        time.sleep(2.0)
-        shot_reset = self.capture("cross_day_home_reset")
+    # ---------- 收尾 ----------
 
-        # 4. 点击「开始学习」或「继续学习」进行第二天复习流转并打卡
-        start_btn = self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习")
-        if start_btn:
-            print("[*] 点击开启第 2 天的复习流转...")
-            self.device.click_element(start_btn)
-            time.sleep(2.0)
-            for turn in range(1, 50):
-                time.sleep(0.5)
-                nodes = self.device.dump_ui_hierarchy()
-                all_text = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in nodes)
-                if any(k in all_text for k in ("学习完成", "打卡成功", "已打卡", "今日已打卡", "再来一组", "生成打卡海报", "前往词表")):
-                    print(f"[*] 第 2 天复习完成并成功打卡（第 {turn} 步）！")
-                    claim_btn = self.device.find_element(text="开心收下", nodes=nodes)
-                    if claim_btn:
-                        self.device.click_element(claim_btn)
-                        time.sleep(1.5)
-                    break
-                nxt = self.device.find_element(text="下一词", nodes=nodes) or self.device.find_element(text="下一组", nodes=nodes)
-                if nxt:
-                    self.device.click_element(nxt)
-                    continue
-                dk = self.device.find_element(text="再学学", nodes=nodes) or self.device.find_element(text="不认识", nodes=nodes)
-                if dk:
-                    self.device.click_element(dk)
-                    continue
+    def step_teardown(self):
+        print("\n--- [15] 善后注销 ---")
+        ok = self._phone_unregister()
+        nodes = self.device.dump()
+        back_to_welcome = self._has(nodes, ID_LOGIN_EMAIL_ENTRY) or "微信一键登录" in self._labels(nodes)
+        self.expect("测试善后注销账号", ok and back_to_welcome,
+                    "已通过真机注销回到未登录态" if ok and back_to_welcome
+                    else "真机注销没有回到欢迎页",
+                    self.capture("teardown"))
 
-        # 点击左上角返回按钮 (78, 140) 退出完成页返回主页，绝不按返回键
-        self.device.click(78, 140)
-        time.sleep(1.5)
-        self.device.ensure_app_foreground()
-        self.trigger_immediate_sync()
+    # ---------- 报告 ----------
 
-        # 5. 生产库校验第 2 天的连续打卡记录（轮询重试确保落库）
-        daka_info = None
-        for _ in range(10):
-            daka_sql = f"SELECT count(*), min(for_learning_date), max(for_learning_date) FROM daka WHERE user_id = '{uid}';"
-            daka_info = manage_e2e_account.run_psql(daka_sql)
-            if daka_info and int(daka_info.split("|")[0]) >= 2:
-                break
-            time.sleep(1.5)
+    def _status_color(self, status: str) -> str:
+        return {PASSED: "#10B981", FAILED: "#EF4444", NOT_RUN: "#94A3B8"}[status]
 
-        shot_cross = self.capture("cross_day_consecutive_daka")
-        if daka_info and int(daka_info.split("|")[0]) >= 2:
-            count = daka_info.split("|")[0]
-            self.log("跨天复习与连续打卡", "PASSED", f"跨天时钟推进成功，连续打卡达成 {count} 天，生产库具备跨天两条打卡记录", shot_cross)
-        else:
-            self.log("跨天复习与连续打卡", "WARNING", f"跨天记录核验: {daka_info}", shot_cross)
-
-    def step_12_verify_daka_home_status(self):
-        print("\n--- [Step 12] 主页与个人中心打卡状态核验 ---")
-        self.device.wait_and_click(text="学习", timeout=2, exact=True)
-        time.sleep(1.5)
-
-        # 检查主页是否呈现打卡印章或目标锁定态
-        shot_home = self.capture("home_daka_status")
-        is_daka_stamped = bool(self.device.find_element(text="今日已打卡") or self.device.find_element(text="目标已锁定") or self.device.find_element(text="再来一组"))
-
-        # 切换到「我」检查打卡天数
-        self.device.wait_and_click(text="我", timeout=2, exact=True)
-        time.sleep(1.5)
-        shot_me = self.capture("me_daka_status")
-
-        if is_daka_stamped:
-            self.log("主页与个人中心打卡状态", "PASSED", "主页大仪表盘印章成功盖印，呈现「今日已打卡」与「再来一组」加量入口", shot_home)
-        else:
-            self.log("主页与个人中心打卡状态", "PASSED", "主页与个人中心数据渲染正常，打卡流程闭环生效", shot_me)
-
-    def step_13_sync_verification(self):
-        print("\n--- [Step 13] 端云同步校验 ---")
-        self.device.wait_and_click(text="我", timeout=2, exact=True)
-        time.sleep(1.5)
-        shot = self.capture("sync_check_me")
-
-        has_error = bool(self.device.find_element(text="同步失败") or self.device.find_element(text="网络异常"))
-        if not has_error:
-            self.log("端云同步健康度校验", "PASSED", "个人主页各卡片正常渲染，无任何同步异常告警", shot)
-        else:
-            self.log("端云同步健康度校验", "FAILED", "界面检测到同步失败异常标识", shot)
-
-    def step_14_teardown_unregister(self):
-        print("\n--- [Step 14] 测试善后：真机自助注销账号 ---")
-        success = self._do_phone_unregister()
-        shot = self.capture("teardown_unregistered")
-        if success and (self.device.find_element(text="微信一键登录") or self.device.find_element(text="邮箱登录")):
-            self.log("测试善后注销账号", "PASSED", "通过手机端注销账号销毁测试数据，设备恢复纯净未登录态", shot)
-        else:
-            self.log("测试善后注销账号", "WARNING", "真机注销未完全退回登录页，执行云端安全清理", shot)
-            manage_e2e_account.purge_e2e_user_db_only()
-
-    def generate_html_report(self, total_time: float, passed: int, failed: int) -> str:
-        report_file = os.path.join(REPORT_DIR, "report.html")
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        rows_html = ""
+    def generate_report(self, total_time: float, passed: int,
+                        failed: int, skipped: int) -> str:
+        rows = ""
         for r in self.results:
-            badge_color = "#10B981" if r["status"] == "PASSED" else ("#F59E0B" if r["status"] in ("SKIPPED", "WARNING") else "#EF4444")
-            img_html = f'<a href="{r["screenshot"]}" target="_blank"><img src="{r["screenshot"]}" style="width:72px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.1);" /></a>' if r["screenshot"] else "-"
-            duration_str = f"{r.get('duration', 0.0)}s"
-
-            rows_html += f"""
+            img = (f'<a href="{r["screenshot"]}" target="_blank">'
+                   f'<img src="{r["screenshot"]}" style="width:72px;border-radius:6px;" /></a>'
+                   if r["screenshot"] else "-")
+            rows += f"""
             <tr>
-                <td style="padding:12px;border-bottom:1px solid #E2E8F0;"><span class="badge" style="background:{badge_color};color:#FFFFFF;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;">{r['status']}</span></td>
-                <td style="padding:12px;border-bottom:1px solid #E2E8F0;"><strong>{r['step']}</strong></td>
-                <td style="padding:12px;border-bottom:1px solid #E2E8F0;font-size:12px;font-weight:700;color:#0F172A;">{duration_str}</td>
-                <td style="padding:12px;border-bottom:1px solid #E2E8F0;color:#334155;">{r['details']}</td>
-                <td style="padding:12px;border-bottom:1px solid #E2E8F0;font-size:12px;color:#64748B;">{r['timestamp']}</td>
-                <td style="padding:12px;border-bottom:1px solid #E2E8F0;text-align:center;">{img_html}</td>
-            </tr>
-            """
+                <td class="st"><span style="background:{self._status_color(r['status'])};">{r['status']}</span></td>
+                <td><strong>{r['case']}</strong></td>
+                <td class="dur">{r['duration']}s</td>
+                <td>{r['details']}</td>
+                <td class="ts">{r['timestamp']}</td>
+                <td class="shot">{img}</td>
+            </tr>"""
 
-        # FSRS 审计表格构造（全量展示 + 单词英文拼写）
         fsrs_html = ""
-        if hasattr(self, 'audited_fsrs_logs') and self.audited_fsrs_logs:
-            all_logs = self.audited_fsrs_logs
-            fsrs_rows = ""
-            for idx, item in enumerate(all_logs, 1):
-                rating_desc = {1: "忘记(Again)", 2: "困难(Hard)", 3: "良好(Good)", 4: "简单(Easy)"}.get(item.get("rating"), str(item.get("rating")))
-                spell_str = item.get("spell") or "-"
-                fsrs_rows += f"""
-                <tr>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;color:#64748B;">{idx}</td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;font-weight:700;color:#0F172A;font-size:13px;">{spell_str}</td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;color:#64748B;">{item.get('word_id', '-')}</td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;"><span style="background:#EFF6FF;color:#2563EB;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">{rating_desc}</span></td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;color:#0F172A;font-weight:500;">{item.get('stability', '-')}</td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;color:#10B981;font-weight:700;">+{item.get('scheduled_days', '-')} 天</td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;font-size:11px;color:#64748B;">{item.get('create_time', '-')}</td>
-                </tr>
-                """
+        if getattr(self, "audited_logs", None):
+            body = ""
+            for idx, item in enumerate(self.audited_logs, 1):
+                rating = {1: "忘记", 2: "困难", 3: "良好", 4: "简单"}.get(item["rating"], item["rating"])
+                body += (f"<tr><td>{idx}</td><td><strong>{item['spell'] or '-'}</strong></td>"
+                         f"<td>{item['word_id']}</td><td>{rating}</td>"
+                         f"<td>{item['stability']}</td><td>+{item['scheduled_days']} 天</td></tr>")
             fsrs_html = f"""
-            <div style="margin-top: 24px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;">
-                <h3 style="margin-top: 0; font-size: 15px; color: #0F172A;">🧠 本地应用沙盒 SQLite FSRS 评分算法与复习调度全量清单 (共 {len(all_logs)} 条流水)</h3>
-                <div style="font-size: 12px; color: #64748B; margin-bottom: 12px;">
-                    真机免 root 提取 <code>app_flutter/db.sqlite</code> 与 WAL 日志，核验评分属于[1~4]、排查 2000ms 重复计分违规，自洽推导下次复习时间。
-                </div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                    <thead>
-                        <tr style="background: #EDF2F7; text-align: left;">
-                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1; width: 40px;">#</th>
-                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">单词拼写 (Spell)</th>
-                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">单词ID</th>
-                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">FSRS评分</th>
-                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">稳定性 (Stability)</th>
-                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">复习间隔 (Scheduled)</th>
-                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">评分时间</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {fsrs_rows}
-                    </tbody>
-                </table>
-            </div>
-            """
+            <h3>本地 SQLite 评分流水（{len(self.audited_logs)} 条）</h3>
+            <table><thead><tr><th>#</th><th>单词</th><th>单词 ID</th><th>FSRS 评分</th>
+            <th>稳定性</th><th>复习间隔</th></tr></thead><tbody>{body}</tbody></table>"""
 
-        html_content = f"""<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <title>泡泡单词 Android 纯黑盒端到端回归测试报告</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-            background: #F8FAFC;
-            color: #1E293B;
-            margin: 0;
-            padding: 32px 24px;
-        }}
-        .container {{
-            max-width: 1080px;
-            margin: 0 auto;
-            background: #FFFFFF;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-            padding: 32px;
-        }}
-        h1 {{
-            margin-top: 0;
-            font-size: 24px;
-            font-weight: 800;
-            color: #0F172A;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }}
-        .summary-cards {{
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin: 24px 0;
-        }}
-        .card {{
-            background: #F1F5F9;
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }}
-        .card .label {{
-            font-size: 12px;
-            color: #64748B;
-            margin-bottom: 4px;
-        }}
-        .card .value {{
-            font-size: 28px;
-            font-weight: 800;
-            color: #0F172A;
-        }}
-        .card.pass .value {{ color: #10B981; }}
-        .card.fail .value {{ color: #EF4444; }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }}
-        th {{
-            background: #F8FAFC;
-            text-align: left;
-            padding: 12px;
-            font-size: 13px;
-            color: #475569;
-            border-bottom: 2px solid #E2E8F0;
-        }}
-        .footer {{
-            margin-top: 32px;
-            text-align: center;
-            font-size: 13px;
-            color: #94A3B8;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>📱 泡泡单词 Android 纯黑盒端到端回归测试报告</h1>
-        <div style="font-size: 13px; color: #64748B;">
-            遵循真实用户全链路原则：真机自主注册 ➔ 选词书 ➔ 学习轨道配置 ➔ 计划定制(30词) ➔ 单词全流程学习(ASR物理语音+已掌握) ➔ 本地SQLite算法审计 ➔ 跨天时间旅行Day 2连续打卡 ➔ 端云同步 ➔ 真机自主注销销毁
-        </div>
+        html = f"""<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8">
+<title>泡泡单词真机端到端回归测试报告</title>
+<style>
+body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+background:#F8FAFC;color:#1E293B;margin:0;padding:32px 24px;}}
+.container{{max-width:1080px;margin:0 auto;background:#fff;border-radius:16px;padding:32px;
+box-shadow:0 4px 24px rgba(0,0,0,.06);}}
+h1{{margin:0 0 4px;font-size:22px;}}
+.sub{{color:#64748B;font-size:13px;margin-bottom:20px;}}
+.cards{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0;}}
+.card{{background:#F1F5F9;border-radius:12px;padding:14px;text-align:center;}}
+.card .l{{font-size:12px;color:#64748B;}}
+.card .v{{font-size:26px;font-weight:800;}}
+table{{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px;}}
+th{{background:#F8FAFC;text-align:left;padding:10px;color:#475569;border-bottom:2px solid #E2E8F0;}}
+td{{padding:10px;border-bottom:1px solid #E2E8F0;color:#334155;vertical-align:middle;}}
+td.st span{{color:#fff;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;}}
+td.dur{{font-weight:700;white-space:nowrap;}}
+td.ts{{color:#64748B;font-size:12px;white-space:nowrap;}}
+td.shot{{text-align:center;}}
+.footer{{margin-top:24px;text-align:center;font-size:12px;color:#94A3B8;}}
+</style></head><body><div class="container">
+<h1>📱 泡泡单词真机端到端回归测试报告</h1>
+<div class="sub">真机自助注册 → 选词书 → 设定计划 → 选择题作答（答错进详情、答对进阶）→ 杀进程 → 打卡 → 断网/恢复 → 本地库审计 → 跨天连续打卡 → 注销
+｜设备 {self.device.serial if self.device else '-'}</div>
+<div class="cards">
+<div class="card"><div class="l">用例总数</div><div class="v">{len(CASES)}</div></div>
+<div class="card"><div class="l">通过</div><div class="v" style="color:#10B981">{passed}</div></div>
+<div class="card"><div class="l">失败</div><div class="v" style="color:#EF4444">{failed}</div></div>
+<div class="card"><div class="l">未执行</div><div class="v" style="color:#94A3B8">{skipped}</div></div>
+</div>
+<div class="sub">总耗时 {total_time}s</div>
+<table><thead><tr><th style="width:86px">状态</th><th style="width:230px">用例</th>
+<th style="width:64px">耗时</th><th>断言结论</th><th style="width:150px">时间</th>
+<th style="width:86px">截图</th></tr></thead><tbody>{rows}</tbody></table>
+{fsrs_html}
+<div class="footer">Generated by Android E2E Regression | {datetime.now():%Y-%m-%d %H:%M:%S}</div>
+</div></body></html>"""
+        path = os.path.join(REPORT_DIR, "report.html")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
+        return path
 
-        <div class="summary-cards">
-            <div class="card">
-                <div class="label">测试用例步骤</div>
-                <div class="value">{len(self.results)}</div>
-            </div>
-            <div class="card pass">
-                <div class="label">通过用例 (Passed)</div>
-                <div class="value">{passed}</div>
-            </div>
-            <div class="card fail">
-                <div class="label">失败用例 (Failed)</div>
-                <div class="value">{failed}</div>
-            </div>
-            <div class="card">
-                <div class="label">总执行耗时</div>
-                <div class="value">{total_time}s</div>
-            </div>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 90px;">状态</th>
-                    <th style="width: 180px;">测试步骤</th>
-                    <th style="width: 70px;">耗时</th>
-                    <th>操作详情与断言结论</th>
-                    <th style="width: 150px;">执行时间</th>
-                    <th style="width: 90px; text-align: center;">实机截屏</th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows_html}
-            </tbody>
-        </table>
-
-        {fsrs_html}
-
-        <div class="footer">
-            Generated by Android E2E Regression Skill | Time: {now_str}
-        </div>
-    </div>
-</body>
-</html>
-"""
-        with open(report_file, "w", encoding="utf-8") as f:
-            f.write(html_content)
-        return report_file
-
-    def get_thumbnail_base64(self, img_path: str, max_width: int = 160) -> str:
-        """读取实机截屏，压缩为高清轻量级 JPEG base64 缩略图（单张约 6~10KB，保障邮件秒开与图文直出）"""
-        if not img_path or not os.path.exists(img_path):
-            return ""
+    def send_report(self, report_path, total, passed, failed, skipped):
+        print("\n--- 邮件推送 ---")
+        subject = f"【泡泡单词回归】通过 {passed} / 失败 {failed} / 未执行 {skipped}（{datetime.now():%m-%d %H:%M}）"
+        body = (f"<p>共 {len(CASES)} 条用例：通过 {passed}，失败 {failed}，未执行 {skipped}，"
+                f"总耗时 {total}s。</p><p>完整报告见附件路径：{report_path}</p>")
         try:
-            import io
-            import base64
-            from PIL import Image
-            with Image.open(img_path) as im:
-                im_rgb = im.convert("RGB")
-                w, h = im_rgb.size
-                if w > max_width:
-                    new_h = int(h * (max_width / w))
-                    im_resized = im_rgb.resize((max_width, new_h), Image.Resampling.LANCZOS)
-                else:
-                    im_resized = im_rgb
-                buf = io.BytesIO()
-                im_resized.save(buf, format="JPEG", quality=75, optimize=True)
-                b64_str = base64.b64encode(buf.getvalue()).decode("utf-8")
-                return f"data:image/jpeg;base64,{b64_str}"
-        except Exception as e:
-            print(f"[!] 缩略图生成异常: {e}")
-            return ""
-
-    def step_15_send_report_email(self, report_path: str, total_time: float, passed: int, failed: int):
-        print("\n--- [Step 15] 测试报告邮件直推 ---")
-        now_str = datetime.now().strftime("%m-%d %H:%M:%S")
-        subject = f"【泡泡单词回归报告】E2E全量回归完成 - 通过: {passed} / 失败: {failed} ({now_str})"
-        
-        # 构造邮件 HTML（包含轻量化高清真机截屏直出）
-        email_rows = ""
-        for idx, r in enumerate(self.results):
-            badge_color = "#10B981" if r["status"] == "PASSED" else ("#F59E0B" if r["status"] in ("SKIPPED", "WARNING") else "#EF4444")
-            duration_str = f"{r.get('duration', 0.0)}s"
-            
-            shot_html = "-"
-            if r.get("screenshot"):
-                shot_path = r.get("abs_screenshot") or os.path.join(REPORT_DIR, r["screenshot"])
-                # 仅精选 6~8 个关键里程碑展示缩略图，防止邮件体积过大触发云端 Spam 拦截
-                key_milestones = ("进入单词测评卡片", "当日30词学完进入打卡页", "本地DB与FSRS算法审计", "主页与个人中心打卡状态", "真实用户注册与登录")
-                if any(k in r["step"] for k in key_milestones) or idx in (3, 8):
-                    b64 = self.get_thumbnail_base64(shot_path, max_width=90)
-                    if b64:
-                        shot_html = f'<img src="{b64}" style="width:60px;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,0.1);display:block;margin:auto;" />'
-                    else:
-                        shot_html = f'<span style="font-size:11px;color:#64748B;">已截屏</span>'
-                else:
-                    shot_html = f'<span style="font-size:11px;color:#94A3B8;">本地存档</span>'
-
-            email_rows += f"""
-            <tr>
-                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;"><span style="background:{badge_color};color:#FFFFFF;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:bold;">{r['status']}</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;"><strong>{r['step']}</strong></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;font-size:12px;color:#0F172A;font-weight:bold;">{duration_str}</td>
-                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;color:#334155;font-size:13px;">{r['details']}</td>
-                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;font-size:12px;color:#64748B;">{r['timestamp']}</td>
-                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;text-align:center;">{shot_html}</td>
-            </tr>
-            """
-
-        fsrs_email_block = ""
-        if hasattr(self, 'audited_fsrs_logs') and self.audited_fsrs_logs:
-            all_logs = self.audited_fsrs_logs
-            sample_tr = ""
-            for idx, item in enumerate(all_logs, 1):
-                rating_desc = {1: "忘记", 2: "困难", 3: "良好", 4: "简单"}.get(item.get("rating"), str(item.get("rating")))
-                spell_str = item.get("spell") or "-"
-                sample_tr += f"""
-                <tr>
-                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;color:#64748B;">{idx}</td>
-                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;font-weight:bold;color:#0F172A;">{spell_str}</td>
-                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;color:#64748B;">{item.get('word_id')}</td>
-                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;"><span style="background:#EFF6FF;color:#2563EB;padding:2px 6px;border-radius:4px;font-size:11px;">{rating_desc}</span></td>
-                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;">{item.get('stability')}</td>
-                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;color:#10B981;font-weight:bold;">+{item.get('scheduled_days')}天</td>
-                </tr>
-                """
-            fsrs_email_block = f"""
-            <div style="margin-top:20px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
-                <h4 style="margin:0 0 8px 0;font-size:13px;color:#0F172A;">🧠 本地沙盒 SQLite FSRS 评分算法审计全量清单 (共 {len(all_logs)} 条流水)</h4>
-                <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                    <thead>
-                        <tr style="background:#EDF2F7;text-align:left;">
-                            <th style="padding:6px 8px;width:30px;">#</th>
-                            <th style="padding:6px 8px;">单词拼写 (Spell)</th>
-                            <th style="padding:6px 8px;">单词ID</th>
-                            <th style="padding:6px 8px;">评分</th>
-                            <th style="padding:6px 8px;">稳定性</th>
-                            <th style="padding:6px 8px;">复习间隔</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sample_tr}
-                    </tbody>
-                </table>
-            </div>
-            """
-
-        email_html = f"""
-        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:850px;margin:0 auto;background:#FFFFFF;padding:24px;border:1px solid #E2E8F0;border-radius:12px;">
-            <h2 style="color:#0F172A;margin-top:0;">📱 泡泡单词 Android 纯黑盒端到端回归测试报告</h2>
-            <div style="font-size:13px;color:#64748B;margin-bottom:16px;">
-                执行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | 设备: {self.device.serial if self.device else 'Android'}
-            </div>
-            
-            <div style="display:flex;gap:12px;margin-bottom:20px;">
-                <div style="flex:1;background:#F1F5F9;padding:12px;border-radius:8px;text-align:center;">
-                    <div style="font-size:12px;color:#64748B;">测试用例总数</div>
-                    <div style="font-size:22px;font-weight:bold;color:#0F172A;">{len(self.results)}</div>
-                </div>
-                <div style="flex:1;background:#ECFDF5;border:1px solid #A7F3D0;padding:12px;border-radius:8px;text-align:center;">
-                    <div style="font-size:12px;color:#065F46;">通过 (Passed)</div>
-                    <div style="font-size:22px;font-weight:bold;color:#10B981;">{passed}</div>
-                </div>
-                <div style="flex:1;background:#FEF2F2;border:1px solid #FECACA;padding:12px;border-radius:8px;text-align:center;">
-                    <div style="font-size:12px;color:#991B1B;">失败 (Failed)</div>
-                    <div style="font-size:22px;font-weight:bold;color:#EF4444;">{failed}</div>
-                </div>
-                <div style="flex:1;background:#F1F5F9;padding:12px;border-radius:8px;text-align:center;">
-                    <div style="font-size:12px;color:#64748B;">总执行耗时</div>
-                    <div style="font-size:22px;font-weight:bold;color:#0F172A;">{total_time}s</div>
-                </div>
-            </div>
-
-            <table style="width:100%;border-collapse:collapse;margin-top:12px;">
-                <thead>
-                    <tr style="background:#F8FAFC;text-align:left;">
-                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;">状态</th>
-                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;">测试步骤</th>
-                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;">耗时</th>
-                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;">断言与执行详情</th>
-                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;">执行时间</th>
-                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;text-align:center;">实机截屏</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {email_rows}
-                </tbody>
-            </table>
-
-            {fsrs_email_block}
-
-            <div style="margin-top:24px;text-align:center;font-size:12px;color:#94A3B8;">
-                泡泡单词 Android 自动化回归系统 | 本地报告与高清原图已保存至项目 tmp/e2e_report/
-            </div>
-        </div>
-        """
-
-        try:
-            ok = send_report_email.send_email_report(self.target_email, subject, email_html)
-            if ok:
-                self.log("测试报告邮件直推", "PASSED", f"报告已通过阿里云邮件推送至: {self.target_email}")
+            if send_report_email.send_email_report(self.target_email, subject, body):
+                print(f"[*] 报告已推送到 {self.target_email}")
             else:
-                self.log("测试报告邮件直推", "WARNING", f"邮件推送未成功，请检查凭据与配额")
-        except Exception as e:
-            self.log("测试报告邮件直推", "WARNING", f"发送异常: {e}")
+                print("[!] 邮件推送未成功（不影响测试结论）")
+        except Exception as exc:
+            print(f"[!] 邮件推送异常（不影响测试结论）: {exc}")
 
-def acquire_single_instance_lock():
-    """获取单实例互斥文件锁，防止并发执行相互冲突（操作系统级自动释放）"""
+
+def acquire_lock():
     os.makedirs(REPORT_DIR, exist_ok=True)
-    lock_file = os.path.join(REPORT_DIR, "regression.lock")
-    lock_fd = open(lock_file, "a+")
+    fd = open(os.path.join(REPORT_DIR, "regression.lock"), "a+")
     try:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        lock_fd.seek(0)
-        lock_fd.truncate()
-        lock_fd.write(f"PID: {os.getpid()}\nStarted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        lock_fd.flush()
-        return lock_fd
-    except (BlockingIOError, IOError):
-        try:
-            lock_fd.seek(0)
-            info = lock_fd.read().strip()
-        except Exception:
-            info = ""
-        print("\n" + "=" * 52)
-        print("❌ [互斥拦截] 检测到已有另一个端到端回归测试进程正在运行！")
-        if info:
-            print(f"ℹ️ 当前正在执行的测试会话信息:\n{info}")
-        print("⚠️ 物理 Android 设备与生产测试账号同时只能由单一测试进程独占操控。")
-        print("💡 请等待前序测试执行结束，或手动终止冲突进程。本次运行已自动安全退出。")
-        print("=" * 52 + "\n")
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return fd
+    except OSError:
+        print("❌ 已有另一个回归进程正在独占真机，本次退出。")
         return None
 
+
 def main():
-    lock_fd = acquire_single_instance_lock()
-    if not lock_fd:
+    lock = acquire_lock()
+    if not lock:
         sys.exit(1)
-
-    parser = argparse.ArgumentParser(description="运行纯黑盒端到端自动化回归测试")
-    parser.add_argument("--serial", type=str, default=None, help="ADB 设备序列号")
-    parser.add_argument("--email", type=str, default="mmyybb3000@icloud.com", help="测试报告接收邮箱")
-    parser.add_argument("--no-email", action="store_true", help="跳过邮件发送")
+    parser = argparse.ArgumentParser(description="泡泡单词真机端到端回归")
+    parser.add_argument("--serial", default=None)
+    parser.add_argument("--email", default="mmyybb3000@icloud.com")
+    parser.add_argument("--no-email", action="store_true")
+    parser.add_argument("--plan", type=int, default=10,
+                        help="今天要学多少词（越少越快，默认 10）")
     args = parser.parse_args()
+    runner = Runner(serial=args.serial, target_email=args.email,
+                    send_email=not args.no_email, plan_words=args.plan)
+    sys.exit(0 if runner.run_all() else 1)
 
-    runner = PureE2ERegressionRunner(
-        serial=args.serial,
-        target_email=args.email,
-        send_email=not args.no_email
-    )
-    success = runner.run_all()
-    sys.exit(0 if success else 1)
 
 if __name__ == "__main__":
     main()

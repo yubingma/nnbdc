@@ -21,7 +21,6 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/models/bdc_page_args.dart';
 import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
-import 'package:nnbdc/services/sync_progress.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/state.dart';
@@ -42,6 +41,7 @@ import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/widget/sync_progress_overlay.dart';
 import 'package:provider/provider.dart';
 
 /// 任务卡上主数字与加量徽标的基准字号（测量自然宽与真实渲染共用这一份，避免两头各写一个数）
@@ -219,11 +219,6 @@ class TodayPlanPageState extends State<TodayPlanPage>
   bool _isSyncingFromCloud = false;
   bool _hasTriedSupplement = false;
   bool _isLoadingData = false;
-
-  /// 首屏等待端云同步的上限：超过就先用本地数据展示。
-  ///
-  /// 首屏不能被一次同步无限期占住；同步本身仍会在后台继续，进度由 [syncProgress] 展示。
-  static const Duration _cloudSyncWaitTimeout = Duration(seconds: 60);
 
   /// 新用户（本地从未选过壁纸）的默认壁纸：琥珀（暗底照片，底栏会自动改配白图标）。
   /// 默认本页背景：经典（不铺照片，直接用 App 主题底）。
@@ -545,8 +540,8 @@ class TodayPlanPageState extends State<TodayPlanPage>
       // 1. 第一步：优先从本地数据库快速加载现有数据，以便立刻展示 UI
       final bool isNewDay = await _loadEssentialLocalData();
 
-      // 跨天时本日计划尚未初始化（跨天重置与取词都在第 3 步）；重装/换端后本地更是一份计划词都没有，
-      // 计划数据还在云端。这两种情况都必须维持加载态：否则页面会呈现一个 0/0 的"就绪"假象，
+      // 跨天时本日计划尚未初始化（跨天重置与取词都在第 3 步）；重装/换端后本地更是一份计划词都没有。
+      // 这两种情况在计划就绪前都必须维持加载态：否则页面会呈现一个 0/0 的"就绪"假象，
       // 用户在计划就绪前点"开始学习"，跨天时还会把昨天残留的进度当成今日已完成。
       // 只有本地确实拿到了今日计划词，才允许提前展示 UI。
       // 注意：准备流程结束时（finally）无条件置 dataLoaded=true，因此这里不会把页面卡在加载态。
@@ -560,28 +555,26 @@ class TodayPlanPageState extends State<TodayPlanPage>
       // 2. 第二步：执行云端同步（解决多端不一致）
       if (!Global.isGuest && !_hasTriedSync) {
         Global.logger.i('今日计划尝试从云端同步数据...');
-        if (mounted) {
-          setState(() {
-            _isSyncingFromCloud = true;
-          });
-        }
         try {
-          if (_todayWords == null || _todayWords!.isEmpty) {
-            Global.logger.i('今日计划本地为空，发起阻塞式同步...');
-            await ThrottledDbSyncService()
-                .requestSyncAndWait(immediate: true)
-                .timeout(_cloudSyncWaitTimeout);
+          if (!hasLocalPlan) {
+            Global.logger.i('今日计划本地为空，阻塞等待云端数据落地...');
+            if (mounted) {
+              setState(() {
+                _isSyncingFromCloud = true;
+              });
+            }
+            // 不设超时：本地一份计划词都没有时，提前进入只能看到一个空首页，
+            // 比多等一会儿更糟；同步服务保证等待一定会收敛（断网、暂停、失败都会收尾等待者）。
+            // 等待期间首屏由 SyncProgressOverlay 显示字节数、记录数与最近进展，不会看起来像卡死。
+            await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
           } else {
             ThrottledDbSyncService().requestSync();
           }
-        } on TimeoutException {
-          Global.logger.e('等待端云同步超过 ${_cloudSyncWaitTimeout.inSeconds} 秒仍未结束，'
-              '先用本地数据展示；同步仍在后台继续（进度见首屏加载态）');
         } catch (e) {
           Global.logger.e('进入页面同步失败: $e');
         } finally {
           _hasTriedSync = true;
-          if (mounted) {
+          if (mounted && _isSyncingFromCloud) {
             setState(() {
               _isSyncingFromCloud = false;
             });
@@ -973,61 +966,23 @@ class TodayPlanPageState extends State<TodayPlanPage>
           Positioned.fill(
             child: _buildBackground(isDarkMode, themeStyle),
           ),
-          (!dataLoaded)
-              ? Center(
-                  child: ValueListenableBuilder<SyncProgress>(
-                    valueListenable: syncProgress,
-                    builder: (context, progress, _) {
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                isDarkMode ? Colors.white70 : const Color(0xFF111827),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            _isSyncingFromCloud ? 'SYNCING FROM CLOUD...' : 'LOADING PLAN',
-                            style: TextStyle(
-                              color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 2.0,
-                            ),
-                          ),
-                          // 同步进度：数字在跳说明同步还在推进，长时间不动就是真的卡住了
-                          if (_isSyncingFromCloud && !progress.isIdle) ...[
-                            const SizedBox(height: 10),
-                            Text(
-                              progress.hasTotal
-                                  ? '${progress.phase} ${progress.done} / ${progress.total}'
-                                  : progress.phase,
-                              style: TextStyle(
-                                color: isDarkMode ? Colors.white30 : const Color(0xFF94A3B8),
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w400,
-                                letterSpacing: 1.2,
-                                fontFamily: 'Roboto',
-                              ),
-                            ),
-                          ],
-                        ],
-                      );
-                    },
-                  ),
-                )
-              // 底栏是透明的，内容不能画进它的区域（会跟按钮图标叠在一起）。
-              // 用 Padding 把内容区整体收到「底栏上沿」即可：滚动到这里就到底了，
-              // 不会再画进导航栏。
-              // 不能用 ClipRect —— 它默认硬裁剪，会把命中测试一起裁掉，
-              // 落在边界外的按钮（编辑态的「完成」、托盘）就会「看得见、点不到」。
-              : Padding(
+          if (!dataLoaded)
+            Positioned.fill(
+              child: SyncProgressOverlay(
+                isDarkMode: isDarkMode,
+                accentColor: isDarkMode
+                    ? themeConfig.primaryLightColor
+                    : themeConfig.primaryDarkColor,
+                syncing: _isSyncingFromCloud,
+              ),
+            )
+          // 底栏是透明的，内容不能画进它的区域（会跟按钮图标叠在一起）。
+          // 用 Padding 把内容区整体收到「底栏上沿」即可：滚动到这里就到底了，
+          // 不会再画进导航栏。
+          // 不能用 ClipRect —— 它默认硬裁剪，会把命中测试一起裁掉，
+          // 落在边界外的按钮（编辑态的「完成」、托盘）就会「看得见、点不到」。
+          else
+            Padding(
                   padding: EdgeInsets.only(bottom: widget.bottomNavReserve),
                   child: SafeArea(
                   bottom: false,
@@ -2522,11 +2477,12 @@ class TodayPlanPageState extends State<TodayPlanPage>
     Key? key,
     required VoidCallback onTap,
     required Widget child,
+    String? identifier,
   }) {
     final hasWallpaper = _hasEffectiveWallpaper;
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final onDark = _wallpaperIsDark ?? isDarkMode;
-    return _buildIslandCard(
+    final Widget button = _buildIslandCard(
       skin: _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark),
       key: key,
       onTap: onTap,
@@ -2537,6 +2493,8 @@ class TodayPlanPageState extends State<TodayPlanPage>
         child: FittedBox(fit: BoxFit.scaleDown, child: child),
       ),
     );
+    if (identifier == null) return button;
+    return Semantics(identifier: identifier, button: true, child: button);
   }
 
   /// 加量主按钮（首页"继续学习（加量）"/"再来一组"）
@@ -2555,6 +2513,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
     return _wrapActionButton(
       key: key,
       onTap: onPressed,
+      identifier: 'e2e_home_extra',
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -2961,6 +2920,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
 
     return _wrapActionButton(
       onTap: onStartTap,
+      identifier: 'e2e_home_start',
       child: buttonContent,
     );
   }
@@ -2989,17 +2949,21 @@ class TodayPlanPageState extends State<TodayPlanPage>
         Row(
           children: [
             Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: isDarkMode ? Colors.white : Colors.black,
-                  side: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black12),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              child: Semantics(
+                identifier: 'e2e_home_select_book',
+                button: true,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isDarkMode ? Colors.white : Colors.black,
+                    side: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black12),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () => context.push('/select_book').then((v) {
+                    if (mounted) loadData(forceSupplement: true);
+                  }),
+                  child: const Text('选择词书', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
-                onPressed: () => context.push('/select_book').then((v) {
-                  if (mounted) loadData(forceSupplement: true);
-                }),
-                child: const Text('选择词书', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
             if ((todayWordCount ?? 0) > 0) ...[
@@ -4001,38 +3965,42 @@ class TodayPlanPageState extends State<TodayPlanPage>
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // 1. 今日词数（未开始时点它从底部滑出词量设置，已开始时提示已锁定）
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            if (isStarted) {
-              ToastUtil.info('今日学习已开始，设置已锁定');
-              return;
-            }
-            _showWordsPerDaySheet();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  totalLabel,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
+        Semantics(
+          identifier: 'e2e_home_plan',
+          button: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (isStarted) {
+                ToastUtil.info('今日学习已开始，设置已锁定');
+                return;
+              }
+              _showWordsPerDaySheet();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    totalLabel,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: ink.muted,
+                      letterSpacing: 0.3,
+                      shadows: shadows,
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  Icon(
+                    isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
+                    size: isStarted ? 11 : 13.5,
                     color: ink.muted,
-                    letterSpacing: 0.3,
                     shadows: shadows,
                   ),
-                ),
-                const SizedBox(width: 3),
-                Icon(
-                  isStarted ? Icons.lock_outline_rounded : Icons.keyboard_arrow_down_rounded,
-                  size: isStarted ? 11 : 13.5,
-                  color: ink.muted,
-                  shadows: shadows,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -4330,16 +4298,19 @@ class TodayPlanPageState extends State<TodayPlanPage>
                           final isSelected = v == currentValue;
                           final isRestricted = !UserPrivilegeManager.isDailyWordsAllowed(v);
 
-                          return GestureDetector(
-                            onTap: () async {
-                              if (isRestricted) {
-                                ToastUtil.info('开通会员可选择更多单词数量');
-                                return;
-                              }
-                              Navigator.pop(ctx);
-                              await _applyWordsPerDay(v);
-                            },
-                            child: Container(
+                          return Semantics(
+                            identifier: 'e2e_plan_words_$v',
+                            button: true,
+                            child: GestureDetector(
+                              onTap: () async {
+                                if (isRestricted) {
+                                  ToastUtil.info('开通会员可选择更多单词数量');
+                                  return;
+                                }
+                                Navigator.pop(ctx);
+                                await _applyWordsPerDay(v);
+                              },
+                              child: Container(
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? primaryColor
@@ -4398,6 +4369,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                                   ],
                                 ],
                               ),
+                            ),
                             ),
                           );
                         },

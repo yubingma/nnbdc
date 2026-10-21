@@ -37,3 +37,21 @@ class SyncProgress {
 /// 端云同步进度的全局广播口（同一时刻只会有一轮同步在跑）。
 final ValueNotifier<SyncProgress> syncProgress =
     ValueNotifier<SyncProgress>(const SyncProgress.idle());
+
+/// 本轮同步已从云端接收的字节数（系统数据 + 用户数据累计）。
+///
+/// 只增不减：下载系统数据和用户数据是两次请求，若按单次请求展示，
+/// 第二次请求开始时数字会从 8 MB 掉回 64 KB，用户会以为进度倒退了。
+/// 累计值跨多次请求只增不减，才符合「同步在往前走」的直觉。
+final ValueNotifier<int> syncReceivedBytes = ValueNotifier<int>(0);
+
+/// 累加本轮同步从云端接收的字节数。
+void addSyncReceivedBytes(int delta) {
+  if (delta <= 0) return;
+  syncReceivedBytes.value += delta;
+}
+
+/// 开始新一轮同步时清零接收字节数。
+void resetSyncReceivedBytes() {
+  syncReceivedBytes.value = 0;
+}

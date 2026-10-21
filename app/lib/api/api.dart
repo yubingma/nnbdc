@@ -11,6 +11,7 @@ import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/services/sync_progress.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/loading_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -135,14 +136,24 @@ class Api {
           Global.logger.d('📤 请求: ${options.path}');
         }
 
+        final bool isDictRes = options.path.contains('getSysDictResById.do') ||
+            options.path.contains('getUserDictResById.do');
+        // 端云同步的两条日志下载接口：把收到的字节数实时报给首屏加载态。
+        // 只统计这两条接口，避免把词书资源等其它下载混进同步进度里。
+        final bool isSyncLogDownload =
+            options.path.contains('getUserDbLogsFromVersion.do') ||
+                options.path.contains('getSysDbLogs.do');
+
         final existingOnReceiveProgress = options.onReceiveProgress;
+        var syncReported = 0;
+        var syncPending = 0;
+        var syncLastReport = DateTime.fromMillisecondsSinceEpoch(0);
         options.onReceiveProgress = (received, total) {
           // 先执行调用方自己的 progress 回调（例如 dio.download）
           if (existingOnReceiveProgress != null) {
             existingOnReceiveProgress(received, total);
           }
-          if (options.path.contains('getSysDictResById.do') ||
-              options.path.contains('getUserDictResById.do')) {
+          if (isDictRes) {
             // 使用路径+dictId作为资源ID，便于精确监听特定词书的下载进度
             // 确保资源ID格式与downloadADict中构造的一致
             String? dictId = options.queryParameters['dictId'];
@@ -157,6 +168,22 @@ class Api {
               resourceId = options.path;
             }
             _DownloadProgress.update(resourceId, received, total);
+          }
+          if (isSyncLogDownload) {
+            // 下载进度回调可能每几 KB 来一次，全量上报会让首屏每秒重建几百次；
+            // 这里按 100ms 合并一次，请求收尾（received 达到 total）时立即上报。
+            final delta = received - syncReported;
+            if (delta <= 0) return;
+            syncReported = received;
+            syncPending += delta;
+            final now = DateTime.now();
+            final finished = total > 0 && received >= total;
+            if (finished ||
+                now.difference(syncLastReport) >= const Duration(milliseconds: 100)) {
+              syncLastReport = now;
+              addSyncReceivedBytes(syncPending);
+              syncPending = 0;
+            }
           }
         };
         handler.next(options);

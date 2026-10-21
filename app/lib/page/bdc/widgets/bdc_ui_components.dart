@@ -510,34 +510,38 @@ extension BdcPageStateUIComponents on BdcPageState {
     final Color actionColor =
         isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
 
-    return GestureDetector(
-      key: const Key('bdc_mode_switch_btn'),
-      onTap: () {
-        final targetIndex = isSpeakMode ? 1 : 0;
-        ref.read(bdcNotifierProvider.notifier).updateTabIndex(targetIndex);
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              targetIcon,
-              size: 13.5,
-              color: actionColor,
-            ),
-            const SizedBox(width: 3.5),
-            Text(
-              targetLabel,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+    return Semantics(
+      identifier: 'e2e_study_mode_switch',
+      button: true,
+      child: GestureDetector(
+        key: const Key('bdc_mode_switch_btn'),
+        onTap: () {
+          final targetIndex = isSpeakMode ? 1 : 0;
+          ref.read(bdcNotifierProvider.notifier).updateTabIndex(targetIndex);
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                targetIcon,
+                size: 13.5,
                 color: actionColor,
-                letterSpacing: -0.1,
               ),
-            ),
-          ],
+              const SizedBox(width: 3.5),
+              Text(
+                targetLabel,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: actionColor,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1054,6 +1058,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     bool isEnabled = true,
     double indicatorWidth = 16.0,
     double fontSize = 15.5,
+    String? identifier,
   }) {
     // 复用共享极简流转按钮，保证「下一词 / 不认识 / 再学学」与阶段复习「下一组」视觉一致
     return MinimalFlowButton(
@@ -1065,6 +1070,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       isEnabled: isEnabled,
       indicatorWidth: indicatorWidth,
       fontSize: fontSize,
+      identifier: identifier,
     );
   }
 
@@ -1075,6 +1081,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     return _buildMinimalPillButton(
       key: const Key('bdc_not_know_btn'),
       label: '不认识',
+      identifier: 'e2e_study_dont_know',
       textColor: normalTextColor,
       indicatorColor: againIndicator,
       isEnabled: state.buttonsEnabled,
@@ -1102,6 +1109,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         return _buildMinimalPillButton(
           key: const Key('bdc_study_again'),
           label: '再学学',
+          identifier: 'e2e_study_again',
           textColor: normalTextColor,
           indicatorColor:
               notifier.studyAgainRating.colorWithDark(_cachedIsDarkMode),
@@ -1122,6 +1130,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     final btn = _buildMinimalPillButton(
       key: isPlaceholder ? null : const Key('bdc_next_word_btn'),
       label: '下一词',
+      identifier: isPlaceholder ? null : 'e2e_study_next_word',
       textColor: normalTextColor,
       indicatorColor: nextWordIndicator,
       isEnabled: !isPlaceholder && !state.isGettingNextWord,
@@ -1269,12 +1278,13 @@ extension BdcPageStateUIComponents on BdcPageState {
     double? iconSize,
     double? fontSize,
     EdgeInsetsGeometry? padding,
+    String? identifier,
     required VoidCallback onTap,
   }) {
     final isDark = _cachedIsDarkMode;
     // 极简排布：裸图标 + 轻文字，不包裹药丸/描边/阴影容器，靠字阶与色彩建立层级。
     final Color fg = isDark ? const Color(0xFFCBD5E1) : context.textSecondary;
-    return Material(
+    final Widget button = Material(
       key: key,
       color: Colors.transparent,
       child: InkWell(
@@ -1312,6 +1322,8 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
       ),
     );
+    if (identifier == null) return button;
+    return Semantics(identifier: identifier, button: true, child: button);
   }
 
   /// 本组环节进度：本组（每组单词数可配置）的序号、当前词的轨道名、该轨道在本环节的排队位置
@@ -1419,6 +1431,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   _buildTopActionButton(
                     icon: Icons.undo_rounded,
                     label: '回看',
+                    identifier: 'e2e_study_review',
                     onTap: () => notifier.goToPreviousWord(),
                   ),
 
@@ -1429,6 +1442,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     key: _masteredButtonKey,
                     icon: Icons.check_circle_outline_rounded,
                     label: '掌握',
+                    identifier: 'e2e_study_master',
                     iconSize: 16.5,
                     fontSize: 12.5,
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -1777,7 +1791,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 borderColor = Colors.transparent;
               }
 
-              return Padding(
+              final optionRow = Padding(
                 padding:
                     EdgeInsets.symmetric(vertical: isLargeFont ? 1.5 : 2.5),
                 child: SizedBox(
@@ -1816,6 +1830,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ),
                   ),
                 ),
+              );
+              // 选择题每个选项挂稳定标识，真机自动化据此定位选项并读取其释义文案
+              return Semantics(
+                identifier: 'e2e_study_option_$index',
+                button: true,
+                child: optionRow,
               );
             },
           ),

@@ -1,198 +1,206 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-真机本地 SQLite 数据库审计与端云偏离检查器
-1. 提取真机 /data/data/com.nn.nnbdc.android/app_flutter/db.sqlite
-2. 深度审计本地 learning_logs (评分, 稳定性, 下次复习天数)
-3. 检查 2000ms 内重复评分违规 (DuplicateGradeViolation)
-4. 校验「已掌握」词书本地数据
-5. 与生产云端 PostgreSQL 进行跨库 Diff 校验
+真机本地 SQLite 审计器
+
+职责：
+1. 从真机应用沙盒取一份**一致的**数据库快照（先停进程，避免 db.sqlite 与 WAL 在拉取途中被写入）；
+2. 读单词释义（meaning_items），给「选择题答得对不对」提供地面真值；
+3. 审计 learning_logs 的评分、复习间隔、2000ms 内重复评分；
+4. 与云端 PostgreSQL 做端云对比；
+5. 供跨天用例把本地打卡与学习日期整体前移一天。
 """
 
 import os
 import sqlite3
 import subprocess
-from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
+APP_PACKAGE = "com.nn.nnbdc.android"
+DB_REL = "app_flutter/db.sqlite"
+
+
 class LocalDbAuditor:
-    def __init__(self, serial: Optional[str] = None, work_dir: str = "/Volumes/ssd/ppdc/tmp"):
+    def __init__(self, serial: Optional[str] = None,
+                 work_dir: str = "/Volumes/ssd/ppdc/tmp"):
         self.serial = serial
         self.work_dir = os.path.abspath(work_dir)
         os.makedirs(self.work_dir, exist_ok=True)
-        self.local_sqlite_path = os.path.join(self.work_dir, "e2e_audited_local.sqlite")
+        self.local_sqlite_path = os.path.join(self.work_dir, "e2e_local_snapshot.sqlite")
 
-    def _run_adb(self, args: List[str]) -> subprocess.CompletedProcess:
+    def _run_adb(self, args: List[str], binary: bool = False):
         cmd = ["adb"]
         if self.serial:
             cmd.extend(["-s", self.serial])
         cmd.extend(args)
-        return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              text=not binary)
 
-    def pull_local_db(self) -> str:
-        """从 Android 应用沙盒导出并拉取 db.sqlite 与 WAL"""
-        copy_cmd = (
-            "run-as com.nn.nnbdc.android cp app_flutter/db.sqlite /sdcard/e2e_dump.sqlite && "
-            "run-as com.nn.nnbdc.android cp app_flutter/db.sqlite-wal /sdcard/e2e_dump.sqlite-wal 2>/dev/null || true"
-        )
-        self._run_adb(["shell", copy_cmd])
+    # ---------- 快照 ----------
 
-        # pull 到本地
-        dest_db = self.local_sqlite_path
-        dest_wal = self.local_sqlite_path + "-wal"
-        self._run_adb(["pull", "/sdcard/e2e_dump.sqlite", dest_db])
-        self._run_adb(["pull", "/sdcard/e2e_dump.sqlite-wal", dest_wal])
-        return dest_db
+    def pull_snapshot(self) -> str:
+        """把 db.sqlite 与 WAL、SHM 一起取回本地。
+
+        调用方必须先 `stop_app()`：进程还活着时三份文件可能在不同时刻被写入，
+        拉回来的就是撕裂快照，会凭空造出「端云不一致」。
+        """
+        dest = self.local_sqlite_path
+        for suffix, required in (("", True), ("-wal", False), ("-shm", False)):
+            local_path = dest + suffix
+            res = self._run_adb(
+                ["exec-out", "run-as", APP_PACKAGE, "cat", DB_REL + suffix], binary=True
+            )
+            if res.returncode != 0 or not res.stdout:
+                if required:
+                    raise RuntimeError(
+                        f"拉取 {DB_REL}{suffix} 失败: {res.stderr.decode('utf-8', 'ignore')}"
+                    )
+                if os.path.exists(local_path):
+                    os.remove(local_path)
+                continue
+            with open(local_path, "wb") as f:
+                f.write(res.stdout)
+        return dest
+
+    def push_snapshot(self) -> None:
+        """把本地改过的快照推回真机（时间旅行用），并清掉旧的 WAL/SHM。"""
+        remote_tmp = "/sdcard/e2e_push.sqlite"
+        for suffix in ("", "-wal", "-shm"):
+            local_path = self.local_sqlite_path + suffix
+            if os.path.exists(local_path):
+                self._run_adb(["push", local_path, remote_tmp + suffix])
+                self._run_adb(["shell", "run-as", APP_PACKAGE, "cp",
+                               remote_tmp + suffix, DB_REL + suffix])
+            else:
+                self._run_adb(["shell", "run-as", APP_PACKAGE, "rm", "-f", DB_REL + suffix])
+        self._run_adb(["shell", "rm", "-f", remote_tmp, remote_tmp + "-wal", remote_tmp + "-shm"])
+
+    def _connect(self) -> sqlite3.Connection:
+        return sqlite3.connect(self.local_sqlite_path)
+
+    # ---------- 释义地面真值 ----------
+
+    def word_meanings(self, spells: List[str]) -> Dict[str, List[str]]:
+        """spell -> 中文释义列表。选择题选项就是「词性. 释义；释义」拼出来的。"""
+        if not spells:
+            return {}
+        conn = self._connect()
+        try:
+            marks = ",".join("?" * len(spells))
+            rows = conn.execute(
+                f"SELECT w.spell, m.meaning FROM words w "
+                f"JOIN meaning_items m ON m.word_id = w.id "
+                f"WHERE w.spell IN ({marks}) ORDER BY m.popularity ASC",
+                spells,
+            ).fetchall()
+        finally:
+            conn.close()
+        result: Dict[str, List[str]] = {}
+        for spell, meaning in rows:
+            result.setdefault(spell, []).append(meaning)
+        return result
+
+    def meanings_by_spell(self) -> Dict[str, List[str]]:
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT w.spell, m.meaning FROM words w "
+                "JOIN meaning_items m ON m.word_id = w.id"
+            ).fetchall()
+        finally:
+            conn.close()
+        result: Dict[str, List[str]] = {}
+        for spell, meaning in rows:
+            result.setdefault(spell, []).append(meaning)
+        return result
+
+    # ---------- 学习数据审计 ----------
 
     def audit_local_learning_data(self) -> Dict:
-        """全量审计真机本地 SQLite 中的学习数据与 FSRS 算法指标"""
-        if not os.path.exists(self.local_sqlite_path):
-            self.pull_local_db()
-
-        conn = sqlite3.connect(self.local_sqlite_path)
+        conn = self._connect()
         cur = conn.cursor()
+        rows = cur.execute(
+            "SELECT l.id, l.word_id, l.rating, l.stability, l.difficulty, "
+            "l.elapsed_days, l.scheduled_days, l.create_time, w.spell "
+            "FROM learning_logs l LEFT JOIN words w ON l.word_id = w.id "
+            "ORDER BY l.create_time ASC"
+        ).fetchall()
 
-        # 1. 审计 learning_logs
-        has_words_table = False
-        try:
-            cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='words';")
-            has_words_table = bool(cur.fetchone())
-        except Exception:
-            pass
-
-        if has_words_table:
-            cur.execute("""
-            SELECT l.id, l.user_id, l.word_id, l.rating, l.stability, l.difficulty, l.elapsed_days, l.scheduled_days, l.create_time, w.spell
-            FROM learning_logs l
-            LEFT JOIN words w ON l.word_id = w.id
-            ORDER BY l.create_time ASC;
-            """)
-        else:
-            cur.execute("""
-            SELECT id, user_id, word_id, rating, stability, difficulty, elapsed_days, scheduled_days, create_time, NULL
-            FROM learning_logs
-            ORDER BY create_time ASC;
-            """)
-        raw_logs = cur.fetchall()
-
-        logs = []
-        duplicate_violations = []
-        last_log_by_word = {}
-
-        for row in raw_logs:
-            spell = row[9] if len(row) > 9 else None
-            log_item = {
-                "id": row[0],
-                "user_id": row[1],
-                "word_id": row[2],
-                "rating": row[3],
-                "stability": row[4],
-                "difficulty": row[5],
-                "elapsed_days": row[6],
-                "scheduled_days": row[7],
-                "create_time": row[8],
-                "spell": spell
+        logs: List[Dict] = []
+        duplicate_violations: List[Dict] = []
+        last_by_word: Dict[str, Dict] = {}
+        for row in rows:
+            item = {
+                "id": row[0], "word_id": row[1], "rating": row[2],
+                "stability": row[3], "difficulty": row[4], "elapsed_days": row[5],
+                "scheduled_days": row[6], "create_time": row[7], "spell": row[8],
             }
-            logs.append(log_item)
-
-        # 补全缺失的单词英文拼写
-        missing_spell_ids = [l["word_id"] for l in logs if not l.get("spell")]
-        if missing_spell_ids:
-            try:
-                import manage_e2e_account
-                spells_map = manage_e2e_account.get_word_spells(missing_spell_ids)
-                for l in logs:
-                    wid_str = str(l["word_id"])
-                    if not l.get("spell") and wid_str in spells_map:
-                        l["spell"] = spells_map[wid_str]
-            except Exception as e:
-                print(f"[!] 批量补全单词拼写异常: {e}")
-
-        # 重复评分违规检测 (2000ms 窗口)
-        for log_item in logs:
-            wid = log_item["word_id"]
-            ctime = log_item["create_time"]
-            if wid in last_log_by_word:
-                prev = last_log_by_word[wid]
-                diff_ms = abs(ctime - prev["create_time"]) * 1000 if ctime < 10000000000 else abs(ctime - prev["create_time"])
-                if diff_ms < 2000:
+            logs.append(item)
+            prev = last_by_word.get(item["word_id"])
+            if prev is not None:
+                gap_ms = abs(item["create_time"] - prev["create_time"]) * 1000
+                if gap_ms < 2000:
                     duplicate_violations.append({
-                        "word_id": wid,
+                        "word_id": item["word_id"],
                         "first_log_id": prev["id"],
-                        "second_log_id": log_item["id"],
-                        "gap_ms": diff_ms,
-                        "rating": log_item["rating"]
+                        "second_log_id": item["id"],
+                        "gap_ms": gap_ms,
+                        "rating": item["rating"],
                     })
-            last_log_by_word[wid] = log_item
+            last_by_word[item["word_id"]] = item
 
-        # 2. 审计 learning_words
-        cur.execute("""
-        SELECT word_id, state, learned_times, today_learned_times, stability, difficulty, scheduled_days
-        FROM learning_words;
-        """)
-        words = []
-        for row in cur.fetchall():
-            words.append({
-                "word_id": row[0],
-                "state": row[1],
-                "learned_times": row[2],
-                "today_learned_times": row[3],
-                "stability": row[4],
-                "difficulty": row[5],
-                "scheduled_days": row[6]
-            })
-
-        # 3. 审计「已掌握」词书
-        cur.execute("""
-        SELECT dw.word_id, dw.create_time
-        FROM dict_words dw
-        JOIN dicts d ON dw.dict_id = d.id
-        WHERE d.name = '已掌握'
-        ORDER BY dw.create_time DESC;
-        """)
-        mastered_words = [{"word_id": r[0], "create_time": r[1]} for r in cur.fetchall()]
-
+        mastered = cur.execute(
+            "SELECT dw.word_id FROM dict_words dw "
+            "JOIN dicts d ON dw.dict_id = d.id WHERE d.name = '已掌握'"
+        ).fetchall()
+        learning_word_count = cur.execute("SELECT COUNT(*) FROM learning_words").fetchone()[0]
         conn.close()
 
         return {
             "total_logs": len(logs),
             "logs": logs,
             "duplicate_violations": duplicate_violations,
-            "total_learning_words": len(words),
-            "learning_words": words,
-            "mastered_words_count": len(mastered_words),
-            "mastered_words": mastered_words
+            "total_learning_words": learning_word_count,
+            "mastered_words": [{"word_id": r[0]} for r in mastered],
         }
 
-    def verify_local_and_cloud_alignment(self, cloud_logs: List[Dict], cloud_words: List[Dict]) -> Tuple[bool, str]:
-        """端云双向对齐检查：对比手机本地 SQLite 与云端 PostgreSQL"""
-        local_data = self.audit_local_learning_data()
-        local_logs = local_data["logs"]
-        local_words = local_data["learning_words"]
-
-        issues = []
-
-        # 1. 检查日志条数是否对齐
-        if len(local_logs) != len(cloud_logs):
-            issues.append(f"评分流水条数端云不一致: 本地={len(local_logs)}条, 云端={len(cloud_logs)}条")
-
-        # 2. 检查是否有重复评分流水
-        if local_data["duplicate_violations"]:
-            issues.append(f"本地发现 {len(local_data['duplicate_violations'])} 处 2000ms 内重复评分违规 (DuplicateGradeViolation)")
-
-        # 3. 检查 FSRS scheduled_days 与 rating 合法性
-        for log in local_logs:
+    def verify_local_and_cloud_alignment(self, cloud_logs: List[Dict],
+                                         cloud_words: List[Dict]) -> Tuple[bool, str]:
+        local = self.audit_local_learning_data()
+        issues: List[str] = []
+        if local["total_logs"] != len(cloud_logs):
+            issues.append(f"评分流水条数端云不一致: 本地={local['total_logs']}, 云端={len(cloud_logs)}")
+        if local["duplicate_violations"]:
+            issues.append(f"本地发现 {len(local['duplicate_violations'])} 处 2000ms 内重复评分")
+        if local["total_learning_words"] != len(cloud_words):
+            issues.append(f"记忆词数端云不一致: 本地={local['total_learning_words']}, 云端={len(cloud_words)}")
+        for log in local["logs"]:
             if log["rating"] not in (1, 2, 3, 4):
-                issues.append(f"本地日志非法 rating: log_id={log['id']}, rating={log['rating']}")
+                issues.append(f"非法评分 rating={log['rating']} (log {log['id']})")
             if log["scheduled_days"] <= 0:
-                issues.append(f"本地日志 scheduled_days 未生效: log_id={log['id']}, scheduled_days={log['scheduled_days']}")
+                issues.append(f"复习间隔未生效 scheduled_days={log['scheduled_days']} (log {log['id']})")
             if log["stability"] <= 0:
-                issues.append(f"本地日志 stability 异常: log_id={log['id']}, stability={log['stability']}")
+                issues.append(f"稳定性异常 stability={log['stability']} (log {log['id']})")
+        passed = not issues
+        detail = "端云数据完全自洽，FSRS 评分与复习间隔全部对齐" if passed else "；".join(issues)
+        return passed, detail
 
-        # 4. 检查学习词表覆盖
-        if len(local_words) != len(cloud_words):
-            issues.append(f"记忆词数端云不一致: 本地={len(local_words)}, 云端={len(cloud_words)}")
+    # ---------- 跨天时间旅行 ----------
 
-        passed = len(issues) == 0
-        details = "端云数据完全自洽，FSRS 评分与复习间隔全部对齐" if passed else "；".join(issues)
-        return passed, details
+    def shift_one_day_back(self) -> int:
+        """把打卡、学习日期整体前移 86400 秒，模拟「昨天学过」。返回改动行数。"""
+        conn = self._connect()
+        cur = conn.cursor()
+        changed = 0
+        for sql in (
+            "UPDATE dakas SET for_learning_date = for_learning_date - 86400, "
+            "create_time = create_time - 86400, update_time = update_time - 86400",
+            "UPDATE learning_words SET last_learning_date = last_learning_date - 86400, "
+            "update_time = update_time - 86400",
+            "UPDATE user_study_daily_stats SET date = date - 86400, update_time = update_time - 86400",
+        ):
+            cur.execute(sql)
+            changed += cur.rowcount if cur.rowcount > 0 else 0
+        conn.commit()
+        conn.close()
+        return changed

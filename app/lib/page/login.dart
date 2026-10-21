@@ -321,7 +321,8 @@ class LoginPageState extends State<LoginPage>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (!(!PlatformUtils.isIOS && (PlatformUtils.isZhuoyiTong || !_isWechatInstalled))) ...[
-                              _buildMinorButton('邮箱登录', _onEmailLoginPressed, textSubColor),
+                              _buildMinorButton('邮箱登录', _onEmailLoginPressed, textSubColor,
+                                  identifier: 'e2e_login_email_entry'),
                               Container(
                                 width: 1,
                                 height: 12,
@@ -396,7 +397,10 @@ class LoginPageState extends State<LoginPage>
                             crossAxisAlignment: WrapCrossAlignment.center,
                             alignment: WrapAlignment.center,
                             children: [
-                              Row(
+                              Semantics(
+                                identifier: 'e2e_login_agree',
+                                button: true,
+                                child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   AnimatedContainer(
@@ -431,6 +435,7 @@ class LoginPageState extends State<LoginPage>
                                   ),
                                 ],
                               ),
+                              ),
                               _buildLink('《用户协议》', showProtocolPage, textMainColor),
                               Text(
                                 ' 与 ',
@@ -456,8 +461,9 @@ class LoginPageState extends State<LoginPage>
     );
   }
 
-  Widget _buildMinorButton(String text, VoidCallback onTap, Color textColor) {
-    return TextButton(
+  Widget _buildMinorButton(String text, VoidCallback onTap, Color textColor,
+      {String? identifier}) {
+    final Widget button = TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
         minimumSize: Size.zero,
@@ -475,6 +481,8 @@ class LoginPageState extends State<LoginPage>
         ),
       ),
     );
+    if (identifier == null) return button;
+    return Semantics(identifier: identifier, button: true, child: button);
   }
 
   Widget _buildLink(String text, VoidCallback onTap, Color mainColor) {
