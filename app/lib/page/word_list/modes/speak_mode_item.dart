@@ -103,11 +103,38 @@ class SpeakModeItem extends StatelessWidget {
           const SizedBox(height: 4),
           _buildAiJudgingBadge(),
         ],
-        if (word.roundHeardText != null) ...[
-          const SizedBox(height: 4),
-          buildAsrRoundVerdict(word.roundHeardText),
-        ],
+        _buildRoundFeedback(),
       ],
+    );
+  }
+
+  /// 这一轮的反馈：一个匹配度数字 + （只在什么都没听清时）一句短提示。
+  ///
+  /// 刻意不回显用户说的原话：说一长句时那行字既放不下，又会把整行挤成看不清的小字。
+  Widget _buildRoundFeedback() {
+    final children = <Widget>[];
+    if (word.roundMatchScore != null) {
+      children.add(buildAsrMatchScore(word.roundMatchScore));
+    }
+    if (word.roundHeardNothing) {
+      children.add(const Text(
+        asrHeardNothingText,
+        style: TextStyle(
+          fontSize: 10,
+          height: 1.3,
+          color: Colors.orange,
+          fontWeight: FontWeight.w500,
+        ),
+      ));
+    }
+    if (children.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      ),
     );
   }
 
@@ -190,11 +217,7 @@ class SpeakModeItem extends StatelessWidget {
             ),
           ),
         ),
-        if (word.roundHeardText != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: buildAsrRoundVerdict(word.roundHeardText),
-          ),
+        _buildRoundFeedback(),
       ],
     );
   }

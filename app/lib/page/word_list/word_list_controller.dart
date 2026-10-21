@@ -102,6 +102,19 @@ class WordListController extends ChangeNotifier {
     _memorySortedAlg = sortAlg;
   }
 
+  /// 单词被移出当前视图后，同步从内存快照里剔除。
+  ///
+  /// 这些词表（已掌握、错词、学习中、今日单词等）不是按页查库，而是把全部单词
+  /// 一次性读进 [_rawWordsCache] 再切片展示（见 [_ensureMemorySortedList]）。若移出后
+  /// 不更新快照，列表补页时会从旧快照把刚移出的词重新拉回来，并且把
+  /// `totalWordCount` 覆盖回旧总数——「已掌握」词表点重学后顶部词数纹丝不动即由此产生。
+  void _removeFromMemorySnapshot(Set<String> wordIds) {
+    bool inSnapshot(WordWrapper w) =>
+        w.word.id != null && wordIds.contains(w.word.id);
+    _rawWordsCache?.removeWhere(inSnapshot);
+    _memorySortedList?.removeWhere(inSnapshot);
+  }
+
   WordListController({
     required this.args,
     required this.itemScrollController,
@@ -636,6 +649,7 @@ class WordListController extends ChangeNotifier {
       }
 
       words.remove(word);
+      _removeFromMemorySnapshot({word.word.id!});
       totalWordCount--;
 
       if (isBookMarkValid(bookMark)) {
@@ -679,6 +693,7 @@ class WordListController extends ChangeNotifier {
       word.currentLearningStatus = true;
       word.currentProgress = word.maxProgress;
       words.remove(word);
+      _removeFromMemorySnapshot({word.word.id!});
       totalWordCount--;
 
       if (isBookMarkValid(bookMark)) {
@@ -712,6 +727,7 @@ class WordListController extends ChangeNotifier {
       if (!keepInView) {
         _applyCancelledMasteryDisplay(word, newStatus);
         words.remove(word);
+        _removeFromMemorySnapshot({word.word.id!});
         totalWordCount--;
 
         if (isBookMarkValid(bookMark)) {
@@ -903,6 +919,7 @@ class WordListController extends ChangeNotifier {
         final id = w.word.id;
         return id != null && idSet.contains(id);
       });
+      _removeFromMemorySnapshot(idSet);
       totalWordCount = max(0, totalWordCount - changed);
 
       // 书签：被移除的词里排在书签词之前的有几个，位置就前移几位（与单条掌握同一规则）

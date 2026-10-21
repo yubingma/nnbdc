@@ -147,6 +147,9 @@ void main() {
 
       await _insertDict(db, now, 'dict_main', '主词书', userId);
       await _insertDict(db, now, 'dict_mastered', '已掌握', userId);
+      // 真实用户（含访客）建号时必带「生词本」（app/lib/global.dart:208-228 与后端 createNewUser 对齐）。
+      // 取消掌握 = 从零重学，会把词写进「生词本」，缺少它时 DAO 按数据异常直接抛错，属预期行为。
+      await _insertDict(db, now, 'dict_raw', '生词本', userId);
 
       const spells = ['zebra', 'bear', 'cat', 'ant', 'dog'];
       for (var i = 0; i < spells.length; i++) {

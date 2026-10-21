@@ -971,8 +971,9 @@ void main() {
     expect(state.wordWrapper!.asrMatchedMeaningItemParts, isEmpty, reason: '不得把本词释义标记为已答对');
     expect(state.wordWrapper!.aiApprovedAnswer, null, reason: '不得记录 AI 认可回答');
     expect(state.isAiEvaluating, false, reason: '裁判结束后应复位判定中状态');
-    expect(state.asrRoundHeardText, '露水',
-        reason: '判错必须把"听到的是哪句"留在界面上：否则用户只说得出"我答了它没反应"，无从区分是没识别还是答错');
+    expect(state.currentScore, 0,
+        reason: '说中文判错时要在波形旁显示匹配度数字（这里一个字都不沾，就是 0），'
+            '否则用户只说得出"我答了它没反应"，无从区分是没识别还是答错');
 
     // Note: 形近词提示走 ToastUtil.info，纯单元测试环境没有 ToastificationWrapper，
     // 无法实例化提示条，故此处不覆盖提示文案（文案本身由 AiRefereeUtil.confusableWordHint 的单测覆盖）。
@@ -1000,14 +1001,14 @@ void main() {
       'isFinal': true,
     }));
     expect(notifier.hasPendingWordAiReferee, false, reason: '没有可判文字时不应请教裁判');
-    expect(container.read(bdcNotifierProvider).asrRoundHeardText, null,
+    expect(container.read(bdcNotifierProvider).asrRoundHeardNothing, false,
         reason: '停顿去抖未到时，结论还没定');
 
     await Future.delayed(const Duration(milliseconds: 1700));
 
     final state = container.read(bdcNotifierProvider);
-    expect(state.asrRoundHeardText, '',
-        reason: '空字符串就是"没听清"：界面据此提示"没听清，再说一遍"，不能让用户对着静止页面猜');
+    expect(state.asrRoundHeardNothing, true,
+        reason: '界面据此提示"没听清，再说一遍"，不能让用户对着静止页面猜');
   });
 
   test('BdcNotifier - 键盘只敲了一个字不算"没听清"（提示只属于语音）', () async {
@@ -1029,11 +1030,13 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 300));
     await Future.delayed(const Duration(milliseconds: 1700));
 
-    expect(container.read(bdcNotifierProvider).asrRoundHeardText, null,
+    final state = container.read(bdcNotifierProvider);
+    expect(state.asrRoundHeardNothing, false,
         reason: '键盘只敲一个字是"还没写完"，不是"没听清"，更不能对键盘输入说"再说一遍"');
+    expect(state.currentScore, null, reason: '键盘输入不显示匹配度数字（那是语音的反馈）');
   });
 
-  test('BdcNotifier - 用户重新开口并说中释义时，上一轮的「不对」结论应被撤掉', () async {
+  test('BdcNotifier - 说错后重新说对：匹配度随之更新，通过后不残留任何判错痕迹', () async {
     final mockAsr = MockAsr();
     final container = ProviderContainer(
       overrides: [asrProvider.overrideWithValue(mockAsr)],
@@ -1056,29 +1059,29 @@ void main() {
     wrapper.word.meaningItems = [MeaningItemVo.from('n.', '犹太人')];
     notifier.updateAsrPassRuleCache('HALF');
 
-    // 先说错：「露水」判错，结论落在界面上
+    // 先说错：「露水」与"犹太人"一个字都不沾，匹配度就是 0
     await notifier.onAsrResult(jsonEncode({
       'best': '露水',
       'candidates': ['露水'],
       'isFinal': true,
     }));
     await Future.delayed(const Duration(milliseconds: 1700));
-    expect(container.read(bdcNotifierProvider).asrRoundHeardText, '露水');
+    expect(container.read(bdcNotifierProvider).currentScore, 0,
+        reason: '说错时界面靠匹配度数字表达，不能什么都不显示');
 
-    // 用户重新开口：上一轮结论立刻作废，不能挂着"不对"去判新的一句话
+    // 用户重新开口说对：匹配度立刻刷新
     await notifier.onAsrResult(jsonEncode({
       'best': '犹太人',
       'candidates': ['犹太人'],
       'isFinal': false,
     }));
-    expect(container.read(bdcNotifierProvider).asrRoundHeardText, null,
-        reason: '重新开口后旧结论必须撤掉');
+    expect(container.read(bdcNotifierProvider).currentScore, 100,
+        reason: '说出正确释义时匹配度应为满分');
 
-    // 这一轮说对了：结论仍然是空的，不能残留任何判错提示
     await _feedVoiceAsr(notifier, container, '犹太人', isFinal: true);
     final state = container.read(bdcNotifierProvider);
     expect(state.hasFinishedAnswering, true, reason: '说出正确释义应通过');
-    expect(state.asrRoundHeardText, null, reason: '答对后不得残留判错结论');
+    expect(state.asrRoundHeardNothing, false, reason: '答对后不得残留"没听清"');
   });
 
   test('BdcNotifier - 英译汉英文拼写板内拼写不应触发释义 AI 裁判', () async {

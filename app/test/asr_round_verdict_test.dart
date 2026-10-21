@@ -2,56 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/word_util.dart';
 
-/// 「本轮开口结论」是背单词页与词表页共用的同一句话：
-/// 没有它，答错与"程序卡死"在界面上完全一样。
+/// 「本轮开口」的反馈是背单词页与词表页共用的一套口径：
+/// 一个 0~100 的匹配度数字，外加只在什么都没听清时的一句短提示。
+/// 明确**不回显用户说的原话**——说一长句时那行字既放不下也读不清（线上反馈）。
 void main() {
-  group('本轮开口结论的文案', () {
-    test('暂无结论时不展示', () {
-      expect(asrRoundVerdictText(null), isNull);
-    });
-
-    test('什么都没听到时说"没听清，再说一遍"', () {
-      expect(asrRoundVerdictText(''), '没听清，再说一遍');
-    });
-
-    test('听到了但它不对时，回显原话', () {
-      expect(asrRoundVerdictText('露水'), '听到的是「露水」，不对');
-    });
-  });
-
-  group('本轮开口结论的渲染', () {
+  group('匹配度数字', () {
     Widget wrap(Widget child) =>
         MaterialApp(home: Scaffold(body: Center(child: child)));
 
-    testWidgets('判错时把回显显示成醒目的橙字', (tester) async {
-      await tester.pumpWidget(wrap(buildAsrRoundVerdict('露水')));
-
-      expect(find.text('听到的是「露水」，不对'), findsOneWidget);
-
-      final textWidget = tester.widget<Text>(find.text('听到的是「露水」，不对'));
-      expect(textWidget.style?.color, Colors.orange);
-      expect(textWidget.style?.fontSize, 10, reason: '词表页行内默认 10px');
-      expect(textWidget.maxLines, 2,
-          reason: '说了一长句时宁可折行，也不能被缩成几像素的小字');
-    });
-
-    testWidgets('背单词页用更大的字号单独占一行', (tester) async {
-      await tester.pumpWidget(wrap(buildAsrRoundVerdict('露水', fontSize: 11.5)));
-
-      final textWidget = tester.widget<Text>(find.text('听到的是「露水」，不对'));
-      expect(textWidget.style?.fontSize, 11.5);
-    });
-
-    testWidgets('没听清时显示"没听清，再说一遍"', (tester) async {
-      await tester.pumpWidget(wrap(buildAsrRoundVerdict('')));
-
-      expect(find.text('没听清，再说一遍'), findsOneWidget);
-    });
-
-    testWidgets('暂无结论时不占位：行高不变', (tester) async {
-      await tester.pumpWidget(wrap(buildAsrRoundVerdict(null)));
+    testWidgets('还没有分数时不占位', (tester) async {
+      await tester.pumpWidget(wrap(buildAsrMatchScore(null)));
 
       expect(find.byType(Text), findsNothing);
+    });
+
+    testWidgets('0 分也要显示：说错了不等于没反应', (tester) async {
+      await tester.pumpWidget(wrap(buildAsrMatchScore(0)));
+
+      expect(find.text('匹配度 0'), findsOneWidget,
+          reason: '一个字都不沾时，0 才是"系统听清了但完全不对"的证据');
+    });
+
+    testWidgets('分数用醒目的橙字显示', (tester) async {
+      await tester.pumpWidget(wrap(buildAsrMatchScore(87)));
+
+      final textWidget = tester.widget<Text>(find.text('匹配度 87'));
+      expect(textWidget.style?.color, Colors.orange);
+      expect(textWidget.maxLines, 1);
+    });
+  });
+
+  group('没听清提示', () {
+    test('文案固定一句短话，不做原话回显', () {
+      expect(asrHeardNothingText, '没听清，再说一遍');
     });
   });
 }

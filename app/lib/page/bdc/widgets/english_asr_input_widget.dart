@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 
 class EnglishAsrInputWidget extends StatefulWidget {
@@ -15,6 +16,8 @@ class EnglishAsrInputWidget extends StatefulWidget {
   final bool isScorePassed; // 当前得分是否满足通过条件（含核心词匹配）
   final bool isSentenceStep; // 新增：是否是例句练习步骤
   final bool isAiEvaluating; // 是否正在进行大模型裁判
+  /// 这一轮什么都没听清：状态行改说「没听清，再说一遍」，而不是继续提示"请说…"。
+  final bool heardNothing;
 
   const EnglishAsrInputWidget({
     super.key,
@@ -27,6 +30,7 @@ class EnglishAsrInputWidget extends StatefulWidget {
     this.isScorePassed = false,
     this.isSentenceStep = false,
     this.isAiEvaluating = false,
+    this.heardNothing = false,
   });
 
   @override
@@ -172,6 +176,9 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
       } else {
         statusText = "回答正确";
       }
+    } else if (widget.heardNothing) {
+      // 这一轮什么都没听清：必须说出来，否则与"程序没反应"无法区分
+      statusText = asrHeardNothingText;
     } else {
       switch (widget.asrState) {
         case AsrState.started:
@@ -196,7 +203,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
       }
     }
 
-    final scoreWidget = (widget.score != null && widget.score! > 0)
+    final scoreWidget = (widget.score != null)
         ? Tooltip(
             message: '发音评分',
             triggerMode: TooltipTriggerMode.tap,

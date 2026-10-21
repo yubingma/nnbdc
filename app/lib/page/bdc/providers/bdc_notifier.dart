@@ -2902,8 +2902,15 @@ class BdcNotifier extends _$BdcNotifier {
       String inputLower = inputText.trim().toLowerCase();
       
       isSpellingMatch = inputLower.replaceAll(RegExp(r'[^a-z]'), '') == correctSpell.replaceAll(RegExp(r'[^a-z]'), '');
-      // 音素相似度阈值仅适用于语音输入 (isVoice=true)，不用于手写或键盘输入
-      if (!isSpellingMatch && isVoice && asrInput != null && (state.currentScore ?? 0) >= Constants.phonemeMatchThreshold) {
+      // 音素相似度阈值仅适用于语音输入 (isVoice=true)，不用于手写或键盘输入。
+      // 且只在中英环节成立：那里的 currentScore 是"这个英文单词的发音分"；
+      // 英中环节的 currentScore 是"中文释义的匹配度"，拿它当拼写命中会把
+      // "说对了中文释义"错当成"拼对了英文单词"。
+      if (!isSpellingMatch &&
+          isVoice &&
+          asrInput != null &&
+          state.studyStep == StudyStep.ch2En.json &&
+          (state.currentScore ?? 0) >= Constants.phonemeMatchThreshold) {
         isSpellingMatch = true;
       }
     }
@@ -2946,6 +2953,14 @@ class BdcNotifier extends _$BdcNotifier {
       final result = matchInputChineseWithMeaningItems(
           clonedWrapper, inputs, strict: state.isChineseDictation);
       bool isMatch = _isAsrPassSync(result.totalCount, result.matchedCount);
+
+      // 匹配度（0~100）：说中文时让用户看见"系统听清了、离目标释义有多远"。
+      // 只显示数字、不回显原话：说一长句时原话放不下，还会把整行缩成看不清的小字（线上反馈）。
+      // 只在语音时更新：键盘输入不需要这个分数。
+      if (isVoice) {
+        state = state.copyWith(
+            currentScore: _bestMeaningMatchScore(inputs, state.word!));
+      }
       Global.logger.d('[PERF] checkAsrResult -> matchInputChineseWithMeaningItems cost: ${matchStopwatch.elapsedMilliseconds}ms');
 
       // 中文默写：把本次判题结果同步为进度数据，仅供手写页展示"还差几个释义即可通过"。
@@ -3167,6 +3182,27 @@ class BdcNotifier extends _$BdcNotifier {
   bool _isAsrPassSync(int total, int matched) {
     if (state.asrPassRuleCache == 'ALL' && total <= 0) return false;
     return matched >= _requiredMatchCount(total);
+  }
+
+  /// 用户这一句中文与这个词最接近的那个释义子项的相似度（0~100）。
+  ///
+  /// 只用于「说中文」环节显示匹配度数字，不参与判题（判题仍只看命中与否）：
+  /// 它回答的是"听清了，但离释义有多远"，而不是"这句算不算对"。
+  int _bestMeaningMatchScore(List<String> inputs, WordVo word) {
+    int best = 0;
+    for (final item in word.getMergedMeaningItems()) {
+      final meaning = item.meaning;
+      if (meaning == null) continue;
+      for (final part in splitMeaning2Parts(meaning)) {
+        final target = part.trim();
+        if (target.isEmpty) continue;
+        for (final input in inputs) {
+          final score = getChineseSentenceMatchScore(input, target);
+          if (score > best) best = score;
+        }
+      }
+    }
+    return best;
   }
 
   ({FsrsRating rating, String reason}) _calculateRating(String method, {int? customResponseTime}) {
@@ -4619,13 +4655,7 @@ class BdcNotifier extends _$BdcNotifier {
       } else {
         _failedWordAiEvaluationsForCurrentWord[cleanInput] = explanation;
         wordWrapper.isAiEvaluating = false;
-        state = state.copyWith(
-          isAiEvaluating: false,
-          // 判"不对"必须落到界面上：自动兜底裁判没有对话框、也不是中文默写，
-          // 此前这里一个提示都不发，用户看到的只是"说完之后什么都没发生"，
-          // 与程序卡死无法区分。回显原话还能顺带回答"是不是网络没识别出来"。
-          asrRoundHeardText: AsrUtil.heardEchoText(rawInput, cleanInput),
-        );
+        state = state.copyWith(isAiEvaluating: false);
         final confusableHint = AiRefereeUtil.confusableWordHint(
           userAnswer: cleanInput,
           confusedWord: refereeResult.confusedWord,
@@ -4740,10 +4770,7 @@ class BdcNotifier extends _$BdcNotifier {
 
       // 同一个词刚判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
       // 只能放在停顿回调里——调度入口每一帧识别都会进一次，提示会刷屏。
-      if (_remindAlreadyJudgedAnswer(cleanInput)) {
-        state = state.copyWith(asrRoundHeardText: AsrUtil.heardEchoText(rawInput, cleanInput));
-        return;
-      }
+      if (_remindAlreadyJudgedAnswer(cleanInput)) return;
       if (_wordAiEvaluationCountForCurrentWord >= 5) return;
 
       await _evaluateCh2EnWithAiReferee(
@@ -4850,11 +4877,7 @@ class BdcNotifier extends _$BdcNotifier {
       } else {
         _failedWordAiEvaluationsForCurrentWord[cleanInput] = explanation;
         wordWrapper.isAiEvaluating = false;
-        state = state.copyWith(
-          isAiEvaluating: false,
-          // 同英中环节：判"不对"必须让用户看见，否则"说完没反应"与"程序死了"无法区分。
-          asrRoundHeardText: AsrUtil.heardEchoText(rawInput, cleanInput),
-        );
+        state = state.copyWith(isAiEvaluating: false);
         if (isSynonym && explanation.isNotEmpty) {
           ToastUtil.info(explanation, autoCloseDuration: const Duration(seconds: 4));
         } else if (context != null && context.mounted) {
