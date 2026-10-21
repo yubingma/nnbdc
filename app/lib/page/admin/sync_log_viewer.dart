@@ -4,6 +4,7 @@ import 'package:nnbdc/models/sync_log.dart';
 import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/global.dart';
 
@@ -62,6 +63,18 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
   /// 手动触发同步
   Future<void> _manualSync() async {
     if (_isSyncing) return;
+
+    // 后台自动同步在断网时会静默跳过（避免离线抖动刷日志），
+    // 但用户主动点「立即同步」必须给出明确结果：否则界面停在上一次的
+    // 「数据已是最新」，等于告诉用户同步成功了。
+    if (!await NetworkUtil().isConnected()) {
+      final service = SyncLogService();
+      final logId = await service.startSync();
+      await service.failSync(logId: logId, errorMessage: '网络不可用，本次同步未执行');
+      await _loadLogs();
+      ToastUtil.error('网络不可用，本次同步未执行');
+      return;
+    }
 
     setState(() {
       _isSyncing = true;
@@ -1051,7 +1064,10 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                           ),
                           const SizedBox(height: 14),
                           // 立即同步按钮（最新美学：薄雾微光底 + 精细描边 + 主题色文字与图标）
-                          Material(
+                          Semantics(
+                            identifier: 'e2e_sync_now',
+                            button: true,
+                            child: Material(
                             color: Colors.transparent,
                             child: InkWell(
                               onTap: _isSyncing ? null : _manualSync,
@@ -1110,6 +1126,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                               ),
                             ),
                           ),
+                            ),
                         ],
                       ),
                     ),

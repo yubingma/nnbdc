@@ -1,155 +1,123 @@
 ---
 name: android-e2e-regression
-description: 泡泡单词 Android 真机端到端全量自动化回归测试。连接生产环境数据库核验/初始化测试账号 e2etest@nnbdc.com，驱动真实 Android 手机自动完成唤醒、启动、验证码登录、主导航遍历、单词学习流转、端云同步及生成完整测试报告。
-whenToUse: 当发布新版本前需要进行回归测试、每次发版前做冒烟验证、排查 Android 端真机核心功能闭环、验证生产库环境链路兼容性时使用。
+description: 泡泡单词 Android 真机端到端全量自动化回归测试。连接生产环境数据库核验测试账号 e2etest@nnbdc.com，驱动真实 Android 手机完成注册登录、选词书、答题判定、打卡、断网/恢复、本地库审计与跨天连续打卡，输出固定口径的 HTML 报告。
+whenToUse: 发版前需要回归、验证真机核心业务闭环、核对端云数据一致性、排查打卡与同步问题时使用。
 ---
 
-# Android 端到端自动化回归测试 (E2E Regression)
+# Android 真机端到端回归测试
 
-本 Skill 提供针对「泡泡单词」Android 客户端的自动化回归测试方案。测试直接联通**生产环境数据库**，闭环校验真实网络与云端同步链路，并通过 ADB 驱动已连接的 Android 真实手机执行端到端（E2E）核心业务流程，自动输出带关键步骤实机截图的 HTML 测试报告。
+用 ADB 驱动一台真实 Android 手机，走完「注册 → 选词书 → 定计划 → 学完当日计划 → 打卡 → 断网恢复 → 跨天连续打卡 → 注销」的完整业务，并把每一步的结论写进一份报告。全程只有两处碰后端：读登录验证码、核对云端落库结果。
 
----
+## 三条硬规矩
 
-## 核心设计与纯黑盒端到端原则
+### 1. 分母固定，跑不到的记「未执行」
 
-```mermaid
-flowchart TD
-    A[执行回归测试] --> B[Step 1: 连接 Android 真实手机并点亮屏幕]
-    B --> C[Step 2: 启动 App 前台校验]
-    C --> D[Step 3: 初始纯净状态核验]
-    D --> E{是否已处于登录态?}
-    E -- 是 --> F[手机端进入设置 -> 注销账号 -> 销毁数据退回登录页]
-    E -- 否 --> G[保持欢迎页冷启动]
-    F --> G
-    G --> H[Step 4: 手机端自主注册与验证码登录]
-    H --> I[手机输入邮箱 -> 点击获取 -> 生产库唯一截获验证码 -> 自动填入提交]
-    I --> J[Step 5: 底部四大主导航遍历 (词表/查词/我/学习)]
-    J --> K[Step 6: 新用户词书配置生效]
-    K --> L[Step 7: 学习轨道配置与切换体验]
-    L --> M[Step 8: 每日学习计划定制]
-    M --> N[Step 9: 单词全流程学习直至触发打卡结算]
-    N --> O[Step 10: 主页打卡印章与个人中心状态核验]
-    O --> P[Step 11: 端云同步健康度校验]
-    P --> Q[Step 12: 测试善后：真机自助注销账号还原未登录态]
-    Q --> R[Step 13: 生成 HTML 报告并自动邮件直推]
-```
+`run_regression.py` 顶部 `CASES` 是全部用例清单，报告分母永远是它的长度。执行到一半挂掉时，没跑到的用例不会消失，而是记成 **未执行** —— 报告里一眼能看出「这次根本没跑到」，不会被误读成「只坏了一步」。
 
-### 1. 纯黑盒端到端测试黄金原则
-- **真实客户端注册**：严禁通过后端后门 SQL 直接插入新用户。所有账号由手机端原生登录/注册界面输入邮箱触发，让服务端与客户端完整走通首次注册、配置分发、本地数据库初始化的真实链路。
-- **真机自助注销闭环**：回归测试前与测试结束后，若存在旧账号，必须通过手机端自身的**「注销账号」**功能（输入 `okay` 确认）彻底销毁云端与本地的所有学习进度与配置，恢复纯净未登录态，保证每次回归测试 100% 确定且幂等。
-- **打卡与学习轨道全流程覆盖**：不仅测试单词交互，还完整回归「学习轨道」展开/折叠与 Tab 切换、每日计划词数定制，以及完整学完当天全部单词直至触发「打卡完成页」，并查验生产库 `daka` 表真实写入。
-- **单实例互斥锁保护**：测试启动时自动获取操作系统级文件锁（`flock`）。当终端与后台/AI 同时触发回归时，自动互斥拦截并打印占用信息，杜绝双进程争抢同一台物理真机或争抢同一个测试账号导致的状态混乱。
-- **极简唯一后端协同**：整个回归链路中，**只有「从生产库读取验证码」和「核对打卡是否入库」连接后端**（因为自动化测试无法人肉收信，截获验证码是唯一的合理外部辅助），其余所有操作 100% 均为真实手机屏幕上的人机交互。
-- **自动化邮件直推**：测试结束自动将内嵌真机截图与状态指标的高清 HTML 测试报告通过阿里云邮件推送直达用户指定邮箱（如 `mmyybb3000@icloud.com`）。
-- **安全红线**：严禁波及生产环境其他任何正常用户，测试邮箱固定为 `e2etest@nnbdc.com`。
+### 2. 只有通过和失败，没有「警告」
 
----
+断言不成立就是 **失败**。历史版本把「30 词没学完」「打卡没落库」「跨天没连上」都降级成「警告」，整轮仍然返回成功 —— 这种「假绿」比测试覆盖不足更危险，已经全部删除。
 
-## 工具脚本一览
+### 3. 控件按稳定标识点，不按文案、不按坐标
 
-所有配套驱动脚本位于当前 Skill 的 `scripts/` 目录下：
+App 用 `Semantics(identifier: 'e2e_xxx')` 把标识写进无障碍树的 `resource-id`，测试按它定位。文案改字、换分辨率都不影响；标识找不到就是失败，绝不退回按文案猜。
 
-| 脚本文件 | 核心职责 | 常用命令 |
+只有三类东西允许按文案找：
+- **断言要读的展示内容**（如「第 1 组 · 新词测评 3/10」「2,984 词」「同步失败」）；
+- **App 内置的系统输入控件**（`android.widget.EditText`，邮箱与验证码框）；
+- **瞬态系统弹窗**（「导入词书」的「完成」按钮）。
+
+## 已埋好的稳定标识
+
+改动 App 侧控件时，`Semantics(identifier: ...)` 与下表必须同步维护。
+
+| 区域 | 标识 | 位置 |
 |---|---|---|
-| `scripts/manage_e2e_account.py` | 生产库账号核验、创建、重置、验证码抓取、打卡记录核验 | `./scripts/manage_e2e_account.py --check`<br>`./scripts/manage_e2e_account.py --get-code` |
-| `scripts/device_controller.py` | ADB 设备连接、屏幕唤醒解锁、UI 节点 dump 与智能点击 | 模块引用或直接测试连接 |
-| `scripts/send_report_email.py` | 阿里云邮件推送 (DirectMail) HTML 报告推送模块 | `./scripts/send_report_email.py --to <邮箱>` |
-| `scripts/run_regression.py` | 全量自动化回归执行引擎与 HTML 报告生成器 | `./scripts/run_regression.py --email mmyybb3000@icloud.com` |
+| 底栏 5 项 | `e2e_nav_study` / `e2e_nav_word_lists` / `e2e_nav_search` / `e2e_nav_game` / `e2e_nav_me` | `app/lib/page/index.dart` |
+| 主页 | `e2e_home_start`、`e2e_home_extra`、`e2e_home_select_book`、`e2e_home_plan`、`e2e_plan_words_<n>` | `app/lib/page/today_plan.dart` |
+| 词书页 | `e2e_book_row_<dictId>`、`e2e_book_save` | `app/lib/page/select_book.dart` |
+| 答题页 | `e2e_study_option_<0..n>`、`e2e_study_dont_know`、`e2e_study_again`、`e2e_study_next_word`、`e2e_study_next_group`、`e2e_study_master`、`e2e_study_review`、`e2e_study_mode_switch` | `app/lib/page/bdc/`、`app/lib/widget/minimal_flow_button.dart` |
+| 单词详情页 | `e2e_word_detail`、`e2e_detail_next_word` | `app/lib/page/word_detail.dart` |
+| 完成打卡页 | `e2e_finish_page`、`e2e_finish_extra`、`e2e_badge_claim` | `app/lib/page/finish.dart`、`app/lib/widget/badge_award_dialog.dart` |
+| 登录 | `e2e_login_agree`、`e2e_login_email_entry`、`e2e_send_code`、`e2e_login_submit` | `app/lib/page/login.dart`、`app/lib/page/email_login.dart` |
+| 个人中心 | `e2e_me_settings`、`e2e_me_sync`、`e2e_me_unregister`、`e2e_sync_now` | `app/lib/page/me.dart`、`app/lib/page/admin/sync_log_viewer.dart` |
 
----
+**新增标识后必须重新构建并安装 APK**，否则测试会因为找不到标识直接失败（这是有意的：旧包里没有标识，就不该假装测过了）。
 
-## 执行模式
+## 用例清单（28 条）
 
-### 模式 A：一键全自动回归与邮件直推（推荐）
+| # | 用例 | 断言的是什么 |
+|---|---|---|
+| 1 | 连接 Android 设备 | 拿到设备与分辨率 |
+| 2 | 启动 App 前台校验 | App 在前台 |
+| 3 | 初始环境核验 | 欢迎页；若有旧账号则真机注销后回到欢迎页 |
+| 4 | 截获生产验证码 | 生产库取到本次验证码 |
+| 5 | 真实用户注册与登录 | 手机端输入邮箱验证码后进入 App |
+| 6–10 | 导航切换：学习/词表/查词/比赛/我 | 底栏五项都能切过去 |
+| 11 | 词书就绪校验 | 有可用词书，主页出现学习入口 |
+| 12 | 每日学习计划定制 | 主页「今日 N 词」等于设定的 N |
+| 13 | 学习轨道配置与切换 | 轨道环节流程可见，收起后消失、展开又出现 |
+| 14 | 进入单词测评卡片 | 出现带「第 X 组 … n/N」的答题卡片 |
+| 15 | 选择题答错必须进入单词详情 | 故意选错后进入单词详情页 |
+| 16 | 选择题答对自动进阶下一题 | 按本地库释义选对后自动换题 |
+| 17 | 学习中标记已掌握 | 点「掌握」后词进入已掌握 |
+| 18 | 杀进程后学习进度不丢 | `force-stop` 重启后仍在原来的 n/N |
+| 19 | 拒绝录音权限不崩溃 | 撤销麦克风权限 + 切语音作答，进程不重启、有权限说明 |
+| 20 | 当日计划学完进入打卡页 | 当天计划全部作答后到完成页 |
+| 21 | 断网时同步失败可见 | 断网后手动同步，页面/同步卡片明确报失败 |
+| 22 | 恢复网络后同步补齐 | 恢复后同步成功，云端出现本次学习流水 |
+| 23 | 端云打卡数据持久化核验 | 生产库 `daka` 有当天记录 |
+| 24 | 本地Db与FSRS算法审计 | 评分 ∈ 1~4、复习间隔 > 0、无 2000ms 重复评分、端云条数一致 |
+| 25 | 跨天复习与连续打卡 | 时钟前移一天后复习，生产库有连续 2 天打卡 |
+| 26 | 主页与个人中心打卡状态 | 主页出现「今日已打卡」等印记 |
+| 27 | 端云同步健康度校验 | 个人中心无同步失败告警 |
+| 28 | 测试善后注销账号 | 回到未登录态 |
 
-在终端或由 AI 直接运行回归脚本：
+### 答题正确性怎么判
+
+- 先停进程拉一份本地 SQLite 快照（`db.sqlite` + WAL 一起取，避免撕裂），从 `meaning_items` 读出每个单词的真实释义；
+- 选择题的每个选项有稳定标识，选项文案从节点里读出来；
+- 选项文案里能命中该词释义最多的那一个才算「正确选项」；判不出唯一答案就不判，不会瞎点。
+
+### 反向用例
+
+- **断网**：关 Wi-Fi 与移动数据 → 进同步页点「立即同步」→ 必须明确报失败，不能假报成功；恢复网络后必须补上。
+- **拒绝录音权限**：`pm revoke` 会直接杀掉进程，所以先撤权再启动，然后切「说释义」，验证进程不重启且有权限说明。
+- **杀进程**：答题中途 `force-stop` 再启动，验证进度还在原位。
+
+## 执行
+
 ```bash
-python3 .agents/skills/android-e2e-regression/scripts/run_regression.py --email mmyybb3000@icloud.com
-```
-> 若跳过邮件推送，可添加 `--no-email` 参数。若有多个设备，可通过 `--serial <设备号>` 指定。
-> 若手机上有多个设备或模拟器在线，可通过 `--serial <设备号>` 指定目标设备。
-
-执行完毕后，测试报告将自动保存至：
-- **HTML 报告**：`tmp/e2e_report/report.html`
-- **全链路实机截图**：`tmp/e2e_report/screenshots/`
-
----
-
-### 模式 B：AI 交互式单步驱动（用于深度排查与单点调试）
-
-当需要针对特定功能定位异常时，AI 可按以下标准操作程序（SOP）分步驱动：
-
-#### 第 1 步：生产数据库检查与账号初始化
-运行：
-```bash
-.agents/skills/android-e2e-regression/scripts/manage_e2e_account.py --ensure
-```
-若需要完全重置该账号的学习进度与记录：
-```bash
-.agents/skills/android-e2e-regression/scripts/manage_e2e_account.py --reset
+python3 -u .agents/skills/android-e2e-regression/scripts/run_regression.py --no-email --plan 10
 ```
 
-#### 第 2 步：检测手机连接并唤醒
-确保手机已开启 USB 调试且已连接：
-```bash
-adb devices
-# 唤醒屏幕
-adb shell input keyevent 26
-# 上滑解锁
-adb shell input swipe 500 1800 500 500 300
-```
+- `--plan N`：今天学多少词，默认 10。词数直接决定学习、跨天两段循环的长度，是控制总耗时最有效的旋钮。
+- `--no-email`：跳过邮件推送（不影响结论）。
+- `--serial <设备号>`：多台设备时指定。
+- `E2E_DEBUG=1`：打印学习循环每一轮抓到的状态，用来定位「卡在哪张卡上」。
 
-#### 第 3 步：冷启动泡泡单词 App
-```bash
-adb shell am force-stop com.nn.nnbdc.android
-adb shell monkey -p com.nn.nnbdc.android -c android.intent.category.LAUNCHER 1
-```
+产物：
+- 报告 `tmp/e2e_report/report.html`
+- 截图 `tmp/e2e_report/screenshots/`
 
-#### 第 4 步：执行邮箱验证码登录
-1. 引导手机进入邮箱登录页；
-2. 输入邮箱 `e2etest@nnbdc.com`：
-   ```bash
-   adb shell input text "e2etest\@nnbdc.com"
-   ```
-3. 点击「获取」验证码；
-4. 立即从生产库获取验证码：
-   ```bash
-   .agents/skills/android-e2e-regression/scripts/manage_e2e_account.py --get-code
-   ```
-5. 将输出的 6 位数字输入手机，点击「登录」。
+## 耗时与快慢
 
-#### 第 5 步：导航遍历与功能交互
-- 底部 Tab 切换：点击对应坐标或调用 `device_controller.py` 的 `wait_and_click(text="词表")` 等。
-- 启动背单词：点击「开始学习」，在单词页面点击「不认识」或「下一词」，验证释义展现与发音。
-- 截图留存：
-  ```bash
-  adb exec-out screencap -p > tmp/e2e_report/screenshots/step_custom.png
-  ```
+`uiautomator dump` 单次约 1.5 秒，是整条测试的成本底座；界面在动画中间时它会返回空树，所以要等界面落定再抓。已知的耗时大头：
 
----
+| 环节 | 大致耗时 | 说明 |
+|---|---|---|
+| 注销 + 注册登录 | 40s | 真机注销会清本地库，无法跳过 |
+| 词书导入 | 25s | 挑「够用且词数最少」的词书，导入最快 |
+| 学习循环 | 每词 2 次抓界面 | 点击后等 0.45 秒再抓，避免在动画里空转 |
+| 断网/恢复 | 45s | 含两次手动同步与云端核对 |
+| 本地库快照 | 每份 25s | 库约 194MB，一份快照要拉 10 秒以上 |
 
-## 核心回归测试用例清单
+优化方向只有两个：减少抓界面的次数、减少拉整库的次数。不要再加 `sleep` 硬等。
 
-| 用例编号 | 用例名称 | 核心操作步骤 | 预期通过结果 (Success Criteria) |
-|---|---|---|---|
-| **TC-01** | 生产库与账号基准 | 检查并重置 `e2etest@nnbdc.com` | 账号存在，生词本、已掌握词书、学习步骤就绪，魔法泡泡为 100 |
-| **TC-02** | 真机启动与前台挂载 | 唤醒屏幕，冷启动 `com.nn.nnbdc.android` | App 正常加载并处于前台，无闪退，顺利通过权限引导 |
-| **TC-03** | 邮箱验证码闭环登录 | 输入 e2etest 邮箱，点击获取，查库截获填入并登录 | 验证码校验通过，顺利登入并跳转至首页（非游客状态） |
-| **TC-04** | 主导航切换冒烟 | 依次点击「词表」「查词」「我」「学习」 | 页面顺利切换无白屏，各模块标题及核心列表正常渲染 |
-| **TC-05** | 个人中心属性校验 | 进入「我」页面，核对用户信息 | 显示昵称为「E2E测试用户」，魔法泡泡正常显示 |
-| **TC-06** | 单词学习核心流转 | 首页点击「开始学习/继续学习」，交互 2 轮后返回 | 单词音标、释义正常展示，流转按钮可点击，返回主页状态正常保存 |
-| **TC-07** | 端云同步无报错 | 触发数据同步，观察界面反馈与日志 | 界面无「同步失败」「网络异常」等红字提示 |
+## 常见问题
 
----
-
-## 常见问题与排查指南
-
-1. **`adb devices` 为空或显示 `unauthorized`**：
-   - 检查手机屏幕是否弹出了「允许 USB 调试吗？」弹窗，勾选「一律允许」并确认；
-   - 尝试执行 `adb kill-server && adb start-server`。
-2. **验证码获取失败**：
-   - 检查手机网络是否畅通（能否正常访问 `https://back.nnbdc.com`）；
-   - 检查 `nnbdc_server_pwd` 环境变量是否配置在 `~/.zprofile` 中；
-   - 确保点击手机「获取」按钮后等待 1~2 秒再读取数据库。
-3. **Flutter 界面节点 dump 文本为空**：
-   - 部分自绘 Canvas 元素可能未导出 Semantics，`device_controller.py` 提供截图捕获能力，结合坐标自适应点击。
+1. **`adb devices` 为空**：检查 USB 调试授权；`adb kill-server && adb start-server`。
+2. **用例大面积失败且报「找不到标识」**：装的是旧包，重新 `flutter build apk --debug` 并 `adb install -r`。
+3. **验证码取不到**：确认手机网络能访问 `back.nnbdc.com`，且 `~/.zprofile` 里有数据库口令。
+4. **断网用例失败**：先看是「没切到断网」还是「切了但 App 不报失败」。前者是 `svc wifi/data` 没生效，后者是 App 的问题，不要改测试去迁就。
+5. **设备中途掉线**：脚本会直接以「真机已断开连接」失败，不会再空转 400 轮。

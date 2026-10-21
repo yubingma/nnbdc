@@ -28,6 +28,8 @@ class AndroidDeviceController:
     def __init__(self, serial: Optional[str] = None):
         self.serial = serial
         self._screen_size: Optional[Tuple[int, int]] = None
+        self.dump_calls = 0
+        self.dump_failures = 0
         self._ensure_device()
 
     # ---------- ADB 基础 ----------
@@ -42,10 +44,15 @@ class AndroidDeviceController:
                 full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 text=True, timeout=timeout,
             )
+            stderr = (res.stderr or "").strip()
+            # 设备掉线不是「重试一下就好」的临时错误：继续跑只会拿空界面骗自己
+            if res.returncode != 0 and any(
+                    k in stderr for k in ("device not found", "device offline", "no devices")):
+                raise ConnectionError(f"真机已断开连接: {stderr}")
             if check and res.returncode != 0:
                 raise RuntimeError(
                     f"ADB 命令执行失败 ({' '.join(full_cmd)}): "
-                    f"{res.stderr.strip() or res.stdout.strip()}"
+                    f"{stderr or res.stdout.strip()}"
                 )
             return res
         except subprocess.TimeoutExpired:
@@ -151,6 +158,7 @@ class AndroidDeviceController:
         `null root node`，这里重试几次直到拿到 `<hierarchy`。
         """
         for attempt in range(4):
+            self.dump_calls += 1
             res = self._run_adb(
                 ["exec-out", "uiautomator", "dump", "/dev/tty"], check=False, timeout=40
             )
@@ -158,7 +166,8 @@ class AndroidDeviceController:
             start, end = out.find("<?xml"), out.rfind("</hierarchy>")
             if start >= 0 and end > start:
                 return self._parse(out[start:end + len("</hierarchy>")])
-            time.sleep(0.3 + attempt * 0.3)
+            self.dump_failures += 1
+            time.sleep(0.25 + attempt * 0.2)
         return []
 
     @staticmethod

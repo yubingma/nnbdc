@@ -62,6 +62,7 @@ ID_BADGE_CLAIM = "e2e_badge_claim"
 ID_ME_SYNC = "e2e_me_sync"
 ID_ME_SETTINGS = "e2e_me_settings"
 ID_ME_UNREGISTER = "e2e_me_unregister"
+ID_SYNC_NOW = "e2e_sync_now"
 ID_LOGIN_AGREE = "e2e_login_agree"
 ID_LOGIN_EMAIL_ENTRY = "e2e_login_email_entry"
 ID_SEND_CODE = "e2e_send_code"
@@ -250,6 +251,7 @@ class Runner:
             self.step_study_track()
             self.step_study()
             self.step_offline_sync()
+            self.step_daka_persisted()
             self.step_audit()
             self.step_cross_day()
             self.step_home_status()
@@ -330,8 +332,11 @@ class Runner:
         if state == "unknown":
             raise CaseFailure("既不在欢迎页也不在主界面，按返回键也退不出来")
         self._phone_unregister()
-        self.expect("初始环境核验", self._baseline() == "welcome",
-                    "已通过真机注销回到欢迎页", self.capture("after_unregister"))
+        back = self._baseline() == "welcome"
+        self.expect("初始环境核验", back,
+                    "旧账号已通过真机注销回到欢迎页" if back
+                    else "执行了真机注销，但没有回到欢迎页",
+                    self.capture("after_unregister"))
 
     @staticmethod
     def _labels(nodes):
@@ -345,18 +350,25 @@ class Runner:
         if not node:
             return False
         self.device.tap_node(node)
-        field = self._first_edit_text()
-        if not field:
+        # 注销弹窗是动画淡入的，等它的输入框真的出现再点，否则会点在遮罩上把弹窗关掉
+        field = None
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            field = self._first_edit_text()
+            if field:
+                break
+            time.sleep(0.3)
+        if field is None:
             return False
         self.device.tap_node(field)
-        self.device.clear_text_input(10)
-        self.device.input_text("okay")
-        time.sleep(0.4)
-        confirm = self.device.wait_by_text_any(["确认注销", "确定"], timeout=3)
-        if confirm:
-            self.device.tap_node(confirm)
-        # 等回到欢迎页
-        return self.device.wait(ID_LOGIN_EMAIL_ENTRY, timeout=10) is not None
+        time.sleep(0.3)
+        self.device.input_text("okay")   # 弹窗要求输入 okay 才能点确认注销
+        time.sleep(0.5)
+        confirm = self.device.wait_by_text_any(["确认注销"], timeout=4)
+        if confirm is None:
+            return False
+        self.device.tap_node(confirm)
+        return self.device.wait(ID_LOGIN_EMAIL_ENTRY, timeout=15) is not None
 
     def _ensure_main_ui(self):
         """从完成页、详情页等二级页面退回到带底栏的主界面。"""
@@ -381,7 +393,18 @@ class Runner:
         """「设置与工具」是折叠区，已经展开时再点会把它收起来 —— 先看标题上的收起/展开。"""
         node = self.device.find_by_id(ID_ME_SETTINGS)
         if node is None:
-            raise CaseFailure("个人中心找不到「设置与工具」")
+            # 页面已经被向下滚过，标题不在屏内；能直接看到设置项就说明本来就是展开的
+            if self.device.find_by_id(ID_ME_SYNC) or self.device.find_by_id(ID_ME_UNREGISTER):
+                return
+            w, _ = self.device.get_screen_size()
+            for _ in range(4):
+                self.device.swipe(w // 2, 500, w // 2, 1700, 300)
+                time.sleep(0.3)
+                node = self.device.find_by_id(ID_ME_SETTINGS)
+                if node:
+                    break
+            if node is None:
+                raise CaseFailure("个人中心找不到「设置与工具」")
         if "收起" in " ".join(self.device.texts_within(node, self.device.dump())):
             return
         self.device.tap_node(node)
@@ -693,7 +716,8 @@ class Runner:
             time.sleep(0.5)
         reached = self.device.wait(ID_FINISH_PAGE, timeout=5) is not None
         self.expect("当日计划学完进入打卡页", reached,
-                    "学完当日计划并自动进入完成打卡页" if reached else "没有进入完成打卡页",
+                    ("学完当日计划并自动进入完成打卡页；" + self._dump_stats()) if reached
+                    else "没有进入完成打卡页",
                     self.capture("finish_page"))
 
     def _switch_to_choice_mode(self, attempts: int = 3):
@@ -773,19 +797,24 @@ class Runner:
         self.meanings = self.auditor.meanings_by_spell()
         print(f"[*] 本地可判定的单词释义 {len(self.meanings)} 个")
 
-    def _run_study_loop(self, expected_words: int):
+    def _run_study_loop(self, expected_words: int, assert_cases: bool = True):
+        """学完一整天的词。第二天复习时传 assert_cases=False：那些专项用例只做一次。"""
         wrong_tested = False
         correct_tested = False
         mastered_tested = False
         kill_tested = False
         answered = 0
         last_header = ""
+        last_state = ""
+        same_state_turns = 0
 
         debug = bool(os.environ.get("E2E_DEBUG"))
         for turn in range(1, 400):
+            tick = time.time()
             nodes = self.device.dump()
             if debug:
-                print(f"  [turn {turn}] header={self._header(nodes)!r} "
+                print(f"  [turn {turn}] dump={time.time() - tick:.2f}s "
+                      f"header={self._header(nodes)!r} "
                       f"options={len(self._options(nodes))} "
                       f"next_word={self._has(nodes, ID_STUDY_NEXT_WORD)} "
                       f"detail={self._has(nodes, ID_WORD_DETAIL)} "
@@ -794,6 +823,7 @@ class Runner:
                 return
             if self._has(nodes, ID_DETAIL_NEXT_WORD):
                 self.device.tap_id(ID_DETAIL_NEXT_WORD)
+                time.sleep(0.45)
                 continue
             if self._has(nodes, ID_STUDY_NEXT_GROUP):
                 self.device.tap_id(ID_STUDY_NEXT_GROUP)
@@ -803,14 +833,16 @@ class Runner:
                 # 详情页的「下一词」没就位时先点左上角返回
                 if not self.device.go_back(nodes):
                     raise CaseFailure("单词详情页既没有「下一词」也点不到返回")
+                time.sleep(0.45)
                 continue
             # 已经作答、等用户点「下一词」的状态：必须优先处理，
             # 否则会一直在同一张卡上重复点选项（评分被反复改写）
             if self._has(nodes, ID_STUDY_NEXT_WORD):
                 self.device.tap_id(ID_STUDY_NEXT_WORD, nodes)
+                time.sleep(0.45)
                 continue
             if not self._has(nodes, ID_STUDY_DONT_KNOW):
-                time.sleep(0.25)
+                time.sleep(0.5)
                 continue
 
             header = self._header(nodes)
@@ -818,15 +850,25 @@ class Runner:
 
             if not options:
                 # 非选择题卡片：不认识 → 看答案 → 下一词
-                self.device.tap_id(ID_STUDY_DONT_KNOW)
+                self.device.tap_id(ID_STUDY_DONT_KNOW, nodes)
+                time.sleep(0.45)
                 continue
+
+            # 同一屏连续出现的次数：界面卡死时别空转几百轮，直接报出来是哪一屏
+            state_key = f"{header}|{len(options)}"
+            if state_key == last_state:
+                same_state_turns += 1
+            else:
+                last_state, same_state_turns = state_key, 1
+            if same_state_turns > 12:
+                raise CaseFailure(f"答题界面卡在同一屏 {same_state_turns} 轮没有变化：{header}")
 
             word = self._current_word(nodes)
             option_texts = [" ".join(self.device.texts_within(o, nodes)) for o in options]
             meanings = self.meanings.get(word) if word else None
             correct = self._pick_correct_option(option_texts, meanings) if meanings else None
 
-            if options and correct is not None and not wrong_tested:
+            if assert_cases and options and correct is not None and not wrong_tested:
                 wrong_index = next(i for i in range(len(options)) if i != correct)
                 self.device.tap_node(options[wrong_index])
                 landed = self.device.wait(ID_WORD_DETAIL, timeout=4) or self.device.find_by_id(ID_DETAIL_NEXT_WORD)
@@ -837,7 +879,7 @@ class Runner:
                 wrong_tested = True
                 continue
 
-            if options and correct is not None and not correct_tested:
+            if assert_cases and options and correct is not None and not correct_tested:
                 before = header
                 self.device.tap_node(options[correct])
                 advanced = False
@@ -857,7 +899,7 @@ class Runner:
                 correct_tested = True
                 continue
 
-            if not mastered_tested and self.device.find_by_id(ID_STUDY_MASTER, nodes):
+            if assert_cases and not mastered_tested and self.device.find_by_id(ID_STUDY_MASTER, nodes):
                 spell = self._current_word(nodes) or "本词"
                 self.device.tap_id(ID_STUDY_MASTER, nodes)
                 mastered_tested = True
@@ -868,15 +910,20 @@ class Runner:
 
             if options:
                 self.device.tap_node(options[0])
+                time.sleep(0.45)
                 answered += 1
                 last_header = header
 
-                if (not kill_tested and answered >= 3):
+                if (assert_cases and not kill_tested and answered >= 3):
                     self._kill_case(header)
                     kill_tested = True
                 continue
 
         raise CaseFailure(f"学习流转超过 400 步仍未结束（最后位置：{last_header}）")
+
+    def _dump_stats(self) -> str:
+        d = self.device
+        return f"抓界面 {d.dump_calls} 次，其中空树重试 {d.dump_failures} 次"
 
     def _kill_case(self, header_before: str):
         print("[*] 反向用例：学习途中最粗暴地结束进程，看进度是否还在")
@@ -910,12 +957,30 @@ class Runner:
         self.device.tap_node(tile)
         time.sleep(1.2)
 
-    def _force_sync(self):
+    def _sync_stamp(self) -> str:
+        for n in self.device.dump():
+            if "上次同步" in n["label"]:
+                return n["label"]
+        return ""
+
+    def _force_sync(self) -> bool:
+        """进同步页点「立即同步」，等这次同步真的结束，再用「云同步状态」卡片判断成败。"""
         self._open_sync_page()
-        time.sleep(2.0)
-        if not self.device.go_back():
-            raise CaseFailure("同步页退不回来（左上角没有返回按钮）")
-        time.sleep(0.3)
+        if self.device.find_by_id(ID_SYNC_NOW) is None:
+            raise CaseFailure("同步页没有「立即同步」按钮")
+        before = self._sync_stamp()
+        self._tap_sync_now()
+        deadline = time.time() + 30
+        while time.time() < deadline:
+            if self._sync_stamp() != before:
+                break
+            time.sleep(1.0)
+        self._ensure_main_ui()
+        tile = self._scroll_to_id(ID_ME_SYNC)
+        if tile is None:
+            raise CaseFailure("同步后找不到「云同步状态」卡片")
+        text = " ".join(self.device.texts_within(tile, self.device.dump()))
+        return "失败" not in text and "已是最新" in text
 
     def step_offline_sync(self):
         print("\n--- [10] 断网 / 恢复 ---")
@@ -924,19 +989,26 @@ class Runner:
             raise CaseFailure("无法把设备切到断网状态")
 
         self._open_sync_page()
+        self._tap_sync_now()
         saw_failure = False
-        deadline = time.time() + 15
+        deadline = time.time() + 20
         while time.time() < deadline:
             if "失败" in self._labels(self.device.dump()):
                 saw_failure = True
                 break
-            time.sleep(0.8)
+            time.sleep(1.0)
+        if not saw_failure:
+            # 同步页没写失败，再回「云同步状态」卡片看它的状态文案
+            if self.device.go_back():
+                tile = self._scroll_to_id(ID_ME_SYNC)
+                if tile:
+                    saw_failure = "失败" in " ".join(
+                        self.device.texts_within(tile, self.device.dump()))
         self.expect("断网时同步失败可见", saw_failure,
-                    "断网后同步状态明确报出失败，没有假报成已同步"
-                    if saw_failure else "断网后同步页面没有任何失败提示（假报成功）",
+                    "断网后手动同步，同步页明确记录了一条失败，没有假报成同步成功"
+                    if saw_failure else "断网后手动同步，同步页与同步卡片都没有失败提示（假报成功）",
                     self.capture("offline_sync_failed"))
-        if not self.device.go_back():
-            raise CaseFailure("同步页退不回来")
+        self._ensure_main_ui()
 
         self.device.set_network(True)
         deadline = time.time() + 25
@@ -944,14 +1016,29 @@ class Runner:
             time.sleep(1.0)
         if not self._online():
             raise CaseFailure("恢复网络失败，后续无法继续")
-        self._force_sync()
-        self._force_sync()
 
-        ok = self._wait_cloud_logs(self.plan_words, timeout=40)
+        self._open_sync_page()
+        self._tap_sync_now()
+        synced = False
+        deadline = time.time() + 25
+        while time.time() < deadline:
+            if "同步成功" in self._labels(self.device.dump()):
+                synced = True
+                break
+            time.sleep(1.0)
+        self._ensure_main_ui()
+
+        ok = synced and self._wait_cloud_logs(self.plan_words, timeout=20)
         self.expect("恢复网络后同步补齐", ok,
-                    f"恢复网络并触发同步后，云端已有学习流水（至少 {self.plan_words} 条计划内记录）"
-                    if ok else "恢复网络并触发同步后，云端仍没有学习流水",
+                    f"恢复网络后手动同步成功，云端已有本次学习流水" if ok
+                    else f"恢复网络后同步{'成功但云端仍无流水' if synced else '没有成功'}",
                     self.capture("online_sync_recovered"))
+
+    def _tap_sync_now(self):
+        btn = self.device.wait(ID_SYNC_NOW, timeout=6)
+        if btn is None:
+            raise CaseFailure("同步页没有「立即同步」按钮")
+        self.device.tap_node(btn)
 
     def _online(self) -> bool:
         """直接发一个 ICMP 包判定联网：dumpsys 里残留的 VALIDATED 关掉 Wi-Fi 后仍然在。"""
@@ -973,15 +1060,32 @@ class Runner:
 
     # ---------- 本地审计 ----------
 
+    def step_daka_persisted(self):
+        print("\n--- [10.5] 打卡落库核验 ---")
+        rec = None
+        deadline = time.time() + 20
+        while time.time() < deadline:
+            rec = manage_e2e_account.check_user_daka()
+            if rec:
+                break
+            time.sleep(1.5)
+        self.expect("端云打卡数据持久化核验", rec is not None,
+                    f"生产库 daka 表有当天记录: 业务日={rec.get('for_learning_date', '')}"
+                    if rec else "生产库 daka 表没有当天打卡记录",
+                    self.capture("daka_persisted"))
+
     def step_audit(self):
         print("\n--- [11] 本地库与 FSRS 审计 ---")
+        user = manage_e2e_account.check_user()
+        if not user:
+            raise CaseFailure("生产库里找不到当前测试账号")
         self.device.stop_app()
         self.auditor.pull_snapshot()
-        audit = self.auditor.audit_local_learning_data()
-        user = manage_e2e_account.check_user()
-        cloud_logs = manage_e2e_account.get_user_learning_logs(user["id"]) if user else []
-        cloud_words = manage_e2e_account.get_user_learning_words(user["id"]) if user else []
-        aligned, detail = self.auditor.verify_local_and_cloud_alignment(cloud_logs, cloud_words)
+        audit = self.auditor.audit_local_learning_data(user["id"])
+        cloud_logs = manage_e2e_account.get_user_learning_logs(user["id"])
+        cloud_words = manage_e2e_account.get_user_learning_words(user["id"])
+        aligned, detail = self.auditor.verify_local_and_cloud_alignment(
+            cloud_logs, cloud_words, user["id"])
         ok = (audit["total_logs"] > 0 and not audit["duplicate_violations"]
               and aligned)
         self.audited_logs = audit["logs"]
@@ -993,36 +1097,39 @@ class Runner:
 
     def step_cross_day(self):
         print("\n--- [12] 跨天 ---")
-        changed = self.auditor.shift_one_day_back()
+        user = manage_e2e_account.check_user()
+        if not user:
+            raise CaseFailure("生产库里找不到当前测试账号")
+        changed = self.auditor.shift_one_day_back(user["id"])
         if changed <= 0:
             raise CaseFailure("本地库没有可前移的打卡/学习记录，无法模拟跨天")
         self.auditor.push_snapshot()
-        manage_e2e_account.time_travel_yesterday()
+        manage_e2e_account.time_travel_yesterday(user["id"])
         self.device.launch_app()
         self._enter_study()
         if self.device.wait(ID_STUDY_DONT_KNOW, timeout=10) is None:
             raise CaseFailure("跨天后进入学习没有出现复习卡片")
-        self._run_study_loop(self.plan_words)
+        self._run_study_loop(self.plan_words, assert_cases=False)
         badge = self.device.find_by_id(ID_BADGE_CLAIM)
         if badge:
             self.device.tap_node(badge)
-        self._force_sync()
+        synced = self._force_sync()
 
-        user = manage_e2e_account.check_user()
-        daka_count = 0
-        if user:
-            deadline = time.time() + 20
-            while time.time() < deadline:
-                row = manage_e2e_account.run_psql(
-                    f"SELECT count(*) FROM daka WHERE user_id = '{user['id']}';")
-                if row and row.strip().isdigit():
-                    daka_count = int(row.strip())
-                    if daka_count >= 2:
-                        break
-                time.sleep(1.5)
-        self.expect("跨天复习与连续打卡", daka_count >= 2,
-                    f"把本地与云端时钟前移一天后完成复习，生产库已有连续 {daka_count} 天打卡"
-                    if daka_count >= 2 else f"跨天复习完成后生产库只有 {daka_count} 天打卡",
+        daka_rows = ""
+        deadline = time.time() + 20
+        while time.time() < deadline:
+            daka_rows = manage_e2e_account.run_psql(
+                f"SELECT for_learning_date FROM daka WHERE user_id = '{user['id']}' "
+                f"ORDER BY for_learning_date;")
+            if daka_rows and len([x for x in daka_rows.splitlines() if x.strip()]) >= 2:
+                break
+            time.sleep(1.5)
+        dates = [x.strip() for x in (daka_rows or "").splitlines() if x.strip()]
+        self.expect("跨天复习与连续打卡", len(dates) >= 2,
+                    f"时钟前移一天后完成复习，生产库已有 {len(dates)} 天打卡: {dates}"
+                    if len(dates) >= 2
+                    else f"跨天复习完成后生产库只有 {len(dates)} 天打卡 {dates}，"
+                         f"第二天同步{'成功' if synced else '失败'}",
                     self.capture("cross_day_daka"))
 
     def step_home_status(self):

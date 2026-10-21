@@ -116,14 +116,20 @@ class LocalDbAuditor:
 
     # ---------- 学习数据审计 ----------
 
-    def audit_local_learning_data(self) -> Dict:
+    def audit_local_learning_data(self, user_id: str) -> Dict:
+        """只审当前账号的流水。
+
+        本地库是全设备共用的一份：注销过的旧账号的 learning_logs / learning_words
+        仍留在库里（实测一份快照里还躺着别的账号 5614 条流水）。不按 user_id 过滤，
+        就会拿「所有历史账号的总和」去和云端比，必然对不上。
+        """
         conn = self._connect()
         cur = conn.cursor()
         rows = cur.execute(
             "SELECT l.id, l.word_id, l.rating, l.stability, l.difficulty, "
             "l.elapsed_days, l.scheduled_days, l.create_time, w.spell "
             "FROM learning_logs l LEFT JOIN words w ON l.word_id = w.id "
-            "ORDER BY l.create_time ASC"
+            "WHERE l.user_id = ? ORDER BY l.create_time ASC", (user_id,)
         ).fetchall()
 
         logs: List[Dict] = []
@@ -151,9 +157,12 @@ class LocalDbAuditor:
 
         mastered = cur.execute(
             "SELECT dw.word_id FROM dict_words dw "
-            "JOIN dicts d ON dw.dict_id = d.id WHERE d.name = '已掌握'"
+            "JOIN dicts d ON dw.dict_id = d.id "
+            "WHERE d.name = '已掌握' AND d.owner_id = ?", (user_id,)
         ).fetchall()
-        learning_word_count = cur.execute("SELECT COUNT(*) FROM learning_words").fetchone()[0]
+        learning_word_count = cur.execute(
+            "SELECT COUNT(*) FROM learning_words WHERE user_id = ?", (user_id,)
+        ).fetchone()[0]
         conn.close()
 
         return {
@@ -165,8 +174,9 @@ class LocalDbAuditor:
         }
 
     def verify_local_and_cloud_alignment(self, cloud_logs: List[Dict],
-                                         cloud_words: List[Dict]) -> Tuple[bool, str]:
-        local = self.audit_local_learning_data()
+                                         cloud_words: List[Dict],
+                                         user_id: str) -> Tuple[bool, str]:
+        local = self.audit_local_learning_data(user_id)
         issues: List[str] = []
         if local["total_logs"] != len(cloud_logs):
             issues.append(f"评分流水条数端云不一致: 本地={local['total_logs']}, 云端={len(cloud_logs)}")
@@ -187,19 +197,21 @@ class LocalDbAuditor:
 
     # ---------- 跨天时间旅行 ----------
 
-    def shift_one_day_back(self) -> int:
-        """把打卡、学习日期整体前移 86400 秒，模拟「昨天学过」。返回改动行数。"""
+    def shift_one_day_back(self, user_id: str) -> int:
+        """把当前账号的打卡、学习日期整体前移 86400 秒，模拟「昨天学过」。"""
         conn = self._connect()
         cur = conn.cursor()
         changed = 0
         for sql in (
             "UPDATE dakas SET for_learning_date = for_learning_date - 86400, "
-            "create_time = create_time - 86400, update_time = update_time - 86400",
+            "create_time = create_time - 86400, update_time = update_time - 86400 "
+            "WHERE user_id = ?",
             "UPDATE learning_words SET last_learning_date = last_learning_date - 86400, "
-            "update_time = update_time - 86400",
-            "UPDATE user_study_daily_stats SET date = date - 86400, update_time = update_time - 86400",
+            "update_time = update_time - 86400 WHERE user_id = ?",
+            "UPDATE user_study_daily_stats SET date = date - 86400, "
+            "update_time = update_time - 86400 WHERE user_id = ?",
         ):
-            cur.execute(sql)
+            cur.execute(sql, (user_id,))
             changed += cur.rowcount if cur.rowcount > 0 else 0
         conn.commit()
         conn.close()
