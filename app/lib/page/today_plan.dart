@@ -1255,12 +1255,12 @@ class TodayPlanPageState extends State<TodayPlanPage>
       // （托盘里的 chip 在 Wrap + Opacity + Builder 里，重建约束不同），偏移就错位，
       // 卡片会飘到离手指很远的地方。指针锚定与尺寸无关，两种来源的拖动体验一致。
       dragAnchorStrategy: pointerDragAnchorStrategy,
-      // 左上角对齐指针后再往右下挪一点：手指按下会盖住指针周围一圈，
-      // 不挪的话卡片左上角会被手指压住，正好挡住「拖的是哪个环节」。
-      // 卡片摆在指针的左上：手指正好压在卡片的右下角，卡面大部分露在外面
-      // 注意：feedbackOffset 只改「命中判定点」，不改卡片画在哪（Flutter 源码里
-      // 它只喂给 hitTestInView）。要挪视觉位置必须在 feedback 内部做位移。
-      // 拖拽时命中点稍微上移，避免手指挡住目标判定。
+      // 卡片画在指针的左上：手指正好压在卡片的右下角，卡面大部分露在外面，
+      // 不会被手指挡住。位置只在 feedback 内部做位移（见 FeedbackRightAligned）。
+      // 判定点必须就是手指位置：绝不能拿 feedbackOffset 去补视觉偏移——它会被
+      // 加进 hitTestInView 的坐标（Flutter `_DragAvatar.updateDrag` 里的
+      // `globalPosition + feedbackOffset`），手指便要让开那段距离才能命中目标，
+      // 一侧的落点区因此变成死区。
       onDragStarted: () {
         HapticFeedback.mediumImpact();
         _hoveredBlockReason = null;
@@ -2107,7 +2107,7 @@ class TodayPlanPageState extends State<TodayPlanPage>
                       data: payload,
                       delay: const Duration(milliseconds: 220),
                       dragAnchorStrategy: pointerDragAnchorStrategy,
-                      feedbackOffset: const Offset(-62, -18),
+                      // 判定点 = 手指：不要用 feedbackOffset 补视觉偏移（原因见 _trackNode）
                       onDragStarted: () {
                         HapticFeedback.mediumImpact();
                         _hoveredBlockReason = null;
