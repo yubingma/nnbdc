@@ -793,6 +793,17 @@ public class ReadyState extends RoomState {
             botDelayStartTask = null;
         }
 
+        // 用户是从「单人练习」直接转正式对战：练习本身也算一局（START_EXERCISE 会把 isPlaying 置真）。
+        // 不先把这局练习收掉，下面机器人"延迟开赛"的回调会以为对局还在进行、直接 return，
+        // 新一局就永远起不来——表现就是"我已经就绪，机器人一直不点开始"。
+        UserGameData callerData = room.getUserPlayData(user);
+        if (callerData != null && callerData.isExercise()) {
+            callerData.setExercise(false);
+            isPlaying = false;
+            stackAddedOnce.clear();
+            cancelFallTask(user);
+        }
+
         // 获取系统配置（每局游戏需要支付的魔法泡泡数）
         // 在socket线程中无事务环境，使用newSession方式避免获取currentSession失败
         SysParam sysParam = sysParamBo.findById(SysParam.COW_DUNG_PER_GAME, true);
@@ -831,8 +842,15 @@ public class ReadyState extends RoomState {
                 @Override
                 public void run() {
                     try {
-                        // 确保房间状态仍然是当前的 ReadyState 且游戏未开始
-                        if (room.getState() != ReadyState.this || isPlaying) {
+                        // 确保房间状态仍然是当前的 ReadyState 且没有对局在跑
+                        if (room.getState() != ReadyState.this) {
+                            return;
+                        }
+                        if (isPlaying) {
+                            // 以前这里是静默 return：一旦 isPlaying 卡住，机器人永远不点开始，
+                            // 日志里一个字都看不到。留一条 warn，让这类"开不了局"能被追溯到。
+                            log.warn(String.format("机器人[%s]延迟开赛被跳过：本局仍在进行中（isPlaying=true）",
+                                    Util.getNickNameOfUser(bot)));
                             return;
                         }
 
