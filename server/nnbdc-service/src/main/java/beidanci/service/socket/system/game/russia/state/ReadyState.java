@@ -972,8 +972,12 @@ public class ReadyState extends RoomState {
             this.humanUserObj = (user1 == botUser) ? user2 : user1;
             this.botTimer = new Timer(true);
             this.botWordIdx = 0;
-            // 首次调度：设置合理的初始延迟，让机器人与人类基本同步开始
-            scheduleBotNext(800L);
+            // 首次调度：等画面真的开始再落子。
+            // 客户端开局有 1.4 秒开场动画，第一块砖落地还要再等一会儿；以前固定 800ms 抢答，
+            // 玩家还没看到第一块砖，机器人就已经答完一题——那题一旦判错，对面开局就白丢一格防线
+            // （线上表现：新一局刚开始，对手那边已经有一格红色）。
+            // 取"这一题下落窗口的一半"：既在开场动画之后，也不会慢到超过触底窗口。
+            scheduleBotNext(Math.max(2600L, botAnswerWindowMs(0) / 2));
         }
 
         // 两位玩家各扣除若干魔法泡泡（按照系统配置）
