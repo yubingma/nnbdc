@@ -5,6 +5,7 @@ import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/util/asr.dart';
 import '../models/word_ui_state.dart';
+import 'answer_mode.dart';
 
 const Object _sentinel = Object();
 
@@ -29,7 +30,9 @@ class BdcState extends Equatable {
   final bool isScorePassed;
   final bool showSentenceTranslation;
   final bool showSentenceWordMeaning;
-  final int tabIndex;
+  /// 当前用哪种方式答题：写（键盘打字）/ 说（开口）/ 选（四选一）。
+  /// 哪几档存在见 [AnswerModes.forStep]；它不是下标，下标由 [AnswerModes.indexOf] 换算。
+  final AnswerMode answerMode;
   
   final List<WordPresentation> history;
   final int historyIndex;
@@ -129,15 +132,6 @@ class BdcState extends Equatable {
   /// 界面据此分辨错误的种类（例如通用释义缺失），给出对应的处理出路。
   final Object? loadErrorCause;
 
-  final bool isSelectModePreferred;
-  final bool isSentenceSelectModePreferred;
-
-  /// 「语音答题」是否开启（学习设置里可关，按设备存在本地）。
-  ///
-  /// 关掉后背单词页全程不开麦：答题卡第一档从「说」换成「拼写」，
-  /// 英译汉直接打字写中文释义、汉译英直接打拼写，安静场所也能作答。
-  final bool voiceAnswerEnabled;
-
   /// 例句环节 PTT(按下说话)按钮是否处于按住状态
   final bool isPttPressed;
 
@@ -166,7 +160,7 @@ class BdcState extends Equatable {
     this.isScorePassed = false,
     this.showSentenceTranslation = false,
     this.showSentenceWordMeaning = false,
-    this.tabIndex = 0,
+    this.answerMode = AnswerMode.speak,
     this.history = const [],
     this.historyIndex = -1,
     this.wordUIStates = const {},
@@ -219,9 +213,6 @@ class BdcState extends Equatable {
     this.isWordImageEdited = false,
     this.loadError,
     this.loadErrorCause,
-    this.isSelectModePreferred = false,
-    this.isSentenceSelectModePreferred = false,
-    this.voiceAnswerEnabled = true,
     this.isPttPressed = false,
     this.isAiEvaluating = false,
     this.isPracticeMode = false,
@@ -259,7 +250,7 @@ class BdcState extends Equatable {
     bool? isScorePassed,
     bool? showSentenceTranslation,
     bool? showSentenceWordMeaning,
-    int? tabIndex,
+    AnswerMode? answerMode,
     List<WordPresentation>? history,
     int? historyIndex,
     Map<String, WordUIState>? wordUIStates,
@@ -312,9 +303,6 @@ class BdcState extends Equatable {
     bool? isWordImageEdited,
     Object? loadError = _sentinel,
     Object? loadErrorCause = _sentinel,
-    bool? isSelectModePreferred,
-    bool? isSentenceSelectModePreferred,
-    bool? voiceAnswerEnabled,
     bool? isPttPressed,
     bool? isAiEvaluating,
     bool? isPracticeMode,
@@ -331,12 +319,11 @@ class BdcState extends Equatable {
     // 当成语音识别结果宽松匹配，还会被输入法候选触发提前判题。
     final String? effectiveStudyStep =
         studyStep == _sentinel ? this.studyStep : (studyStep as String?);
-    final int effectiveTabIndex = tabIndex ?? this.tabIndex;
+    final AnswerMode effectiveAnswerMode = answerMode ?? this.answerMode;
     final bool typedChineseAnswer =
-        !(voiceAnswerEnabled ?? this.voiceAnswerEnabled) &&
-            !handwritingBoardVisible &&
+        !handwritingBoardVisible &&
             effectiveStudyStep == StudyStep.en2Ch.json &&
-            effectiveTabIndex == 0;
+            effectiveAnswerMode == AnswerMode.write;
     final bool chineseAnswerActive =
         handwritingBoardVisible || typedChineseAnswer;
     return BdcState(
@@ -358,7 +345,7 @@ class BdcState extends Equatable {
       isScorePassed: isScorePassed ?? this.isScorePassed,
       showSentenceTranslation: showSentenceTranslation ?? this.showSentenceTranslation,
       showSentenceWordMeaning: showSentenceWordMeaning ?? this.showSentenceWordMeaning,
-      tabIndex: tabIndex ?? this.tabIndex,
+      answerMode: answerMode ?? this.answerMode,
       history: history ?? this.history,
       historyIndex: historyIndex ?? this.historyIndex,
       wordUIStates: wordUIStates ?? this.wordUIStates,
@@ -419,9 +406,6 @@ class BdcState extends Equatable {
       isWordImageEdited: isWordImageEdited ?? this.isWordImageEdited,
       loadError: loadError == _sentinel ? this.loadError : (loadError as String?),
       loadErrorCause: loadErrorCause == _sentinel ? this.loadErrorCause : loadErrorCause,
-      isSelectModePreferred: isSelectModePreferred ?? this.isSelectModePreferred,
-      isSentenceSelectModePreferred: isSentenceSelectModePreferred ?? this.isSentenceSelectModePreferred,
-      voiceAnswerEnabled: voiceAnswerEnabled ?? this.voiceAnswerEnabled,
       isPttPressed: isPttPressed ?? this.isPttPressed,
       isAiEvaluating: isAiEvaluating ?? this.isAiEvaluating,
       isPracticeMode: isPracticeMode ?? this.isPracticeMode,
@@ -458,7 +442,7 @@ class BdcState extends Equatable {
     isScorePassed,
     showSentenceTranslation,
     showSentenceWordMeaning,
-    tabIndex,
+    answerMode,
     history,
     historyIndex,
     wordUIStates,
@@ -510,9 +494,6 @@ class BdcState extends Equatable {
     isWordImageEdited,
     loadError,
     loadErrorCause,
-    isSelectModePreferred,
-    isSentenceSelectModePreferred,
-    voiceAnswerEnabled,
     isPttPressed,
     isAiEvaluating,
   ];

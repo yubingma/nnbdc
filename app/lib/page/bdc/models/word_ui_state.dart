@@ -1,6 +1,7 @@
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/fsrs.dart';
+import '../providers/answer_mode.dart';
 
 class WordUIState {
   final int? stepIndex;
@@ -10,7 +11,8 @@ class WordUIState {
   final bool showSentenceTranslation;
   final bool showSentenceWordMeaning;
   final int? selectedAnswerIndex;
-  final int tabIndex;
+  /// 那一次呈现时用的答题方式（写/说/选）
+  final AnswerMode answerMode;
   final int? currentScore;
   final String meaningText;
   final List<WordVo>? words;
@@ -41,7 +43,7 @@ class WordUIState {
     required this.showSentenceTranslation,
     this.showSentenceWordMeaning = false,
     this.selectedAnswerIndex,
-    required this.tabIndex,
+    required this.answerMode,
     this.currentScore,
     required this.meaningText,
     this.words,

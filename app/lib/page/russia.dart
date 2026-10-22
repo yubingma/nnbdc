@@ -2543,72 +2543,83 @@ class RussiaPageState extends State<RussiaPage>
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
-              // 我方昵称
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    myNickName.isNotEmpty ? myNickName : '我方',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.95),
-                      shadows: [
-                        Shadow(
-                          color: const Color(0xFF032B69).withValues(alpha: 0.8),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
+              // 我方昵称：昵称长度不可控，左右各占一半、文字超出就省略
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        myNickName.isNotEmpty ? myNickName : '我方',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.95),
+                          shadows: [
+                            Shadow(
+                              color: const Color(0xFF032B69).withValues(alpha: 0.8),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  if (myStarted) ...[
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981),
-                        borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text('已就绪',
-                          style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
                     ),
+                    if (myStarted) ...[
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text('已就绪',
+                            style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-              const Spacer(),
               // 对手昵称
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (opponentStarted) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text('已就绪',
-                          style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  Text(
-                    opponentNickName,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.95),
-                      shadows: [
-                        Shadow(
-                          color: const Color(0xFF032B69).withValues(alpha: 0.8),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (opponentStarted) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                      ],
+                        child: const Text('已就绪',
+                            style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    Flexible(
+                      child: Text(
+                        opponentNickName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.95),
+                          shadows: [
+                            Shadow(
+                              color: const Color(0xFF032B69).withValues(alpha: 0.8),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -3814,37 +3825,52 @@ class RussiaPageState extends State<RussiaPage>
                             final String ownerTag = isViewingSelf ? '我方' : (opponentNickName.isEmpty ? '对手' : opponentNickName);
                             final Color ownerColor = isViewingSelf ? const Color(0xFF38BDF8) : const Color(0xFFF97316);
 
+                            // 昵称长度不可控：两段各分一半、文字超出就省略，
+                            // 否则"对手昵称 + 最高连击/作答"这种长组合在窄屏或大字号下必然溢出
                             return Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.bolt_rounded, size: 14, color: Color(0xFFFBBF24)),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      '$ownerTag最高连击 $highlightCombo',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.white.withValues(alpha: 0.75),
-                                        fontWeight: FontWeight.w600,
+                                Expanded(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.bolt_rounded, size: 14, color: Color(0xFFFBBF24)),
+                                      const SizedBox(width: 3),
+                                      Flexible(
+                                        child: Text(
+                                          '$ownerTag最高连击 $highlightCombo',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white.withValues(alpha: 0.75),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                                 Container(width: 1, height: 10, color: Colors.white.withValues(alpha: 0.15)),
-                                Row(
-                                  children: [
-                                    Icon(Icons.my_location_rounded, size: 13, color: ownerColor),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '$ownerTag作答 $highlightAnswers 题',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.white.withValues(alpha: 0.75),
-                                        fontWeight: FontWeight.w600,
+                                Expanded(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.my_location_rounded, size: 13, color: ownerColor),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          '$ownerTag作答 $highlightAnswers 题',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white.withValues(alpha: 0.75),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             );
@@ -3886,24 +3912,32 @@ class RussiaPageState extends State<RussiaPage>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      isViewingSelf ? Icons.person_rounded : Icons.sports_esports_rounded,
-                                      size: 14,
-                                      color: themeColor,
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      '【$targetName】结算数据',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
+                                // 标题带昵称，必须让位给右侧的「我方/对方」切换器
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isViewingSelf ? Icons.person_rounded : Icons.sports_esports_rounded,
+                                        size: 14,
                                         color: themeColor,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 5),
+                                      Flexible(
+                                        child: Text(
+                                          '【$targetName】结算数据',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: themeColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
                                 Container(
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.06),

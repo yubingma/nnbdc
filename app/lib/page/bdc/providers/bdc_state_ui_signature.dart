@@ -1,5 +1,6 @@
 import 'package:nnbdc/api/bo/word_bo.dart';
 
+import 'answer_mode.dart';
 import 'bdc_state.dart';
 
 /// 专为顶层 BdcPage 刷新优化的轻量级签名对象，剔除了 ASR 等高频更新字段和极其昂贵的深层集合比对。
@@ -15,7 +16,7 @@ class BdcStateUiSignature {
   final int? correctAnswerIndex;
   final bool showSentenceTranslation;
   final bool showSentenceWordMeaning;
-  final int tabIndex;
+  final AnswerMode answerMode;
   final int historyIndex;
   final int historyLength;
   final bool showHandwritingBoard;
@@ -44,9 +45,6 @@ class BdcStateUiSignature {
   final bool isEditMode;
   final String? highlightedWordImgId;
   final bool isWordImageEdited;
-  final bool isSelectModePreferred;
-  final bool isSentenceSelectModePreferred;
-  final bool voiceAnswerEnabled;
   final int? currentScore;
   final String? asrFirstCandidate;
   final bool isAiEvaluating;
@@ -68,7 +66,7 @@ class BdcStateUiSignature {
         correctAnswerIndex = s.correctAnswerIndex,
         showSentenceTranslation = s.showSentenceTranslation,
         showSentenceWordMeaning = s.showSentenceWordMeaning,
-        tabIndex = s.tabIndex,
+        answerMode = s.answerMode,
         historyIndex = s.historyIndex,
         historyLength = s.history.length,
         showHandwritingBoard = s.showHandwritingBoard,
@@ -88,9 +86,6 @@ class BdcStateUiSignature {
         isEditMode = s.isEditMode,
         highlightedWordImgId = s.highlightedWordImg?.id,
         isWordImageEdited = s.isWordImageEdited,
-        isSelectModePreferred = s.isSelectModePreferred,
-        isSentenceSelectModePreferred = s.isSentenceSelectModePreferred,
-        voiceAnswerEnabled = s.voiceAnswerEnabled,
         currentScore = s.currentScore,
         asrFirstCandidate = s.currentAsrCandidates.isNotEmpty ? s.currentAsrCandidates.first : null,
         isAiEvaluating = s.isAiEvaluating,
@@ -115,7 +110,7 @@ class BdcStateUiSignature {
         correctAnswerIndex == other.correctAnswerIndex &&
         showSentenceTranslation == other.showSentenceTranslation &&
         showSentenceWordMeaning == other.showSentenceWordMeaning &&
-        tabIndex == other.tabIndex &&
+        answerMode == other.answerMode &&
         historyIndex == other.historyIndex &&
         historyLength == other.historyLength &&
         showHandwritingBoard == other.showHandwritingBoard &&
@@ -134,9 +129,6 @@ class BdcStateUiSignature {
         isEditMode == other.isEditMode &&
         highlightedWordImgId == other.highlightedWordImgId &&
         isWordImageEdited == other.isWordImageEdited &&
-        isSelectModePreferred == other.isSelectModePreferred &&
-        isSentenceSelectModePreferred == other.isSentenceSelectModePreferred &&
-        voiceAnswerEnabled == other.voiceAnswerEnabled &&
         currentScore == other.currentScore &&
         asrFirstCandidate == other.asrFirstCandidate &&
         isAiEvaluating == other.isAiEvaluating &&
@@ -160,7 +152,7 @@ class BdcStateUiSignature {
         correctAnswerIndex,
         showSentenceTranslation,
         showSentenceWordMeaning,
-        tabIndex,
+        answerMode,
         historyIndex,
         historyLength,
         showHandwritingBoard,
@@ -179,9 +171,6 @@ class BdcStateUiSignature {
         isEditMode,
         highlightedWordImgId,
         isWordImageEdited,
-        isSelectModePreferred,
-        isSentenceSelectModePreferred,
-        voiceAnswerEnabled,
         currentScore,
         asrFirstCandidate,
         isAiEvaluating,

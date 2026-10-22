@@ -45,6 +45,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/bdc_page_args.dart';
 import '../models/word_ui_state.dart';
+import 'answer_mode.dart';
 import 'bdc_state.dart';
 
 part 'bdc_notifier.g.dart';
@@ -288,53 +289,30 @@ class BdcNotifier extends _$BdcNotifier {
 
     _startLearningTimer();
 
-    final initialWordSelectPreferred =
-        Prefs.read<bool>('bdc_select_mode_preferred') ?? false;
-    final initialSentenceSelectPreferred =
-        Prefs.read<bool>('bdc_sentence_select_mode_preferred') ?? false;
-
-    final bool voiceAnswerEnabled =
-        Prefs.read<bool>(voiceAnswerEnabledPrefKey) ?? true;
-    // 关掉语音答题后不再为"下一句要开麦"保温录音通道：既没有识别要等，
-    // 也避免播放一直走 playAndRecord 那套（音量更小、在 iPad 上还可能走听筒）
-    StudyAudioSessionController.instance.keepMicrophoneWarm = voiceAnswerEnabled;
-
-    return BdcState(
-      isSelectModePreferred: initialWordSelectPreferred,
-      isSentenceSelectModePreferred: initialSentenceSelectPreferred,
-      voiceAnswerEnabled: voiceAnswerEnabled,
-    );
+    return BdcState(answerMode: AnswerModes.defaultFor(null));
   }
 
-  /// 「语音答题」开关的本地存储键。
+  /// 「答题方式」偏好的本地存储键：单词环节与例句环节各记一份。
   ///
-  /// 按设备存（不进 StudyConfig）：安静场所是这个设备当场的处境，
-  /// 在平板上关掉不该把手机上的语音也一起关掉。
-  static const String voiceAnswerEnabledPrefKey = 'bdc_voice_answer_enabled';
+  /// 按设备存（不进 StudyConfig）：这是"这台设备上我习惯怎么答"，换设备不该被带走。
+  static const String answerModePrefKeyWord = 'bdc_answer_mode_word';
+  static const String answerModePrefKeySentence = 'bdc_answer_mode_sentence';
 
-  /// 这个环节的第一档答题方式是不是「说」。
+  static String answerModePrefKey(bool isSentenceStep) =>
+      isSentenceStep ? answerModePrefKeySentence : answerModePrefKeyWord;
+
+  /// 用户上次选的那一档；从没选过返回 null（交给 [AnswerModes.coerce] 落默认档）。
   ///
-  /// 三个条件：用户开着语音答题、平台认这门语言的语音、环节本身有对应的说模式。
-  /// 页面据此决定答题卡的档数，通知器据此决定要不要开麦 —— 只此一份判据。
-  static bool voiceAnswerAvailableFor(String studyStep, bool voiceAnswerEnabled) {
-    if (!voiceAnswerEnabled) return false;
-    if (!PlatformUtils.isAsrSupported()) return false;
-    if (studyStep == StudyStep.ch2En.json ||
-        studyStep == StudyStep.chSentence2En.json) {
-      return PlatformUtils.isEnglishAsrSupported();
-    }
-    return studyStep == StudyStep.en2Ch.json ||
-        studyStep == StudyStep.enSentence2Ch.json;
-  }
-
-  /// 答题卡的档数：单词环节恒为两档（第一档＝说或拼写，第二档＝选择题）；
-  /// 例句环节没有键盘答题，关掉语音后只剩选择题一档。
-  static int answerTabCountFor(String studyStep, bool voiceAnswerEnabled) {
-    final bool isSentenceStep =
-        studyStep == StudyStep.enSentence2Ch.json ||
-            studyStep == StudyStep.chSentence2En.json;
-    if (!isSentenceStep) return 2;
-    return voiceAnswerAvailableFor(studyStep, voiceAnswerEnabled) ? 2 : 1;
+  /// 老版本只记过"是不是选择题"（`bdc_select_mode_preferred`），这里兼容一次：
+  /// 老用户的选择题偏好继续生效，其余按默认档。
+  static AnswerMode? readPreferredAnswerMode(bool isSentenceStep) {
+    final AnswerMode? stored =
+        AnswerMode.fromName(Prefs.read<String>(answerModePrefKey(isSentenceStep)));
+    if (stored != null) return stored;
+    final String legacyKey = isSentenceStep
+        ? 'bdc_sentence_select_mode_preferred'
+        : 'bdc_select_mode_preferred';
+    return (Prefs.read<bool>(legacyKey) ?? false) ? AnswerMode.choose : null;
   }
 
   DateTime? _lastSyncTime;
@@ -620,7 +598,11 @@ class BdcNotifier extends _$BdcNotifier {
           showSentenceTranslation: stateJson['showSentenceTranslation'] ?? false,
           showSentenceWordMeaning: stateJson['showSentenceWordMeaning'] ?? false,
           selectedAnswerIndex: stateJson['selectedAnswerIndex'],
-          tabIndex: stateJson['tabIndex'] ?? 0,
+          // 老版本存的是档位下标（0 说 / 1 选），认不出来时按它还原
+          answerMode: AnswerMode.fromName(stateJson['answerMode']) ??
+              (stateJson['tabIndex'] == 1
+                  ? AnswerMode.choose
+                  : AnswerMode.speak),
           currentScore: stateJson['currentScore'],
           meaningText: stateJson['meaningText'] ?? '',
           correctAnswerIndex: stateJson['correctAnswerIndex'] ?? 0,
@@ -751,9 +733,8 @@ class BdcNotifier extends _$BdcNotifier {
         isLatestAnswerWrongToday: false,
       );
       
-      // 开启麦克风保温以跨越列表页（关掉语音答题就不再保温，没有识别要等）
-      StudyAudioSessionController.instance.keepMicrophoneWarm =
-          state.voiceAnswerEnabled;
+      // 开启麦克风保温以跨越列表页（不在说档就不保温，没有识别要等）
+      StudyAudioSessionController.instance.keepMicrophoneWarm = _isSpeaking;
       
       // Redirect to batch word list
       Future.delayed(Duration.zero, () {
@@ -761,8 +742,7 @@ class BdcNotifier extends _$BdcNotifier {
           label: '下一组',
           identifier: 'e2e_study_next_group',
           onTap: () async {
-            StudyAudioSessionController.instance.keepMicrophoneWarm =
-                state.voiceAnswerEnabled;
+            StudyAudioSessionController.instance.keepMicrophoneWarm = _isSpeaking;
             await StudyBo().completeListStepForCurrentBatch();
             // 跳转回 BDC 页面，它会自动加载下一个非 List 环节的单词
             goRouter.pushReplacement('/bdc');
@@ -795,7 +775,7 @@ class BdcNotifier extends _$BdcNotifier {
     
     if (asr.state == AsrState.started) {
       await StudyAudioSessionController.instance.syncHardwareIntent(
-        isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+        isInSpeakTab: _isSpeaking,
         isAnsweringActive: false,
         language: AsrLanguage.english,
         phrases: [],
@@ -842,15 +822,12 @@ class BdcNotifier extends _$BdcNotifier {
     WordWrapper wordWrapper = WordWrapper(word, null);
     
     final bool isSentenceStep = newStudyStep == StudyStep.enSentence2Ch.json || newStudyStep == StudyStep.chSentence2En.json;
-    // 选项档位按"这一档是不是选择题"决定：单词环节两档恒在，例句环节关掉语音后只有一档（选择题）。
-    final int tabCount = answerTabCountFor(newStudyStep, state.voiceAnswerEnabled);
-    int newTabIndex = 0;
-    final bool isPreferred = isSentenceStep
-        ? state.isSentenceSelectModePreferred
-        : state.isSelectModePreferred;
-    if (isPreferred && tabCount > 1) {
-      newTabIndex = tabCount - 1;
-    }
+    // 这一词用哪种方式答：用户上次选的那一档，落到这个环节真正有的档里。
+    // 档位跨词、跨次会话都保留 —— 否则"每换一个词就得再点一次"的老问题又回来了。
+    final AnswerMode newAnswerMode = AnswerModes.coerce(
+        newStudyStep, readPreferredAnswerMode(isSentenceStep));
+    StudyAudioSessionController.instance.keepMicrophoneWarm =
+        newAnswerMode == AnswerMode.speak;
 
     _accumulatedAsrText = "";
     _lastFinalAsrText = "";
@@ -924,7 +901,7 @@ class BdcNotifier extends _$BdcNotifier {
       asrWrongWordForm: false, // 换词：上一词的"词形不对"不能带到新词
       loadError: null, // Successfully loaded a word, clear error
       loadErrorCause: null,
-      tabIndex: newTabIndex,
+      answerMode: newAnswerMode,
       showHandwritingBoard: false,
       isKeyboardVisible: false,
       // 中文答案的进度按词重算：关掉语音后打字面板不会像手写板那样随换词消失，
@@ -989,7 +966,7 @@ class BdcNotifier extends _$BdcNotifier {
     // iOS 说模式引擎预热在发音播放完成后进行，避免提前抢占 AudioSession
     //（将 session 切为 playAndRecord）导致后续发音播放时 session 状态不匹配产生爆音。
     // 例句环节采用 PTT（按下说话）完全手动控制，不自动开麦。
-    final bool shouldSpeak = !isSentenceStep && _shouldShowSpeakTab && state.tabIndex == 0;
+    final bool shouldSpeak = !isSentenceStep && newAnswerMode == AnswerMode.speak;
 
     // 将发音播放和 ASR 启动延迟 200ms 执行，在卡片过渡动画结束前不抢占渲染资源。
     // 使用 _playToken 防止快速切词时旧 callback 使用过期 state。
@@ -1241,58 +1218,24 @@ class BdcNotifier extends _$BdcNotifier {
     );
   }
 
-  void updateTabIndex(int index) {
-    // 「选择题」永远是最后一档：单词环节是第 2 档（说/拼写在前），
-    // 例句环节关掉语音后只剩它一档。
-    final int tabCount =
-        answerTabCountFor(state.studyStep ?? '', state.voiceAnswerEnabled);
-    if (index < 0 || index >= tabCount) return;
-    final bool isSelectTab = index == tabCount - 1;
-    // 切换 Tab 即视为松开 PTT（防止切到"选"Tab 后例句环节识别仍在继续）
+  /// 切答题方式（答题卡右上角的 写/说/选）。
+  ///
+  /// 只在当前环节真有这一档时生效；切完按设备记住，换词/下次进来仍是这一档。
+  /// 切档即视为松开 PTT：否则例句环节还按着「说」时切走，识别会继续跑。
+  void updateAnswerMode(AnswerMode mode) {
+    if (!AnswerModes.forStep(state.studyStep).contains(mode)) return;
+    if (state.answerMode == mode) return;
     if (_isPttPressed) {
       _isPttPressed = false;
       unawaited(asr.stopAsr());
     }
-    final isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
-        state.studyStep == StudyStep.chSentence2En.json;
-    if (isSentence) {
-      state = state.copyWith(
-        tabIndex: index,
-        isSentenceSelectModePreferred: isSelectTab,
-        isPttPressed: _isPttPressed,
-      );
-      unawaited(Prefs.write('bdc_sentence_select_mode_preferred', isSelectTab));
-    } else {
-      state = state.copyWith(
-        tabIndex: index,
-        isSelectModePreferred: isSelectTab,
-        isPttPressed: _isPttPressed,
-      );
-      unawaited(Prefs.write('bdc_select_mode_preferred', isSelectTab));
-    }
+    unawaited(Prefs.write(
+        answerModePrefKey(AnswerModes.isSentenceStep(state.studyStep)),
+        mode.name));
+    StudyAudioSessionController.instance.keepMicrophoneWarm =
+        mode == AnswerMode.speak;
+    state = state.copyWith(answerMode: mode, isPttPressed: _isPttPressed);
     _handleTabChangeForAsr();
-  }
-
-  /// 学习设置里的「语音答题」开关（按设备存在本地）。
-  ///
-  /// 关掉后答题卡第一档由「说」换成「拼写」，并立刻释放麦克风；
-  /// 打开后按当前环节恢复开麦。切档位时顺手把当前档夹回有效范围
-  ///（例句环节关掉语音后只剩选择题一档）。
-  void setVoiceAnswerEnabled(bool enabled) {
-    if (state.voiceAnswerEnabled == enabled) return;
-    unawaited(Prefs.write(voiceAnswerEnabledPrefKey, enabled));
-    StudyAudioSessionController.instance.keepMicrophoneWarm = enabled;
-    final int tabCount = answerTabCountFor(state.studyStep ?? '', enabled);
-    state = state.copyWith(
-      voiceAnswerEnabled: enabled,
-      tabIndex: min(state.tabIndex, tabCount - 1),
-    );
-    if (enabled) {
-      _handleTabChangeForAsr();
-    } else {
-      // 关掉语音就是要马上闭嘴：不受"发音播放期间不开麦"的排队约束
-      _syncAudioHardware();
-    }
   }
 
   /// 打字面板的「提交」：把输入框里的中文释义当作一次显式作答。
@@ -1337,7 +1280,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     // 强制关闭 ASR 识别
     StudyAudioSessionController.instance.syncHardwareIntent(
-      isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+      isInSpeakTab: _isSpeaking,
       isAnsweringActive: false,
       language: AsrLanguage.english,
       phrases: [],
@@ -1463,8 +1406,7 @@ class BdcNotifier extends _$BdcNotifier {
     }
     _cancelPendingWordTimers();
     debugPrint('🕵️ [AudioDiag] showWordDetail.enter | word=${word.spell} isAnswerWrong=$isAnswerWrong');
-    StudyAudioSessionController.instance.keepMicrophoneWarm =
-        state.voiceAnswerEnabled;
+    StudyAudioSessionController.instance.keepMicrophoneWarm = _isSpeaking;
     // 音频与 ASR 清理不再阻塞页面转场：把清理登记为「下一次播放前必须完成」，
     // 转场立即开始，而详情页入场发音会自动排在清理之后，避免发音被旧的 stop/seek 掐断。
     // 1.5s 硬超时保留，防止底层系统音频驱动卡死拖住后续每一次播放。
@@ -2027,7 +1969,7 @@ class BdcNotifier extends _$BdcNotifier {
           'showSentenceTranslation': uiState.showSentenceTranslation,
           'showSentenceWordMeaning': uiState.showSentenceWordMeaning,
           'selectedAnswerIndex': uiState.selectedAnswerIndex,
-          'tabIndex': uiState.tabIndex,
+          'answerMode': uiState.answerMode.name,
           'currentScore': uiState.currentScore,
           'meaningText': uiState.meaningText,
           'correctAnswerIndex': uiState.correctAnswerIndex,
@@ -2069,7 +2011,7 @@ class BdcNotifier extends _$BdcNotifier {
             'showSentenceTranslation': uiState.showSentenceTranslation,
             'showSentenceWordMeaning': uiState.showSentenceWordMeaning,
             'selectedAnswerIndex': uiState.selectedAnswerIndex,
-            'tabIndex': uiState.tabIndex,
+            'answerMode': uiState.answerMode.name,
             'currentScore': uiState.currentScore,
             'meaningText': uiState.meaningText,
             'correctAnswerIndex': uiState.correctAnswerIndex,
@@ -2147,7 +2089,7 @@ class BdcNotifier extends _$BdcNotifier {
           showSentenceTranslation: uiState.showSentenceTranslation,
           showSentenceWordMeaning: uiState.showSentenceWordMeaning,
           selectedAnswerIndex: uiState.selectedAnswerIndex,
-          tabIndex: uiState.tabIndex,
+          answerMode: AnswerModes.coerce(state.studyStep, uiState.answerMode),
           currentScore: uiState.currentScore,
           words: uiState.words,
           correctAnswerIndex: uiState.correctAnswerIndex,
@@ -2432,7 +2374,7 @@ class BdcNotifier extends _$BdcNotifier {
       showSentenceTranslation: state.showSentenceTranslation,
       showSentenceWordMeaning: state.showSentenceWordMeaning,
       selectedAnswerIndex: state.selectedAnswerIndex,
-      tabIndex: state.tabIndex,
+      answerMode: state.answerMode,
       currentScore: state.currentScore,
       meaningText: meaningController.text,
       words: state.words != null ? List<WordVo>.from(state.words!) : null,
@@ -2950,14 +2892,14 @@ class BdcNotifier extends _$BdcNotifier {
           _isAnswerCorrectHandling = true;
           if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
             // 例句环节 PTT 语义：统一走 _syncAudioHardware 按 _isPttPressed 判定说模式，
-            // 避免旧表达式 (_shouldShowSpeakTab && tabIndex==0) 绕过 PTT 控制导致开麦状态错乱。
+            // 避免绕过 PTT 控制直接开麦导致开麦状态错乱。
             final bool isSentenceStep = step == StudyStep.enSentence2Ch.json ||
                 step == StudyStep.chSentence2En.json;
             if (isSentenceStep) {
               _syncAudioHardware();
             } else {
               await StudyAudioSessionController.instance.syncHardwareIntent(
-                isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+                isInSpeakTab: _isSpeaking,
                 isAnsweringActive: false,
                 language: AsrLanguage.english,
                 phrases: [],
@@ -3137,7 +3079,7 @@ class BdcNotifier extends _$BdcNotifier {
         // 仅在麦克风处于开启状态时才进行物理关麦，通过 unawaited 异步执行，绝不阻塞 UI 主帧与答对流程
         if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
           unawaited(StudyAudioSessionController.instance.syncHardwareIntent(
-            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+            isInSpeakTab: _isSpeaking,
             isAnsweringActive: false,
             language: AsrLanguage.chinese,
             phrases: [],
@@ -3556,7 +3498,7 @@ class BdcNotifier extends _$BdcNotifier {
           sentenceDigest: sentenceDigest,
           playWord: willPlayWord,
           playSentence: willPlaySentence,
-          isSpeakMode: startAsrWhenFinish && _shouldShowSpeakTab && state.tabIndex == 0,
+          isSpeakMode: startAsrWhenFinish && _isSpeaking,
         );
       }
     }
@@ -3801,8 +3743,8 @@ class BdcNotifier extends _$BdcNotifier {
     final bool isSentenceStep = state.studyStep == StudyStep.enSentence2Ch.json ||
         state.studyStep == StudyStep.chSentence2En.json;
     final isInSpeakTab = isSentenceStep
-        ? _isPttPressed && state.tabIndex == 0
-        : _shouldShowSpeakTab && state.tabIndex == 0;
+        ? _isPttPressed && _isSpeaking
+        : _isSpeaking;
     final isAnsweringActive = !_isGuideShowing &&
         state.word != null &&
         state.loadError == null &&
@@ -4316,50 +4258,8 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(isWordMastered: value);
   }
 
-  List<Tab> get dynamicTabs {
-    List<Tab> tabs = [];
-    if (_shouldShowSpeakTab) {
-      final String speakLabel;
-      if (state.studyStep == StudyStep.enSentence2Ch.json) {
-        speakLabel = '说中文';
-      } else if (state.studyStep == StudyStep.chSentence2En.json) {
-        speakLabel = '说英文';
-      } else if (state.studyStep == StudyStep.en2Ch.json) {
-        speakLabel = '说释义';
-      } else {
-        speakLabel = '说发音';
-      }
-      tabs.add(Tab(
-        height: 30,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.mic_none_rounded, size: 15),
-            const SizedBox(width: 4),
-            Text(speakLabel),
-          ],
-        ),
-      ));
-    }
-    tabs.add(const Tab(
-      height: 30,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.fact_check_outlined, size: 15),
-          SizedBox(width: 4),
-          Text('选择题'),
-        ],
-      ),
-    ));
-    return tabs;
-  }
-
-  /// 当前环节是否用「说」答题：假则全程不开麦（关掉语音答题，或平台/环节不支持语音）。
-  bool get _shouldShowSpeakTab =>
-      voiceAnswerAvailableFor(state.studyStep ?? '', state.voiceAnswerEnabled);
+  /// 当前是不是在用「说」答题：假则全程不开麦（写/选档一律静默）。
+  bool get _isSpeaking => state.answerMode == AnswerMode.speak;
 
   void updateIsUpdatingByHint(bool value) {
     state = state.copyWith(isUpdatingByHint: value);
@@ -4751,7 +4651,7 @@ class BdcNotifier extends _$BdcNotifier {
 
         if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
           await StudyAudioSessionController.instance.syncHardwareIntent(
-            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+            isInSpeakTab: _isSpeaking,
             isAnsweringActive: false,
             language: AsrLanguage.english,
             phrases: [],
@@ -4991,7 +4891,7 @@ class BdcNotifier extends _$BdcNotifier {
 
         if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
           await StudyAudioSessionController.instance.syncHardwareIntent(
-            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+            isInSpeakTab: _isSpeaking,
             isAnsweringActive: false,
             language: AsrLanguage.english,
             phrases: [],
@@ -5158,7 +5058,7 @@ class BdcNotifier extends _$BdcNotifier {
 
         if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
           await StudyAudioSessionController.instance.syncHardwareIntent(
-            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+            isInSpeakTab: _isSpeaking,
             isAnsweringActive: false,
             language: AsrLanguage.english,
             phrases: [],
