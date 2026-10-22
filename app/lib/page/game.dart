@@ -37,6 +37,9 @@ class _GamePageState extends State<GamePage> {
   /// 当前选中的游戏类型：'bubble'（戳泡泡）、'brick'（消砖块）、'monster'（打哭小馋怪）
   String _selectedGame = 'bubble';
 
+  /// 选中游戏的玩法说明是否展开（默认折叠，避免大段说明占满首屏）
+  bool _rulesExpanded = false;
+
   String get _targetGameRoute =>
       _selectedGame == 'brick' ? '/brick' : '/russia';
 
@@ -133,8 +136,9 @@ class _GamePageState extends State<GamePage> {
       }
 
       // 系统管理员可通过服务端参数隐藏中小学教育类大厅分组（K12）。
-      // 只有明确是其他厂商机型（华为/荣耀/OPPO/vivo 等白名单）才显示。
-      if (!PlatformUtils.isConfirmedNonXiaomiDevice && Prefs.hideK12Content) {
+      // 只有白名单厂商的机型和 iOS 等非 Android 平台才永远显示；
+      // 小米系、Rockchip 云真机、厂商读不到的设备都由该配置决定。
+      if (!PlatformUtils.isK12VisibleVendor && Prefs.hideK12Content) {
         gameHallDataResult!.hallGroups.removeWhere(
             (hg) => Config.k12GroupNames.contains(hg.groupName));
       }
@@ -788,28 +792,68 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: themeConfig.subtleBg,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.black.withValues(alpha: 0.04),
-                    width: 0.5,
+              const SizedBox(height: 14),
+              // 玩法说明默认折叠：整段规则太长，首屏只留一行可点开的入口
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => setState(() => _rulesExpanded = !_rulesExpanded),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.menu_book_rounded, size: 15, color: textSub),
+                      const SizedBox(width: 6),
+                      Text(
+                        '玩法说明',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: textSub,
+                        ),
+                      ),
+                      const Spacer(),
+                      AnimatedRotation(
+                        turns: _rulesExpanded ? 0.25 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(Icons.arrow_forward_ios_rounded,
+                            size: 12,
+                            color: textSub.withValues(alpha: 0.6)),
+                      ),
+                    ],
                   ),
                 ),
-                child: Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    height: 1.45,
-                    color: textSub,
-                  ),
-                ),
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: _rulesExpanded
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: themeConfig.subtleBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.black.withValues(alpha: 0.04),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Text(
+                            description,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              height: 1.45,
+                              color: textSub,
+                            ),
+                          ),
+                        ),
+                      )
+                    : const SizedBox(width: double.infinity),
               ),
               if (isMonster) ...[
                 const SizedBox(height: 18),

@@ -287,9 +287,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       topGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
 
       // 系统管理员可通过服务端参数隐藏中小学教育类分组（K12 词书）。
-      // 只有明确是其他厂商机型（华为/荣耀/OPPO/vivo 等白名单）才显示，
-      // 小米系机型以及厂商读不到的设备都由该配置决定。
-      if (!PlatformUtils.isConfirmedNonXiaomiDevice && Prefs.hideK12Content) {
+      // 只有白名单厂商（华为/荣耀/OPPO/vivo/三星/魅族）的机型和 iOS 等非 Android 平台
+      // 才永远显示；小米系、Rockchip 云真机、厂商读不到的设备都由该配置决定。
+      if (!PlatformUtils.isK12VisibleVendor && Prefs.hideK12Content) {
         topGroups = topGroups
             .where((g) => !Config.k12GroupNames.contains(g.name))
             .toList();

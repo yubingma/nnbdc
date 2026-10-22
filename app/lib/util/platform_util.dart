@@ -174,15 +174,24 @@ class PlatformUtils {
   /// 是否运行在 Flutter 单元测试环境中
   static bool get isUnitTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
-  /// 是否为小米系设备（小米 / Redmi / POCO）。
+  /// 是否「永远显示 K12 内容」——白名单厂商的 Android 机型，以及所有非 Android 平台。
   ///
-  /// 厂商信息由 [initAndroidDeviceInfo] 在启动时读取并归并。
-  static bool get isXiaomiDevice => _androidVendor == 'Xiaomi';
+  /// 白名单只列明确的主流手机品牌；其余情况一律返回 false，交由服务端开关
+  /// `hideK12Content` 决定是否隐藏。这样小米系机型、Rockchip 等云真机/开发板、
+  /// 以及原生通道读不到厂商时都不会漏隐藏。
+  static bool get isK12VisibleVendor {
+    if (!isAndroid) return true;
+    return _androidVendor != null && k12VisibleVendors.contains(_androidVendor);
+  }
 
-  /// 是否「明确不是小米」——即白名单内的其他厂商机型（华为/荣耀/OPPO/vivo 等）。
-  ///
-  /// 厂商信息没读到时返回 false（按"可能是小米"处理），确保小米审核用云真机
-  /// 读不到品牌时也不会漏隐藏 K12 内容。
-  static bool get isConfirmedNonXiaomiDevice =>
-      _androidVendor != null && _androidVendor != 'Xiaomi';
+  /// 白名单厂商（取 [normalizeAndroidVendor] 归并后的值）。
+  /// Redmi/POCO 已归并为 Xiaomi，一加/realme 归并为 OPPO，iQOO 归并为 vivo，故不在此列。
+  static const Set<String> k12VisibleVendors = {
+    'Huawei',
+    'Honor',
+    'OPPO',
+    'vivo',
+    'Samsung',
+    'Meizu',
+  };
 }
