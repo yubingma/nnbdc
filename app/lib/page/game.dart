@@ -726,7 +726,7 @@ class _GamePageState extends State<GamePage> {
       subtitle = '左摇杆走位 · 自动投掷 · 走位答词';
     } else if (_selectedGame == 'brick') {
       icon = Icons.dashboard_rounded;
-      title = '消砖块 · 1v1 经典下落消除';
+      title = '消砖块 · 1v1 下落消除';
       subtitle = '单词下落触底 · 辨析中文释义';
     } else {
       icon = Icons.bubble_chart_rounded;

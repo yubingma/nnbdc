@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/bdc/bdc.dart';
+import 'package:nnbdc/page/bdc/providers/answer_mode.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
 import 'package:nnbdc/state.dart';
@@ -143,7 +144,7 @@ void main() {
     PlatformUtils.englishAsrSupportedOverride = null;
   });
 
-  testWidgets('关掉语音答题：英译汉第一档直接是键盘打字面板，不再"请说"', (tester) async {
+  testWidgets('切到「写」：英译汉直接是键盘打字面板，不再"请说"', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
     final state = const BdcState().copyWith(
       dataLoaded: true,
@@ -151,8 +152,7 @@ void main() {
       wordWrapper: WordWrapper(testWord, null),
       currentGetWordResult: result,
       studyStep: StudyStep.en2Ch.json,
-      tabIndex: 0,
-      voiceAnswerEnabled: false,
+      answerMode: AnswerMode.write,
     );
 
     await _pumpPage(tester, state);
@@ -167,7 +167,7 @@ void main() {
     expect(find.text('提交'), findsOneWidget);
   });
 
-  testWidgets('关掉语音答题：汉译英第一档是拼写面板，没有提交按钮', (tester) async {
+  testWidgets('切到「写」：汉译英是拼写面板，没有提交按钮', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
     final state = const BdcState().copyWith(
       dataLoaded: true,
@@ -175,8 +175,7 @@ void main() {
       wordWrapper: WordWrapper(testWord, null),
       currentGetWordResult: result,
       studyStep: StudyStep.ch2En.json,
-      tabIndex: 0,
-      voiceAnswerEnabled: false,
+      answerMode: AnswerMode.write,
     );
 
     await _pumpPage(tester, state);

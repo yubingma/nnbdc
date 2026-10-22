@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/bdc/bdc.dart';
+import 'package:nnbdc/page/bdc/providers/answer_mode.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
 import 'package:nnbdc/state.dart';
@@ -99,7 +100,7 @@ void main() {
       word: testWord,
       currentGetWordResult: mockGetWordResult,
       studyStep: StudyStep.enSentence2Ch.json,
-      tabIndex: 1, // 选择题模式
+      answerMode: AnswerMode.choose,
       words: [testWord, ...mockGetWordResult.otherWords!],
       correctAnswerIndex: 1,
     );
@@ -128,8 +129,9 @@ void main() {
     expect(tester.widget<Text>(spellFinder).data, 'testword');
     expect(find.textContaining('This is a'), findsNothing);
 
-    // 验证选择题模式下切换按钮文案为「说中文」
-    expect(find.text('说中文'), findsOneWidget);
+    // 答题方式三档里「选」是亮着的，「说」这一档点一下就回去
+    expect(find.text('说'), findsOneWidget);
+    expect(find.text('选'), findsOneWidget);
   });
 
   testWidgets('例句英译汉(EnSentence2Ch)说模式Tab只显示例句且不显示单词拼写', (tester) async {
@@ -140,7 +142,7 @@ void main() {
       word: testWord,
       currentGetWordResult: mockGetWordResult,
       studyStep: StudyStep.enSentence2Ch.json,
-      tabIndex: 0, // 说模式
+      answerMode: AnswerMode.speak,
       words: [testWord, ...mockGetWordResult.otherWords!],
       correctAnswerIndex: 1,
     );
@@ -176,7 +178,7 @@ void main() {
       word: testWord,
       currentGetWordResult: mockGetWordResult,
       studyStep: StudyStep.chSentence2En.json,
-      tabIndex: 1, // 选择题模式
+      answerMode: AnswerMode.choose,
       words: [testWord, ...mockGetWordResult.otherWords!],
       correctAnswerIndex: 1,
     );
@@ -204,8 +206,9 @@ void main() {
     expect(find.byType(Table), findsOneWidget);
     expect(find.textContaining('测试词'), findsWidgets);
 
-    // 验证选择题模式下切换按钮文案为「说英文」（非「说发音」）
-    expect(find.text('说英文'), findsOneWidget);
+    // 答题方式里只有 说/选 两档：例句环节没有「写」
+    expect(find.text('说'), findsOneWidget);
+    expect(find.text('写'), findsNothing);
     expect(find.text('说发音'), findsNothing);
   });
 
@@ -217,7 +220,7 @@ void main() {
       word: testWord,
       currentGetWordResult: mockGetWordResult,
       studyStep: StudyStep.chSentence2En.json,
-      tabIndex: 0, // 说模式
+      answerMode: AnswerMode.speak,
       words: [testWord, ...mockGetWordResult.otherWords!],
       correctAnswerIndex: 1,
     );
@@ -255,7 +258,7 @@ void main() {
       word: testWord,
       currentGetWordResult: mockGetWordResult,
       studyStep: StudyStep.enSentence2Ch.json,
-      tabIndex: 0, // 语音模式
+      answerMode: AnswerMode.speak,
       hasFinishedAnswering: false,
       words: [testWord, ...mockGetWordResult.otherWords!],
       correctAnswerIndex: 1,
@@ -295,7 +298,7 @@ void main() {
       word: testWord,
       currentGetWordResult: mockGetWordResult,
       studyStep: StudyStep.enSentence2Ch.json,
-      tabIndex: 0, // 语音模式
+      answerMode: AnswerMode.speak,
       hasFinishedAnswering: true,
       canLeaveCurrWord: true,
       words: [testWord, ...mockGetWordResult.otherWords!],
@@ -323,23 +326,20 @@ void main() {
     expect(find.text('按住练习'), findsOneWidget);
   });
 
-  testWidgets('例句模式能正确记忆选择题与说模式偏好（isSentenceSelectModePreferred）', (tester) async {
+  testWidgets('例句模式切档后记住用户选的方式，且不串到单词环节', (tester) async {
     final (testWord, mockGetWordResult) = _createTestData();
 
-    // 初始状态：例句环节偏好选择题
-    final enStatePreferredSelect = const BdcState().copyWith(
+    final enStateChoosing = const BdcState().copyWith(
       dataLoaded: true,
       word: testWord,
       currentGetWordResult: mockGetWordResult,
       studyStep: StudyStep.enSentence2Ch.json,
-      tabIndex: 1, // 当前在选择题模式
-      isSentenceSelectModePreferred: true,
-      isSelectModePreferred: false, // 单词模式偏好说，两者互不干扰
+      answerMode: AnswerMode.choose,
       words: [testWord, ...mockGetWordResult.otherWords!],
       correctAnswerIndex: 1,
     );
 
-    final mockNotifier = MockBdcNotifier(enStatePreferredSelect);
+    final mockNotifier = MockBdcNotifier(enStateChoosing);
 
     await tester.pumpWidget(
       provider.ChangeNotifierProvider<DarkMode>(
@@ -358,18 +358,21 @@ void main() {
     );
     await tester.pump();
 
-    // 验证当前显示选择题切换按钮「说中文」
-    expect(find.text('说中文'), findsOneWidget);
+    // 例句环节没有「写」档：切换控件里只有 说/选
+    expect(find.text('说'), findsOneWidget);
+    expect(find.text('选'), findsOneWidget);
+    expect(find.text('写'), findsNothing);
 
-    // 模拟用户在例句模式下切换为语音 Tab（index 0）
-    mockNotifier.updateTabIndex(0);
-    expect(mockNotifier.state.isSentenceSelectModePreferred, false);
-    // 单词模式偏好保持不变
-    expect(mockNotifier.state.isSelectModePreferred, false);
+    // 切到「说」：例句环节这一档生效（落盘口径由 bdc_notifier_test 覆盖）
+    mockNotifier.updateAnswerMode(AnswerMode.speak);
+    expect(mockNotifier.state.answerMode, AnswerMode.speak);
 
-    // 模拟用户在例句模式下切换回选择题 Tab（index 1）
-    mockNotifier.updateTabIndex(1);
-    expect(mockNotifier.state.isSentenceSelectModePreferred, true);
+    // 切回「选」
+    mockNotifier.updateAnswerMode(AnswerMode.choose);
+    expect(mockNotifier.state.answerMode, AnswerMode.choose);
+    // 例句环节没有写档，切过去必须被拒
+    mockNotifier.updateAnswerMode(AnswerMode.write);
+    expect(mockNotifier.state.answerMode, AnswerMode.choose);
   });
 
   testWidgets('选择题模式下点击「隐藏答案继续练习」能成功隐藏答案并重置作答状态', (tester) async {
@@ -381,7 +384,7 @@ void main() {
       word: testWord,
       currentGetWordResult: mockGetWordResult,
       studyStep: StudyStep.enSentence2Ch.json,
-      tabIndex: 1, // 选择题模式
+      answerMode: AnswerMode.choose,
       hasFinishedAnswering: true,
       selectedAnswerIndex: 1, // 选中第 1 个选项
       words: [testWord, ...mockGetWordResult.otherWords!],
@@ -433,7 +436,7 @@ void main() {
       word: testWord,
       currentGetWordResult: mockGetWordResult,
       studyStep: StudyStep.enSentence2Ch.json,
-      tabIndex: 0,
+      answerMode: AnswerMode.speak,
       hasFinishedAnswering: false,
     );
 
@@ -487,7 +490,7 @@ void main() {
       wordWrapper: WordWrapper(testWord, null),
       currentGetWordResult: mockResult,
       studyStep: StudyStep.en2Ch.json,
-      tabIndex: 0,
+      answerMode: AnswerMode.speak,
       words: [
         WordVo.c2('frigate')..setMeaningStr('n. 护卫舰；快速战舰'),
         WordVo.c2('primate')..setMeaningStr('n. 灵长类动物；大主教 adj. 灵长类'),
@@ -524,7 +527,7 @@ void main() {
     );
     await tester.pump();
 
-    final selectBtn = find.text('选择题');
+    final selectBtn = find.byKey(const Key('bdc_answer_mode_choose'));
     expect(selectBtn, findsOneWidget);
     await tester.tap(selectBtn);
     await tester.pumpAndSettle();

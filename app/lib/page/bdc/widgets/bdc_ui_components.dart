@@ -19,14 +19,22 @@ extension BdcPageStateUIComponents on BdcPageState {
   BdcState get state => _activeState ?? ref.read(bdcNotifierProvider);
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
 
-  /// 答题卡第一档是不是「说」（用户开着语音答题、且平台认这一环节的语音）。
-  bool get _firstTabIsVoice => BdcNotifier.voiceAnswerAvailableFor(
-      state.studyStep ?? '', state.voiceAnswerEnabled);
+  /// 当前是不是在用「写」答题
+  bool get _isWriting => state.answerMode == AnswerMode.write;
 
-  /// 当前选中的是不是最后那一档「选择题」（例句环节关掉语音后它也是唯一一档）。
-  bool _isChoiceTabSelected(BdcState s) =>
-      s.tabIndex >=
-      BdcNotifier.answerTabCountFor(s.studyStep ?? '', s.voiceAnswerEnabled) - 1;
+  /// 这一档在不在「选」档（选择题列表与例句卡片都按它决定呈现形态）
+  bool _isChoosing(BdcState s) => s.answerMode == AnswerMode.choose;
+
+  IconData _answerModeIcon(AnswerMode mode) {
+    switch (mode) {
+      case AnswerMode.write:
+        return Icons.keyboard_alt_outlined;
+      case AnswerMode.speak:
+        return Icons.mic_none_rounded;
+      case AnswerMode.choose:
+        return Icons.fact_check_outlined;
+    }
+  }
 
   Widget _buildLoadingPage() {
     final isDarkMode = _cachedIsDarkMode;
@@ -495,108 +503,109 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-  Widget _buildModeSwitchButton() {
-    if (_tabController == null || _tabController!.length <= 1) {
-      return const SizedBox.shrink();
-    }
-    final isDarkMode = _cachedIsDarkMode;
-    final bool onFirstTab = state.tabIndex == 0;
-    // 第一档是「说」还是「拼写」由语音答题开关决定；回到第一档时要按它说清去向。
-    final bool voiceAnswer = _firstTabIsVoice;
-    final String targetLabel;
-    if (onFirstTab) {
-      targetLabel = '选择题';
-    } else if (state.studyStep == StudyStep.enSentence2Ch.json) {
-      targetLabel = '说中文';
-    } else if (state.studyStep == StudyStep.chSentence2En.json) {
-      targetLabel = '说英文';
-    } else if (state.studyStep == StudyStep.en2Ch.json) {
-      targetLabel = voiceAnswer ? '说释义' : '拼写';
-    } else {
-      targetLabel = voiceAnswer ? '说发音' : '拼写';
-    }
-    final IconData targetIcon;
-    if (onFirstTab) {
-      targetIcon = Icons.fact_check_outlined;
-    } else {
-      targetIcon = voiceAnswer ? Icons.mic_none_rounded : Icons.keyboard_alt_outlined;
-    }
-
-    final Color actionColor =
-        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
-
+  /// 答题卡右上角的答题方式切换：写 / 说 / 选。
+  ///
+  /// 三档同时摆出来，谁亮谁生效；点一下就切，切换后按设备记住（换词不用再点）。
+  Widget _buildAnswerModeSwitch() {
+    final List<AnswerMode> modes = AnswerModes.forStep(state.studyStep);
+    if (modes.length <= 1) return const SizedBox.shrink();
+    final bool isDark = _cachedIsDarkMode;
+    final Color activeColor = context.primaryColor;
+    final Color idleColor =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
     return Semantics(
       identifier: 'e2e_study_mode_switch',
-      button: true,
-      child: GestureDetector(
-        key: const Key('bdc_mode_switch_btn'),
-        onTap: () {
-          final targetIndex = onFirstTab ? 1 : 0;
-          ref.read(bdcNotifierProvider.notifier).updateTabIndex(targetIndex);
-        },
-        behavior: HitTestBehavior.opaque,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                targetIcon,
-                size: 13.5,
-                color: actionColor,
-              ),
-              const SizedBox(width: 3.5),
-              Text(
-                targetLabel,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: actionColor,
-                  letterSpacing: -0.1,
+      container: true,
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final AnswerMode mode in modes)
+              Semantics(
+                identifier: 'e2e_study_mode_${mode.name}',
+                button: true,
+                selected: state.answerMode == mode,
+                child: GestureDetector(
+                  key: Key('bdc_answer_mode_${mode.name}'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => ref
+                      .read(bdcNotifierProvider.notifier)
+                      .updateAnswerMode(mode),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    curve: Curves.easeOut,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6.5, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: state.answerMode == mode
+                          ? (isDark
+                              ? Colors.white.withValues(alpha: 0.16)
+                              : Colors.white)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _answerModeIcon(mode),
+                          size: 13,
+                          color: state.answerMode == mode
+                              ? activeColor
+                              : idleColor,
+                        ),
+                        const SizedBox(width: 2.5),
+                        Text(
+                          mode.label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: state.answerMode == mode
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                            color: state.answerMode == mode
+                                ? activeColor
+                                : idleColor,
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  /// 首次点「拼写」时提一句：想一直打字答题，可以在学习设置里关掉语音答题。
-  ///
-  /// 只提一次。反复点「拼写」的人正是这个开关的目标用户 —— 不提示，他们永远
-  /// 只能一个词点一次，也正是线上反馈里"每次都要点一下"那句抱怨。
-  void _maybeHintTypingMode() {
-    const String hintKey = 'bdc_typing_mode_hint_shown';
-    if (Prefs.read<bool>(hintKey) == true) return;
-    unawaited(Prefs.write(hintKey, true));
-    ToastUtil.info('想一直用打字答题？到「更多 → 学习设置」关掉「语音答题」',
-        autoCloseDuration: const Duration(seconds: 4));
-  }
-
-  /// 答题区顶部的题目提示语：开口说，还是动手写。
-  String get _answerPromptLabel {
+  /// 答题区顶部的题目提示语：写、说，还是选（选择题不需要提示语）。
+  String? get _answerPromptLabel {
     final String? step = state.studyStep;
-    if (!_firstTabIsVoice) {
-      // 关掉语音答题后只有单词环节有键盘答题：英译汉写中文释义、汉译英拼单词
-      return step == StudyStep.en2Ch.json ? '请写出中文释义：' : '请拼写单词：';
+    switch (state.answerMode) {
+      case AnswerMode.write:
+        return step == StudyStep.en2Ch.json ? '请写出中文释义：' : '请拼写单词：';
+      case AnswerMode.speak:
+        if (step == StudyStep.enSentence2Ch.json) return '请说出例句翻译：';
+        if (step == StudyStep.chSentence2En.json) return '请朗读英文例句：';
+        return step == StudyStep.en2Ch.json ? '请说出中文释义：' : '请说出单词发音：';
+      case AnswerMode.choose:
+        return null;
     }
-    if (step == StudyStep.enSentence2Ch.json) return '请说出例句翻译：';
-    if (step == StudyStep.chSentence2En.json) return '请朗读英文例句：';
-    return step == StudyStep.en2Ch.json ? '请说出中文释义：' : '请说出单词发音：';
   }
 
-  /// 顶栏要不要留「默写/手写」入口。
-  ///
-  /// 语音模式下只有英译汉有「默写」（说中文释义时的另一条路）；
-  /// 关掉语音答题后，两种语言都只剩键盘和选择题，必须各留一个手写出口。
+  /// 「手写」入口只在写档出现：写档是键盘打字，想用手写就从这里进全屏手写板。
   bool get _showsHandwritingEntry {
-    if (state.showHandwritingBoard) return false;
+    if (!_isWriting || state.showHandwritingBoard) return false;
     final String? step = state.studyStep;
-    if (step != StudyStep.en2Ch.json && step != StudyStep.ch2En.json) {
-      return false;
-    }
-    return !_firstTabIsVoice || step == StudyStep.en2Ch.json;
+    return step == StudyStep.en2Ch.json || step == StudyStep.ch2En.json;
   }
 
   Widget _buildHandwritingEntry() {
@@ -622,7 +631,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             Icon(Icons.edit_outlined, size: 13.5, color: actionColor),
             const SizedBox(width: 3.5),
             Text(
-              _firstTabIsVoice ? '默写' : '手写',
+              '手写',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -912,17 +921,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [
-                                      if (state.tabIndex == 0)
+                                      if (_answerPromptLabel case final String label)
                                         Expanded(
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
-                                                _firstTabIsVoice
-                                                    ? Icons
-                                                        .record_voice_over_outlined
-                                                    : Icons
-                                                        .keyboard_alt_outlined,
+                                                _answerModeIcon(
+                                                    state.answerMode),
                                                 size: 13.5,
                                                 color: _cachedIsDarkMode
                                                     ? const Color(0xFF94A3B8)
@@ -931,7 +937,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                               const SizedBox(width: 4.5),
                                               Flexible(
                                                 child: Text(
-                                                  _answerPromptLabel,
+                                                  label,
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   style: TextStyle(
@@ -951,11 +957,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                                         )
                                       else
                                         const Spacer(),
-                                      // 手写入口：语音模式下只有英译汉的「默写」；
-                                      // 关掉语音答题后两种语言都要留一个「手写」出口。
+                                      // 写档是键盘打字，想手写就从这里进全屏手写板
                                       if (_showsHandwritingEntry)
                                         _buildHandwritingEntry(),
-                                      _buildModeSwitchButton(),
+                                      _buildAnswerModeSwitch(),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
@@ -976,13 +981,18 @@ extension BdcPageStateUIComponents on BdcPageState {
                                           physics:
                                               const NeverScrollableScrollPhysics(),
                                           children: [
-                                            // 始终保持 Tab 数量一致性，避免抖动：
-                                            // 第一档是「说」还是「拼写」由语音答题开关决定
-                                            if (_tabController?.length == 2)
-                                              _firstTabIsVoice
-                                                  ? _buildSpeakPanel()
-                                                  : _buildTypingPanel(),
-                                            _buildChoiceListScrollView(),
+                                            // 档位顺序＝AnswerModes.forStep 的顺序（写/说/选）
+                                            for (final AnswerMode mode
+                                                in AnswerModes.forStep(
+                                                    state.studyStep))
+                                              switch (mode) {
+                                                AnswerMode.write =>
+                                                  _buildTypingPanel(),
+                                                AnswerMode.speak =>
+                                                  _buildSpeakPanel(),
+                                                AnswerMode.choose =>
+                                                  _buildChoiceListScrollView(),
+                                              },
                                           ],
                                         )
                                       : Column(
@@ -1981,19 +1991,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildPanelButton(
-                        icon: Icons.edit_note_rounded,
-                        label: '拼写',
-                        onTap: () {
-                          // 输入框空白由 updateShowHandwritingBoard(true) 统一保证，这里不再单独清
-                          updateUI(() {
-                            notifier.updateShowHandwritingBoard(true);
-                          }, tag: 'hw-open');
-                          notifier.asr.stopMicrophone();
-                          _maybeHintTypingMode();
-                        },
-                      ),
-                      const SizedBox(width: 6),
+                      // 打字/手写统一收到「写」档里，说面板不再摆一个跳去写板的入口
                       _buildPanelButton(
                         icon: Icons.lightbulb_outline_rounded,
                         label: '提示',
@@ -3044,7 +3042,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             : null;
     final sentenceText = sentence?.english ?? "No sentence available";
     final spell = state.word?.spell ?? '';
-    final bool isChoiceTab = _isChoiceTabSelected(state);
+    final bool isChoiceTab = _isChoosing(state);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -3308,7 +3306,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             ? state.word!.sentences!.first
             : null;
     final translationText = sentence?.chinese ?? "暂无例句翻译";
-    final bool isChoiceTab = _isChoiceTabSelected(state);
+    final bool isChoiceTab = _isChoosing(state);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),

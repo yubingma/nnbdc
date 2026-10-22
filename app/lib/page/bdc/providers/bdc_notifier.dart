@@ -1232,8 +1232,10 @@ class BdcNotifier extends _$BdcNotifier {
     unawaited(Prefs.write(
         answerModePrefKey(AnswerModes.isSentenceStep(state.studyStep)),
         mode.name));
-    StudyAudioSessionController.instance.keepMicrophoneWarm =
-        mode == AnswerMode.speak;
+    // 离开说档就不再保温：保温是"马上还要开口"的意图，写/选档没有这个意图
+    if (mode != AnswerMode.speak) {
+      StudyAudioSessionController.instance.keepMicrophoneWarm = false;
+    }
     state = state.copyWith(answerMode: mode, isPttPressed: _isPttPressed);
     _handleTabChangeForAsr();
   }
