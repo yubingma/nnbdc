@@ -67,6 +67,52 @@ void main() {
     });
   });
 
+  group('大厅匹配中的「开始单人练习」出口', () {
+    test('刚进房、没人、也不在等好友 → 给匹配浮层（含练习出口）', () {
+      expect(
+        BrickPageState.showsMatchingOverlay(
+            isPlaying: false,
+            myStarted: false,
+            hasOpponent: false,
+            privateRoomWaiting: false),
+        isTrue,
+      );
+    });
+
+    test('已经有对手 → 不再显示匹配浮层', () {
+      expect(
+        BrickPageState.showsMatchingOverlay(
+            isPlaying: false,
+            myStarted: false,
+            hasOpponent: true,
+            privateRoomWaiting: false),
+        isFalse,
+      );
+    });
+
+    test('正在练习 → 不再显示匹配浮层', () {
+      expect(
+        BrickPageState.showsMatchingOverlay(
+            isPlaying: true,
+            myStarted: true,
+            hasOpponent: false,
+            privateRoomWaiting: false),
+        isFalse,
+      );
+    });
+
+    test('私房房主等人 → 交给开房面板，不叠匹配浮层', () {
+      expect(
+        BrickPageState.showsMatchingOverlay(
+            isPlaying: false,
+            myStarted: false,
+            hasOpponent: false,
+            privateRoomWaiting: true),
+        isFalse,
+      );
+    });
+  });
+
   group('按房号进房失败', () {
     test('客户端必须监听服务端的 joinRoomFailed，并在退出页面时注销', () {
       final source = File('lib/page/brick.dart').readAsStringSync();

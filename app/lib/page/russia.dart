@@ -2984,6 +2984,17 @@ class RussiaPageState extends State<RussiaPage>
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ),
+            const SizedBox(height: 4),
+            // 和消砖块一样给一条明路：不想等了就回大厅，不必去摸顶部的返回箭头
+            TextButton.icon(
+              onPressed: _handleExitButtonClicked,
+              icon: const Icon(Icons.arrow_back_rounded, size: 15),
+              label: const Text('返回大厅', style: TextStyle(fontSize: 13)),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white.withValues(alpha: 0.7),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+              ),
+            ),
           ],
         ),
       ),
@@ -3098,6 +3109,17 @@ class RussiaPageState extends State<RussiaPage>
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 4),
+            // 等不到人就回大厅：这里也必须给一条明路，别让人只能找顶部的返回箭头
+            TextButton.icon(
+              onPressed: () => context.pop(),
+              icon: const Icon(Icons.arrow_back_rounded, size: 15),
+              label: const Text('返回大厅', style: TextStyle(fontSize: 13)),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white.withValues(alpha: 0.7),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+              ),
             ),
           ],
         ),

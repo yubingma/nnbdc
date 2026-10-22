@@ -204,6 +204,22 @@ class BrickPageState extends State<BrickPage>
       isReady: gameState == 'ready',
       myStarted: myStarted);
 
+  /// 大厅匹配中的浮层：还没开局、没有对手、也没在等私房好友——
+  /// 这时给「开始单人练习」的出口，别让人对着空场地干等
+  static bool showsMatchingOverlay({
+    required bool isPlaying,
+    required bool myStarted,
+    required bool hasOpponent,
+    required bool privateRoomWaiting,
+  }) =>
+      !isPlaying && !myStarted && !hasOpponent && !privateRoomWaiting;
+
+  bool get _showsMatchingOverlay => showsMatchingOverlay(
+      isPlaying: isPlaying,
+      myStarted: myStarted,
+      hasOpponent: _hasOpponent,
+      privateRoomWaiting: _showsPrivateRoomWaiting);
+
   /// 房间里已经坐着对手：好友按房号进来了，或大厅匹配到了人。
   /// 只有这时「开始对战」才是服务端认账的指令（房里只有一个人时是 WaitState，不处理 START_GAME）。
   static bool canStartBattle({
@@ -357,11 +373,15 @@ class BrickPageState extends State<BrickPage>
 
     socket.off('enterReady');
     socket.on('enterReady', (data) {
-      if (!mounted || isPlaying) return;
+      if (!mounted) return;
+      // 练习中有人进来也要记下来（顶栏会出现「开始对战」，点了就把练习局让给对方）；
+      // 只有不在对局时才可以重置就绪状态，别把正在打的那一局搅乱
       setState(() {
         gameState = 'ready';
-        myStarted = false;
-        opponentStarted = false;
+        if (!isPlaying) {
+          myStarted = false;
+          opponentStarted = false;
+        }
         if (opponentNickName == '等待对手加入...' || opponentNickName.isEmpty) {
           opponentNickName = '对手';
         }
@@ -631,6 +651,8 @@ class BrickPageState extends State<BrickPage>
   /// 服务端用它计算机器人的触底窗口，这样以后只改客户端的 baseFallSeconds
   /// 或竞技场/行高，服务端会自动跟随，不会留着旧速度常数。
   void _reportGamePacing() {
+    // 单人练习没有对手也没有机器人，这份节奏只用于服务端陪练机器人的触底窗口
+    if (isExercise) return;
     final mediaQuery = MediaQuery.maybeOf(context);
     final size = mediaQuery?.size ?? const Size(390, 844);
     final topPadding = max(mediaQuery?.padding.top ?? 44.0, 16.0);
@@ -1046,7 +1068,10 @@ class BrickPageState extends State<BrickPage>
       StudyAudioSessionController.instance.playSoundEffect('thud.mp3', speed: 0.9, volume: 0.65);
     }
 
-    sendUserCmd('REPORT_STACK_ROWS', [stackRows.length]);
+    // 堆叠行数是给对手看的：单人练习时房间处于等待状态，服务端不记账，发了也只会被当成未知指令
+    if (!isExercise) {
+      sendUserCmd('REPORT_STACK_ROWS', [stackRows.length]);
+    }
     if (myHp <= 0) {
       sendUserCmd('GAME_OVER', ['A']);
       _endGame(isWin: false);
@@ -1072,7 +1097,9 @@ class BrickPageState extends State<BrickPage>
       sendUserCmd('USE_PROPS', [propsIdx]);
       StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.25, volume: 0.4);
       _floatingTexts.add(BrickFloatingText(x: 200, y: 300, text: '✨ 治疗 +1 HP!', color: const Color(0xFF10B981)));
-      sendUserCmd('REPORT_STACK_ROWS', [stackRows.length]);
+      if (!isExercise) {
+        sendUserCmd('REPORT_STACK_ROWS', [stackRows.length]);
+      }
     }
   }
 
@@ -1187,9 +1214,12 @@ class BrickPageState extends State<BrickPage>
       isWin ? 'victory.mp3' : 'failed.mp3',
       timeoutMs: 2000,
     );
+    // 练习没有对手，不能拿"胜负"那套话术糊弄：练习到哪一步就是哪一步
+    final bool wasExercise = isExercise;
     setState(() {
       isPlaying = false;
       myStarted = false;
+      isExercise = false;
       if (isWin) {
         opponentHp = 0;
       } else {
@@ -1209,15 +1239,19 @@ class BrickPageState extends State<BrickPage>
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         title: Text(
-          isWin ? '🏆 消砖大捷！' : '💥 防线失守',
+          wasExercise ? '练习结束' : (isWin ? '🏆 消砖大捷！' : '💥 防线失守'),
           style: TextStyle(
-            color: isWin ? const Color(0xFFFBBF24) : const Color(0xFFEF4444),
+            color: wasExercise
+                ? const Color(0xFF34D399)
+                : (isWin ? const Color(0xFFFBBF24) : const Color(0xFFEF4444)),
             fontWeight: FontWeight.bold,
           ),
           textAlign: TextAlign.center,
         ),
         content: Text(
-          isWin ? '恭喜你成功击垮对方防线，赢得本局胜利！' : '错词方块堆满了防线，本局告负，再接再厉！',
+          wasExercise
+              ? '错词方块堆满了防线，这一局练习到此为止，随时可以再来。'
+              : (isWin ? '恭喜你成功击垮对方防线，赢得本局胜利！' : '错词方块堆满了防线，本局告负，再接再厉！'),
           style: const TextStyle(color: Colors.white70, fontSize: 14),
           textAlign: TextAlign.center,
         ),
@@ -1261,6 +1295,7 @@ class BrickPageState extends State<BrickPage>
     setState(() {
       isPlaying = false;
       myStarted = false;
+      isExercise = false;
       stackRows.clear();
       bricks.clear();
       currWord = null;
@@ -1306,6 +1341,9 @@ class BrickPageState extends State<BrickPage>
     final String opponentCurrentWord = _spellAt(opponentWordCount) ?? '…';
     // 开局前 / 开场动画中还没有正在下落的词：名字上方不显示题号和当前单词
     final bool showBattleInfo = isPlaying && !isIntroPlaying && bricks.isNotEmpty;
+    // 一个人练习时右侧那一路不是对手，标成「练习」，别摆一个"等待对手加入"的假对手
+    final String opponentLabel =
+        isExercise && opponentUserId.isEmpty ? '练习' : opponentNickName;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -1331,12 +1369,13 @@ class BrickPageState extends State<BrickPage>
                 maxStackRows: maxHp,
                 myStackRows: stackRows.length,
                 opponentStackRows: min(maxHp, max(0, maxHp - opponentHp)),
-                opponentName: opponentNickName,
+                opponentName: opponentLabel,
                 myWordOrdinal: myWordIndex + 1,
                 opponentWordOrdinal: opponentWordCount + 1,
                 myCurrentWord: myCurrentWord,
                 opponentCurrentWord: opponentCurrentWord,
                 showBattleInfo: showBattleInfo,
+                opponentInPlay: !isExercise,
               ),
             ),
           ),
@@ -1352,33 +1391,63 @@ class BrickPageState extends State<BrickPage>
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 20),
                   onPressed: () => context.pop(),
                 ),
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white24, width: 0.8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.grid_view_rounded, color: Color(0xFFF59E0B), size: 14),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            '消砖块 · ${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                // 房间名贴着返回键左对齐，但允许吃掉两个按钮之间的全部余量：
+                // 用 Flexible + Spacer 只给它一半，右边一出现「开始对战」或「练习」徽标就会被挤爆
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.grid_view_rounded, color: Color(0xFFF59E0B), size: 14),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              '消砖块 · ${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
+                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           ),
-                        ),
-                      ],
+                          if (isExercise) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: const Color(0xFF34D399).withValues(alpha: 0.6),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: const Text(
+                                '练习',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF6EE7B7),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const Spacer(),
-                if (!isPlaying) ...[
+                // 练习中有人进来：当场给一个开战出口，别让对手在房间里干等
+                if (isPlaying && isExercise && _hasOpponent) ...[
+                  const SizedBox(width: 8),
+                  _buildStartBattleButton(_endPracticeAndStartBattle),
+                ] else if (!isPlaying) ...[
                   const SizedBox(width: 8),
                   if (myStarted)
                     Container(
@@ -1401,41 +1470,17 @@ class BrickPageState extends State<BrickPage>
                       ),
                     )
                   else if (_hasOpponent)
-                    ElevatedButton(
-                      onPressed: () {
-                        sendUserCmd('START_GAME', []);
-                        setState(() => myStarted = true);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF59E0B),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('开始对战', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-                    )
-                  else
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.5), width: 1.0),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.hourglass_top_rounded, size: 14, color: Color(0xFFFBBF24)),
-                          SizedBox(width: 4),
-                          Text(
-                            '等待对手',
-                            style: TextStyle(color: Color(0xFFFCD34D), fontSize: 12, fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildStartBattleButton(_startBattle),
                 ],
               ],
             ),
           ),
+
+          // 2.4 大厅里还没等到人：给「开始单人练习」的出口，不必对着空场地干等
+          if (_showsMatchingOverlay)
+            Positioned.fill(
+              child: _buildMatchingOverlay(),
+            ),
 
           // 2.5 房主开好房等好友：把房号摆出来，说清好友怎么进来
           if (!isPlaying && _showsPrivateRoomWaiting)
@@ -1505,7 +1550,7 @@ class BrickPageState extends State<BrickPage>
   }
 
   /// 房主开好房等好友：房号是好友唯一的入口，必须摆在最显眼的位置并说清怎么用。
-  /// 消砖块没有单人练习，所以只给「复制房号」和「返回大厅」两条真实出路。
+  /// 等不到人就先独自练习，也可以直接回大厅。
   Widget _buildPrivateRoomWaitingOverlay() {
     final int? id = roomId;
     return Center(
@@ -1600,7 +1645,7 @@ class BrickPageState extends State<BrickPage>
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => context.pop(),
+                    onPressed: _startExercise,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF59E0B),
                       foregroundColor: Colors.black87,
@@ -1609,16 +1654,145 @@ class BrickPageState extends State<BrickPage>
                         borderRadius: BorderRadius.circular(18),
                       ),
                     ),
-                    child: const Text('返回大厅',
+                    child: const Text('先独自练习',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 4),
+            TextButton.icon(
+              onPressed: () => context.pop(),
+              icon: const Icon(Icons.arrow_back_rounded, size: 15),
+              label: const Text('返回大厅', style: TextStyle(fontSize: 13)),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white.withValues(alpha: 0.7),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// 大厅匹配中：给一个立刻开练的出口，不必对着空场地干等（练习不计分、不耗魔法泡泡）
+  Widget _buildMatchingOverlay() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F223D).withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 24,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.hourglass_top_rounded, color: Color(0xFFFBBF24), size: 40),
+            const SizedBox(height: 12),
+            const Text(
+              '正在为你匹配对手…',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '配对成功会自动开始；等不及可以先独自练习，练习不计分、也不消耗魔法泡泡',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: Colors.white.withValues(alpha: 0.72),
+              ),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _startExercise,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF59E0B),
+                  foregroundColor: Colors.black87,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+                child: const Text('开始单人练习',
+                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () => context.pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white.withValues(alpha: 0.7),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+              ),
+              child: const Text('返回大厅', style: TextStyle(fontSize: 13)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStartBattleButton(VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFF59E0B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: const Text('开始对战',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+    );
+  }
+
+  /// 房里已经坐着对手时点「开始对战」：服务端只在 ReadyState 认这条指令
+  void _startBattle() {
+    sendUserCmd('START_GAME', []);
+    setState(() => myStarted = true);
+  }
+
+  /// 单人练习：服务端走 START_EXERCISE（不计分、不扣魔法泡泡，退出也不算战败）
+  void _startExercise() {
+    setState(() {
+      isExercise = true;
+      myStarted = true;
+    });
+    sendUserCmd('START_EXERCISE', []);
+  }
+
+  /// 练习中有人进了房间：收掉这一局练习，当场转正式对战。
+  /// 对手若还没点开始，就退回「已就绪」等他，别让两个人各自干等。
+  void _endPracticeAndStartBattle() {
+    setState(() {
+      isExercise = false;
+      myStarted = true;
+      bricks.clear();
+      stackRows.clear();
+      currWord = null;
+      currentOptions.clear();
+      particles.clear();
+      _floatingTexts.clear();
+      if (!opponentStarted) {
+        isPlaying = false;
+        gameState = 'ready';
+      }
+    });
+    sendUserCmd('START_GAME', []);
   }
 
   void _copyRoomId() {
@@ -1764,6 +1938,9 @@ class _BrickScenePainter extends CustomPainter {
   final String opponentCurrentWord;
   final bool showBattleInfo;
 
+  /// 对手是否真在打这一局：单人练习时右侧那一路只是练习位，不能拿我的词序冒充对手进度
+  final bool opponentInPlay;
+
   _BrickScenePainter({
     required this.bricks,
     required this.stackRows,
@@ -1781,6 +1958,7 @@ class _BrickScenePainter extends CustomPainter {
     required this.myCurrentWord,
     required this.opponentCurrentWord,
     required this.showBattleInfo,
+    required this.opponentInPlay,
   });
 
   double get _stackTopY => barrierBottomY - stackRows.length * stackRowHeight;
@@ -1840,7 +2018,7 @@ class _BrickScenePainter extends CustomPainter {
       name: opponentName.isEmpty ? '对手' : opponentName,
       word: opponentCurrentWord,
       ordinal: opponentWordOrdinal,
-      showProgress: showBattleInfo,
+      showProgress: showBattleInfo && opponentInPlay,
       color: const Color(0xFFF59E0B),
     );
 

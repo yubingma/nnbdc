@@ -9,6 +9,7 @@ void main() {
     required String hallName,
     int? roomId,
     bool isPlaying = false,
+    bool isExercise = false,
   }) {
     return MaterialApp(
       home: MediaQuery(
@@ -31,32 +32,56 @@ void main() {
                       icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 20),
                       onPressed: () {},
                     ),
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white24, width: 0.8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.grid_view_rounded, color: Color(0xFFF59E0B), size: 14),
-                            const SizedBox(width: 5),
-                            Flexible(
-                              child: Text(
-                                '消砖块 · $hallName${roomId != null ? ' · 房号$roomId' : ''}',
-                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white24, width: 0.8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.grid_view_rounded, color: Color(0xFFF59E0B), size: 14),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  '消砖块 · $hallName${roomId != null ? ' · 房号$roomId' : ''}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
                               ),
-                            ),
-                          ],
+                              if (isExercise) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: const Color(0xFF34D399).withValues(alpha: 0.6),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    '练习',
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF6EE7B7),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                    const Spacer(),
                     if (!isPlaying) ...[
                       const SizedBox(width: 8),
                       ElevatedButton(
@@ -98,6 +123,27 @@ void main() {
       expect(exceptions, isEmpty, reason: '不应产生任何溢出错误');
       expect(find.textContaining('消砖块 · 英语专业八级'), findsOneWidget);
       expect(find.text('开始对战'), findsOneWidget);
+    } finally {
+      FlutterError.onError = originalOnError;
+      await tester.binding.setSurfaceSize(null);
+    }
+  });
+
+  testWidgets('练习徽标 + 长词书名在320dp极窄屏下不把房间名挤爆', (tester) async {
+    final exceptions = <FlutterErrorDetails>[];
+    final originalOnError = FlutterError.onError;
+    FlutterError.onError = (details) => exceptions.add(details);
+    try {
+      await tester.binding.setSurfaceSize(const Size(320, 800));
+      await tester.pumpWidget(buildBrickTopBar(
+        screenWidth: 320,
+        hallName: '超长词书名称测试超长超长超长超长超长',
+        roomId: 999999,
+        isExercise: true,
+      ));
+      await tester.pumpAndSettle();
+      expect(exceptions, isEmpty, reason: '练习徽标出现后也不应溢出');
+      expect(find.text('练习'), findsOneWidget);
     } finally {
       FlutterError.onError = originalOnError;
       await tester.binding.setSurfaceSize(null);
