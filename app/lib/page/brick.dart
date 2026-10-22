@@ -220,6 +220,17 @@ class BrickPageState extends State<BrickPage>
       hasOpponent: _hasOpponent,
       privateRoomWaiting: _showsPrivateRoomWaiting);
 
+  /// 房里有对手、但这一局还没开打：把「我 / 对手」谁点了开始摆到屏幕中间。
+  /// 以前这里只有右上角一个「已就绪」小标签，对手到底点没点开始完全看不见。
+  static bool showsReadinessOverlay({
+    required bool isPlaying,
+    required bool hasOpponent,
+  }) =>
+      !isPlaying && hasOpponent;
+
+  bool get _showsReadinessOverlay =>
+      showsReadinessOverlay(isPlaying: isPlaying, hasOpponent: _hasOpponent);
+
   /// 房间里已经坐着对手：好友按房号进来了，或大厅匹配到了人。
   /// 只有这时「开始对战」才是服务端认账的指令（房里只有一个人时是 WaitState，不处理 START_GAME）。
   static bool canStartBattle({
@@ -1224,6 +1235,9 @@ class BrickPageState extends State<BrickPage>
     setState(() {
       isPlaying = false;
       myStarted = false;
+      // 新一局谁都没点开始：上一局的"对手已就绪"不能留到下一局，
+      // 否则点了「再来一局」会误显示"双方已就绪、正在开赛"，其实对方根本没点，只能干等
+      opponentStarted = false;
       isExercise = false;
       if (isWin) {
         opponentHp = 0;
@@ -1322,6 +1336,7 @@ class BrickPageState extends State<BrickPage>
     setState(() {
       isPlaying = false;
       myStarted = false;
+      opponentStarted = false;
       isExercise = false;
       stackRows.clear();
       bricks.clear();
@@ -1474,30 +1489,6 @@ class BrickPageState extends State<BrickPage>
                 if (isPlaying && isExercise && _hasOpponent) ...[
                   const SizedBox(width: 8),
                   _buildStartBattleButton(_endPracticeAndStartBattle),
-                ] else if (!isPlaying) ...[
-                  const SizedBox(width: 8),
-                  if (myStarted)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.65), width: 1.0),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF34D399)),
-                          SizedBox(width: 4),
-                          Text(
-                            '已就绪',
-                            style: TextStyle(color: Color(0xFF6EE7B7), fontSize: 12, fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                    )
-                  else if (_hasOpponent)
-                    _buildStartBattleButton(_startBattle),
                 ],
               ],
             ),
@@ -1513,6 +1504,12 @@ class BrickPageState extends State<BrickPage>
           if (!isPlaying && _showsPrivateRoomWaiting)
             Positioned.fill(
               child: _buildPrivateRoomWaitingOverlay(),
+            ),
+
+          // 2.6 房里已经有对手、还没开打：双方谁点了开始，一眼可见
+          if (_showsReadinessOverlay)
+            Positioned.fill(
+              child: _buildReadinessOverlay(),
             ),
 
           // 3. 双方竖排防线画在竞技场左右两侧（见画布），这里只保留答题区
@@ -1771,6 +1768,147 @@ class BrickPageState extends State<BrickPage>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 房里有对手、还没开打：把双方就绪状态摆在屏幕中间，并按情况给下一步。
+  /// 消砖块是"双方都点开始才开赛"，所以对手点没点必须看得见，否则只能互相干等。
+  Widget _buildReadinessOverlay() {
+    final bool bothReady = myStarted && opponentStarted;
+    final String title;
+    final String hint;
+    final IconData icon;
+    final Color accent;
+    if (bothReady) {
+      title = '双方已就绪，正在开赛…';
+      hint = '稍等，第一块砖马上落下';
+      icon = Icons.hourglass_top_rounded;
+      accent = const Color(0xFFFBBF24);
+    } else if (myStarted) {
+      title = '已就绪，等待对手开始…';
+      hint = '对手也点开始后立刻开赛（等不到可以直接回大厅重新匹配）';
+      icon = Icons.hourglass_top_rounded;
+      accent = const Color(0xFFFBBF24);
+    } else if (opponentStarted) {
+      title = '对手已准备就绪';
+      hint = '点「开始对战」，双方都准备好即刻开赛';
+      icon = Icons.flag_rounded;
+      accent = const Color(0xFF34D399);
+    } else {
+      title = '对手已进入房间';
+      hint = '你们各点一次「开始对战」就能开赛';
+      icon = Icons.people_alt_rounded;
+      accent = const Color(0xFF38BDF8);
+    }
+
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F223D).withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: accent.withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 24,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: accent, size: 40),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              hint,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: Colors.white.withValues(alpha: 0.72),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                _buildReadyChip('我', myStarted),
+                _buildReadyChip('对手', opponentStarted),
+              ],
+            ),
+            if (!myStarted) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _startBattle,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.black87,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  child: const Text('开始对战',
+                      style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () => context.pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white.withValues(alpha: 0.7),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+              ),
+              child: const Text('返回大厅', style: TextStyle(fontSize: 13)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 就绪状态小胶囊：绿=已就绪，灰=还没点开始
+  Widget _buildReadyChip(String who, bool ready) {
+    final Color color = ready ? const Color(0xFF34D399) : Colors.white.withValues(alpha: 0.55);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.5), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            ready ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            size: 13,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$who${ready ? '已就绪' : '未开始'}',
+            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: color),
+          ),
+        ],
       ),
     );
   }

@@ -113,6 +113,29 @@ void main() {
     });
   });
 
+  group('开赛前的双方就绪浮层', () {
+    test('房里有对手、还没开打 → 显示双方就绪浮层', () {
+      expect(
+        BrickPageState.showsReadinessOverlay(isPlaying: false, hasOpponent: true),
+        isTrue,
+      );
+    });
+
+    test('正在对局 → 不显示', () {
+      expect(
+        BrickPageState.showsReadinessOverlay(isPlaying: true, hasOpponent: true),
+        isFalse,
+      );
+    });
+
+    test('房里只有我 → 交给匹配/开房浮层，不叠就绪浮层', () {
+      expect(
+        BrickPageState.showsReadinessOverlay(isPlaying: false, hasOpponent: false),
+        isFalse,
+      );
+    });
+  });
+
   group('按房号进房失败', () {
     test('客户端必须监听服务端的 joinRoomFailed，并在退出页面时注销', () {
       final source = File('lib/page/brick.dart').readAsStringSync();

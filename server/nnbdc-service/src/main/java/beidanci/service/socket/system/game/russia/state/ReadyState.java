@@ -462,11 +462,28 @@ public class ReadyState extends RoomState {
         broadcastStackRows(user, reason);
         if (playData.getStackRows() >= 10) {
             try {
-                gameOverProcessor.handleLoser(user);
+                decideLoser(user);
             } catch (IllegalAccessException e) {
                 log.error("处理游戏淘汰失败", e);
             }
         }
+    }
+
+    /**
+     * 判定失败者并立刻结束本局。
+     *
+     * <p>{@code isPlaying} 必须先落地：机器人答题链、触底计时、道具调度全靠它在下一拍自行退出。
+     * 漏掉这一步，结算之后机器人还会在这局里继续答题、继续丢道具，客户端就会在"游戏已经结束"
+     * 的界面上一直收到 propsUsed / stackSync（听感就是游戏还在打），房间也会卡在 isPlaying 里，
+     * 新一局（含点「再来一局」）永远开不起来。
+     */
+    private void decideLoser(UserVo loser) throws IllegalAccessException {
+        isPlaying = false;
+        stackAddedOnce.clear();
+        for (UserVo u : room.getUsers().keySet()) {
+            cancelFallTask(u);
+        }
+        gameOverProcessor.handleLoser(loser);
     }
 
     private void scheduleFallTask(UserVo user, long etaMs) {
@@ -523,7 +540,7 @@ public class ReadyState extends RoomState {
         // 如果堆叠达到 10 行（生命值耗尽淘汰），立即判定该玩家为失败者
         if (pd.getStackRows() >= 10) {
             try {
-                gameOverProcessor.handleLoser(user);
+                decideLoser(user);
             } catch (IllegalAccessException e) {
                 LoggerFactory.getLogger(ReadyState.class).error("处理游戏淘汰失败", e);
             }
@@ -720,7 +737,7 @@ public class ReadyState extends RoomState {
                         opp.setStackRows(opp.getStackRows() + 1);
                         broadcastStackRows(another, "对手导弹轰击");
                         if (opp.getStackRows() >= 10) {
-                            gameOverProcessor.handleLoser(another);
+                            decideLoser(another);
                         } else if (botUserObj != null && another.getId().equals(botUserObj.getId()) && isPlaying) {
                             // 机器人被导弹砸高了一层，触底窗口也要按新高度立即收紧
                             scheduleFallTask(another, botAnswerWindowMs(opp.getStackRows()));
@@ -756,7 +773,7 @@ public class ReadyState extends RoomState {
                 playData.setStackRows(Math.max(playData.getStackRows(), selfRows));
                 broadcastStackRows(user, "堆叠校正");
                 if (playData.getStackRows() >= 10) {
-                    gameOverProcessor.handleLoser(user);
+                    decideLoser(user);
                 }
             }
             // 不再接收/处理对手行数，仅接收 A 玩家自身行数
