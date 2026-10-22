@@ -498,6 +498,22 @@ class Runner:
                 return field
             time.sleep(0.3)
 
+    def _open_email_login(self, entry, agree):
+        """进邮箱登录页，顺带处理协议勾选行的开关状态。
+
+        本机存过「已同意」的账号时，欢迎页是带着勾选启动的（login.dart:51 按
+        accepted_privacy_version 预置 _approved=true）；这时候再点一下勾选行就是把它
+        取消，登录入口会被「请先同意」挡住。所以先直接进，进不去才补勾——不去猜控件状态。
+        """
+        self.device.tap_node(entry)
+        field = self._wait_edit_text(timeout=3)
+        if field:
+            return field
+        self.device.tap_node(agree)
+        time.sleep(0.3)
+        self.device.tap_node(entry)
+        return self._wait_edit_text(timeout=8)
+
     def _day_is_fresh(self) -> bool:
         """主页状态行还写着「未开始」才算今天没动过；开过工的计划会被锁死。"""
         return "未开始" in self._labels(self.device.dump())
@@ -510,14 +526,11 @@ class Runner:
         agree = self.device.find_by_id(ID_LOGIN_AGREE)
         if agree is None:
             raise CaseFailure("欢迎页找不到协议勾选行")
-        self.device.tap_node(agree)
-        time.sleep(0.3)
-        self.device.tap_node(entry)
+        email_field = self._open_email_login(entry, agree)
 
         manage_e2e_account.clear_old_codes()
-        email_field = self._wait_edit_text()
         if not email_field:
-            raise CaseFailure("邮箱登录页没有可输入的邮箱框")
+            raise CaseFailure("勾选协议后仍然进不去邮箱登录页")
         self.device.tap_node(email_field)
         self.device.clear_text_input(60)
         self.device.input_text(E2E_EMAIL)
