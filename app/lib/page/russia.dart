@@ -216,6 +216,10 @@ class RussiaPageState extends State<RussiaPage>
   late final Ticker _ticker;
   Duration _lastElapsed = Duration.zero;
 
+  /// 这款游戏的类型标识：服务端按 (游戏大厅, 游戏类型) 分池匹配、并按房号校验房号归属。
+  /// 戳泡泡和消砖块共用服务端这一套房间逻辑，不带类型就会被当作老客户端单独成池。
+  static const String gameType = 'russia';
+
   bool dataLoaded = false;
   late GameHallVo gameHall;
   late int? exceptRoom;
@@ -564,9 +568,9 @@ class RussiaPageState extends State<RussiaPage>
 
     switch (entry) {
       case RoomEntry.createPrivate:
-        sendUserCmd('CREATE_PRIVATE_ROOM', [gameHall.id]);
+        sendUserCmd('CREATE_PRIVATE_ROOM', [gameHall.id, gameType]);
       case RoomEntry.joinById:
-        sendUserCmd('JOIN_ROOM_BY_ID', [gameHall.id, extraArgs!['joinRoomId']]);
+        sendUserCmd('JOIN_ROOM_BY_ID', [gameHall.id, extraArgs!['joinRoomId'], gameType]);
       case RoomEntry.match:
         final int? exclude = roomToExcludeOnEnter(
           switchRoom: switchRoom,
@@ -574,7 +578,8 @@ class RussiaPageState extends State<RussiaPage>
           routeExceptRoom: exceptRoom,
         );
         // 服务端按字符串解析这个"不想进的房间号"，统一转成字符串再发
-        sendUserCmd('ENTER_GAME_HALL', [gameHall.id, exclude != null ? '$exclude' : '']);
+        sendUserCmd('ENTER_GAME_HALL',
+            [gameHall.id, exclude != null ? '$exclude' : '', gameType]);
     }
   }
 
@@ -2032,59 +2037,62 @@ class RussiaPageState extends State<RussiaPage>
                         color: Colors.white, size: 22),
                     onPressed: _handleExitButtonClicked,
                   ),
-                  const Spacer(),
-                  Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.bubble_chart_rounded, color: Color(0xFF38BDF8), size: 13),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              '${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withValues(alpha: 0.95),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                          if (isExercise) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: const Color(0xFF34D399).withValues(alpha: 0.6),
-                                  width: 0.8,
-                                ),
-                              ),
-                              child: const Text(
-                                '练习模式',
+                  // 房间名胶囊吃掉两个按钮之间的全部余量再居中：
+                  // 若用 Spacer + Flexible + Spacer 三等分，"练习模式"徽标一出现，
+                  // 图标与徽标的固定宽度就会超过那 1/3，右侧必然溢出
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.bubble_chart_rounded, color: Color(0xFF38BDF8), size: 13),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
                                 style: TextStyle(
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF6EE7B7),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.95),
                                 ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                             ),
+                            if (isExercise) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: const Color(0xFF34D399).withValues(alpha: 0.6),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: const Text(
+                                  '练习模式',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF6EE7B7),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                  const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white, size: 22),
                     tooltip: '换房间',

@@ -163,20 +163,21 @@ public class Hall {
     /**
      * 尝试进入某个已存在且处于等待状态（还缺少一个玩家）的游戏室，如果没有已存在的游戏室或所有游戏室已满，则创建一个新的游戏室并进入其中.
      *
-     * @return
+     * @param gameType 玩家的游戏类型（戳泡泡 russia / 消砖块 brick）；老客户端不上报时为 null
      */
-    private synchronized RussiaRoom assignRoomForUser(UserVo user, int exceptRoom) throws IllegalAccessException {
-        // 尝试进入一个waiting状态的游戏室
+    private synchronized RussiaRoom assignRoomForUser(UserVo user, int exceptRoom, String gameType)
+            throws IllegalAccessException {
+        // 只能进同类型的等待房间：两个游戏共用这套房间与对局逻辑，混池会配出"各玩各的"对局
         RussiaRoom roomToEnter = null;
         for (RussiaRoom room : waitingRooms) {
-            if (!room.isPrivateRoom() && room.getId() != exceptRoom) {
+            if (!room.isPrivateRoom() && room.getId() != exceptRoom && room.acceptsGameType(gameType)) {
                 roomToEnter = room;
                 break;
             }
         }
 
         if (roomToEnter == null) {
-            roomToEnter = new RussiaRoom(user, this, wordCache, wordBo, userGameBo, rawWordBo, userSorter, sysParamBo, userBo, selectedDictBo, dictBo);
+            roomToEnter = new RussiaRoom(user, this, wordCache, wordBo, userGameBo, rawWordBo, userSorter, sysParamBo, userBo, selectedDictBo, dictBo, gameType);
         }
 
         roomToEnter.userEnter(user);
@@ -187,38 +188,61 @@ public class Hall {
     /**
      * 创建一个私有房间（仅通过房号进入，不参与大厅匹配）并让用户进入。
      */
-    public synchronized RussiaRoom createPrivateRoomForUser(UserVo user) throws IllegalAccessException {
-        RussiaRoom room = new RussiaRoom(user, this, wordCache, wordBo, userGameBo, rawWordBo, userSorter, sysParamBo, userBo, selectedDictBo, dictBo, true);
+    public synchronized RussiaRoom createPrivateRoomForUser(UserVo user, String gameType) throws IllegalAccessException {
+        RussiaRoom room = new RussiaRoom(user, this, wordCache, wordBo, userGameBo, rawWordBo, userSorter, sysParamBo, userBo, selectedDictBo, dictBo, true, gameType);
         room.userEnter(user);
         return room;
     }
 
     /**
-     * 通过房间号加入房间（满员则失败）。
-     * @return true=成功，false=失败
+     * 通过房间号加入房间。房间不存在/已满、房号属于另一款游戏、房主还在旧版本，
+     * 三种失败必须分开告知：否则用户拿着房号反复重试，永远不明白为什么进不去。
      */
-    public synchronized boolean joinRoomById(UserVo user, int roomId) throws IllegalAccessException {
+    public synchronized JoinResult joinRoomById(UserVo user, int roomId, String gameType)
+            throws IllegalAccessException {
+        RussiaRoom room = findRoomById(roomId);
+        if (room == null || room.getUsers().size() >= 2) {
+            return JoinResult.NOT_FOUND_OR_FULL;
+        }
+        if (!room.acceptsGameType(gameType)) {
+            return room.isLegacyGameType() ? JoinResult.LEGACY_ROOM : JoinResult.WRONG_GAME_TYPE;
+        }
+        room.userEnter(user);
+        return JoinResult.OK;
+    }
+
+    private RussiaRoom findRoomById(int roomId) {
         for (RussiaRoom room : waitingRooms) {
             if (room.getId() == roomId) {
-                if (room.getUsers().size() < 2) {
-                    room.userEnter(user);
-                    return true;
-                } else {
-                    return false;
-                }
+                return room;
             }
         }
         for (RussiaRoom room : readyRooms) {
             if (room.getId() == roomId) {
-                if (room.getUsers().size() < 2) {
-                    room.userEnter(user);
-                    return true;
-                } else {
-                    return false;
-                }
+                return room;
             }
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * 按房号进房的结果。
+     */
+    public enum JoinResult {
+        OK(""),
+        NOT_FOUND_OR_FULL("房间不存在或已满"),
+        WRONG_GAME_TYPE("这间房是另一款游戏的，请回到对应游戏点「进房」"),
+        LEGACY_ROOM("房主用的是旧版本，暂时无法加入，请双方都升级到最新版");
+
+        private final String reason;
+
+        JoinResult(String reason) {
+            this.reason = reason;
+        }
+
+        public String getReason() {
+            return reason;
+        }
     }
 
     /**
@@ -279,8 +303,8 @@ public class Hall {
         socketService.sendEventToUser(user, event, data);
     }
 
-    public void userEnter(UserVo user, int exceptRoom) throws IllegalAccessException {
-        RussiaRoom room = assignRoomForUser(user, exceptRoom);
+    public void userEnter(UserVo user, int exceptRoom, String gameType) throws IllegalAccessException {
+        RussiaRoom room = assignRoomForUser(user, exceptRoom, gameType);
         logger.info(String.format("%s 进入游戏大厅 %s, 房间:[%d,%s]", Util.getNickNameOfUser(user), name, room.getId(),
                 room.getState().getClass().getSimpleName()));
     }

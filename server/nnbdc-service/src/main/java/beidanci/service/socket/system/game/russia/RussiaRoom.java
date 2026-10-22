@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,6 +63,13 @@ public class RussiaRoom {
      */
     private final boolean privateRoom;
 
+    /**
+     * 本房间归属的游戏类型（戳泡泡 russia / 消砖块 brick）。
+     * 两个游戏共用这套房间与对局逻辑，混池会配出"一个玩戳泡泡、一个玩消砖块"的对局。
+     * 老客户端不上报类型时为 null，只与同样为 null 的房间互配，随版本升级自然淘汰。
+     */
+    private final String gameType;
+
     private final WordCache wordCache;
 
     private final WordBo wordBo;
@@ -90,13 +98,13 @@ public class RussiaRoom {
 
     public RussiaRoom(UserVo user, Hall hall, WordCache wordCache, WordBo wordBo, UserGameBo userGameBo,
                       DictWordBo dictWordBo, UserSorter userSorter, SysParamBo sysParamBo, UserBo userBo,
-                      LearningDictBo selectedDictBo, DictBo dictBo) {
-        this(user, hall, wordCache, wordBo, userGameBo, dictWordBo, userSorter, sysParamBo, userBo, selectedDictBo, dictBo, false);
+                      LearningDictBo selectedDictBo, DictBo dictBo, String gameType) {
+        this(user, hall, wordCache, wordBo, userGameBo, dictWordBo, userSorter, sysParamBo, userBo, selectedDictBo, dictBo, false, gameType);
     }
 
     public RussiaRoom(UserVo user, Hall hall, WordCache wordCache, WordBo wordBo, UserGameBo userGameBo,
                       DictWordBo dictWordBo, UserSorter userSorter, SysParamBo sysParamBo, UserBo userBo,
-                      LearningDictBo selectedDictBo, DictBo dictBo, boolean privateRoom) {
+                      LearningDictBo selectedDictBo, DictBo dictBo, boolean privateRoom, String gameType) {
         this.roomId = roomSerialNo.incrementAndGet();
         this.hall = hall;
         this.wordPool = hall.getWordPool();
@@ -109,6 +117,23 @@ public class RussiaRoom {
         this.userBo = userBo;
         this.dictBo = dictBo;
         this.privateRoom = privateRoom;
+        this.gameType = gameType;
+    }
+
+    /**
+     * 这个房间是否接纳该游戏类型的玩家：必须完全相同才算同一池，null 只与 null 相等。
+     * 老客户端（不上报类型）因此只会落在同样不上报类型的房间里，绝不会跨游戏配对。
+     */
+    public boolean acceptsGameType(String playerGameType) {
+        return Objects.equals(gameType, playerGameType);
+    }
+
+    /**
+     * 房间身上没有游戏类型：由老客户端开的房。新版本按严格分池进不去，
+     * 提示必须说清楚是"房主版本较旧"，不能误报成"另一款游戏"。
+     */
+    public boolean isLegacyGameType() {
+        return gameType == null;
     }
 
     /**

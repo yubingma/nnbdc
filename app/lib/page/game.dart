@@ -37,9 +37,6 @@ class _GamePageState extends State<GamePage> {
   /// 当前选中的游戏类型：'bubble'（戳泡泡）、'brick'（消砖块）、'monster'（打哭小馋怪）
   String _selectedGame = 'bubble';
 
-  /// 选中游戏的玩法说明是否展开（默认折叠，避免大段说明占满首屏）
-  bool _rulesExpanded = false;
-
   String get _targetGameRoute =>
       _selectedGame == 'brick' ? '/brick' : '/russia';
 
@@ -711,7 +708,7 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  /// 选中游戏的专属玩法说明大卡片（三款游戏保持完全对称统一的卡片规格与结构）
+  /// 选中游戏的标题卡片（三款游戏保持完全对称统一的卡片规格与结构）
   Widget _buildSelectedGameShowcase(AppThemeConfig themeConfig) {
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
@@ -721,27 +718,20 @@ class _GamePageState extends State<GamePage> {
     final IconData icon;
     final String title;
     final String subtitle;
-    final String description;
     final bool isMonster = _selectedGame == 'monster';
 
     if (isMonster) {
       icon = Icons.pets_rounded;
       title = '打哭小馋怪 · 守桥保卫战';
       subtitle = '左摇杆走位 · 自动投掷 · 走位答词';
-      description =
-          '小馋怪成群压过长桥来抢水果。摇杆带着小宠物走位，自动投掷的坚果只打正前方：把队伍挪到正确单词牌下方才算答对，答对火力升级，答错或超时火力下降。全部打哭即通关，水果被抢光则失败。';
     } else if (_selectedGame == 'brick') {
       icon = Icons.dashboard_rounded;
       title = '消砖块 · 1v1 经典下落消除';
       subtitle = '单词下落触底 · 辨析中文释义';
-      description =
-          '英文单词方块从顶部下落，在触底前从 3 个中文释义中选出正确项。答对消除方块并攒道具：左侧治疗自己，右侧攻击对手；答错或超时会堆成死词层，堆满 10 层即失守。';
     } else {
       icon = Icons.bubble_chart_rounded;
       title = '戳泡泡 · 1v1 海底对决';
       subtitle = '单词泡泡升腾 · 抢点正确拼写';
-      description =
-          '看中文释义，在泡泡越过顶部警戒线前点中拼写正确的英文单词。每连对 3 题获得道具：水雷攻击对手，海星回复生命；双方各 10 格生命，先扣光者判负。';
     }
 
     return Padding(
@@ -791,69 +781,6 @@ class _GamePageState extends State<GamePage> {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 14),
-              // 玩法说明默认折叠：整段规则太长，首屏只留一行可点开的入口
-              InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () => setState(() => _rulesExpanded = !_rulesExpanded),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Icon(Icons.menu_book_rounded, size: 15, color: textSub),
-                      const SizedBox(width: 6),
-                      Text(
-                        '玩法说明',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: textSub,
-                        ),
-                      ),
-                      const Spacer(),
-                      AnimatedRotation(
-                        turns: _rulesExpanded ? 0.25 : 0.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Icon(Icons.arrow_forward_ios_rounded,
-                            size: 12,
-                            color: textSub.withValues(alpha: 0.6)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                alignment: Alignment.topCenter,
-                child: _rulesExpanded
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: themeConfig.subtleBg,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : Colors.black.withValues(alpha: 0.04),
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Text(
-                            description,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              height: 1.45,
-                              color: textSub,
-                            ),
-                          ),
-                        ),
-                      )
-                    : const SizedBox(width: double.infinity),
               ),
               if (isMonster) ...[
                 const SizedBox(height: 18),

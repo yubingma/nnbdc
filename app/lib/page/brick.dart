@@ -149,6 +149,10 @@ class BrickPageState extends State<BrickPage>
   late final Ticker _ticker;
   Duration _lastElapsed = Duration.zero;
 
+  /// 这款游戏的类型标识：服务端按 (游戏大厅, 游戏类型) 分池匹配、并按房号校验房号归属。
+  /// 消砖块和戳泡泡共用服务端这一套房间逻辑，不带类型就会被当作老客户端单独成池。
+  static const String gameType = 'brick';
+
   bool dataLoaded = false;
   late GameHallVo gameHall;
   late int? exceptRoom;
@@ -185,6 +189,31 @@ class BrickPageState extends State<BrickPage>
   String opponentNickName = '等待对手加入...';
   int? roomId;
   String gameState = 'waiting';
+
+  /// 该给「开房等人」界面吗：我开的房 + 好友还没进来 + 我也还没开始。
+  /// 私房不参与大厅匹配，服务端也不会给它补机器人，房主只能一个人干等。
+  static bool showsPrivateRoomWaiting({
+    required bool isPrivateHost,
+    required bool isReady,
+    required bool myStarted,
+  }) =>
+      isPrivateHost && !isReady && !myStarted;
+
+  bool get _showsPrivateRoomWaiting => showsPrivateRoomWaiting(
+      isPrivateHost: isPrivateRoomHost,
+      isReady: gameState == 'ready',
+      myStarted: myStarted);
+
+  /// 房间里已经坐着对手：好友按房号进来了，或大厅匹配到了人。
+  /// 只有这时「开始对战」才是服务端认账的指令（房里只有一个人时是 WaitState，不处理 START_GAME）。
+  static bool canStartBattle({
+    required String gameState,
+    required String opponentUserId,
+  }) =>
+      gameState == 'ready' || opponentUserId.isNotEmpty;
+
+  bool get _hasOpponent =>
+      canStartBattle(gameState: gameState, opponentUserId: opponentUserId);
 
   WordVo? currWord;
   final List<String> distractorWords = [];
@@ -483,6 +512,14 @@ class BrickPageState extends State<BrickPage>
         gameState = 'waiting';
       });
     });
+
+    // 房号输错/房间已满：人已经被摘出原房间，必须退回大厅，不能停在空棋盘上干等
+    socket.off('joinRoomFailed');
+    socket.on('joinRoomFailed', (data) {
+      if (!mounted) return;
+      ToastUtil.error(data?.toString() ?? '房间不存在或已满');
+      context.pop();
+    });
   }
 
   void _cleanupSocketListeners() {
@@ -506,6 +543,7 @@ class BrickPageState extends State<BrickPage>
       'forceClose',
       'noEnoughCowDung',
       'leaveRoom',
+      'joinRoomFailed',
     ]) {
       socket.off(event);
     }
@@ -515,12 +553,15 @@ class BrickPageState extends State<BrickPage>
     final mode = extraArgs?['mode'];
     final joinId = extraArgs?['joinRoomId'];
 
+    // 三条入口指令都要带上游戏类型：服务端按 (大厅, 游戏类型) 分池，
+    // 不带类型只会落进"老客户端池"，永远匹配不到新版本的人
     if (mode == 'createPrivate') {
-      sendUserCmd('CREATE_PRIVATE_ROOM', [gameHall.id]);
+      sendUserCmd('CREATE_PRIVATE_ROOM', [gameHall.id, gameType]);
     } else if (joinId != null) {
-      sendUserCmd('JOIN_ROOM_BY_ID', [gameHall.id, joinId.toString()]);
+      sendUserCmd('JOIN_ROOM_BY_ID', [gameHall.id, joinId.toString(), gameType]);
     } else {
-      sendUserCmd('ENTER_GAME_HALL', [gameHall.id, (exceptRoom ?? -1).toString()]);
+      sendUserCmd('ENTER_GAME_HALL',
+          [gameHall.id, (exceptRoom ?? -1).toString(), gameType]);
     }
   }
 
@@ -1359,7 +1400,7 @@ class BrickPageState extends State<BrickPage>
                         ],
                       ),
                     )
-                  else
+                  else if (_hasOpponent)
                     ElevatedButton(
                       onPressed: () {
                         sendUserCmd('START_GAME', []);
@@ -1370,11 +1411,37 @@ class BrickPageState extends State<BrickPage>
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('开始对战', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.5), width: 1.0),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.hourglass_top_rounded, size: 14, color: Color(0xFFFBBF24)),
+                          SizedBox(width: 4),
+                          Text(
+                            '等待对手',
+                            style: TextStyle(color: Color(0xFFFCD34D), fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               ],
             ),
           ),
+
+          // 2.5 房主开好房等好友：把房号摆出来，说清好友怎么进来
+          if (!isPlaying && _showsPrivateRoomWaiting)
+            Positioned.fill(
+              child: _buildPrivateRoomWaitingOverlay(),
+            ),
 
           // 3. 双方竖排防线画在竞技场左右两侧（见画布），这里只保留答题区
           // 4. 下半部：中文释义三选一答题卡片区（紧凑块，提示、三张卡片、道具栏从上到下挨着排列）
@@ -1435,6 +1502,130 @@ class BrickPageState extends State<BrickPage>
         ],
       ),
     );
+  }
+
+  /// 房主开好房等好友：房号是好友唯一的入口，必须摆在最显眼的位置并说清怎么用。
+  /// 消砖块没有单人练习，所以只给「复制房号」和「返回大厅」两条真实出路。
+  Widget _buildPrivateRoomWaitingOverlay() {
+    final int? id = roomId;
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F223D).withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 24,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.meeting_room_rounded, color: Color(0xFFF59E0B), size: 44),
+            const SizedBox(height: 12),
+            const Text(
+              '房间已开好，等好友进来',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF03142B).withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.45)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '房号',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    id != null ? '$id' : '····',
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFFBBF24),
+                      letterSpacing: 3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              '把房号发给好友：Ta 在游戏大厅点「进房」输入房号即可加入',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: Colors.white.withValues(alpha: 0.75),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: id == null ? null : _copyRoomId,
+                    icon: const Icon(Icons.copy_rounded, size: 15),
+                    label: const Text('复制房号',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFFBBF24),
+                      disabledForegroundColor: Colors.white.withValues(alpha: 0.3),
+                      side: BorderSide(color: const Color(0xFFF59E0B).withValues(alpha: 0.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => context.pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF59E0B),
+                      foregroundColor: Colors.black87,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    child: const Text('返回大厅',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _copyRoomId() {
+    final id = roomId;
+    if (id == null) return;
+    Clipboard.setData(ClipboardData(text: '$id'));
+    ToastUtil.success('房号已复制，发给好友吧');
   }
 
   Widget _buildOptionCard(BrickOption opt) {

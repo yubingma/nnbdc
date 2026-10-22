@@ -100,7 +100,7 @@ public class Russia implements MySystem {
                         log.warn(String.format("用户[%s]试图进入大厅，但他目前已在[%s]大厅, 强制他从目前大厅退出。", user.getDisplayNickName(),
                                 currHall.getName()));
                         currHall.userLeave(user);
-                    }       hall.userEnter(user, exceptRoom);
+                    }       hall.userEnter(user, exceptRoom, gameTypeOf(user, userCmd, 2));
                     users.put(user, hall);
                 }
             case "CREATE_PRIVATE_ROOM" ->                 {
@@ -109,7 +109,7 @@ public class Russia implements MySystem {
                     Hall hall;
                     hall = getOrCreateHall(hallId);
                     leaveCurrentRoom(user, hall);
-                    hall.createPrivateRoomForUser(user);
+                    hall.createPrivateRoomForUser(user, gameTypeOf(user, userCmd, 1));
                     users.put(user, hall);
                 }
             case "JOIN_ROOM_BY_ID" ->                 {
@@ -118,9 +118,9 @@ public class Russia implements MySystem {
                     Hall hall;
                     hall = getOrCreateHall(hallId);
                     leaveCurrentRoom(user, hall);
-                    boolean ok = hall.joinRoomById(user, roomId);
-                    if (!ok) {
-                        socketService.sendEventToUser(user, "joinRoomFailed", "房间不存在或已满");
+                    Hall.JoinResult result = hall.joinRoomById(user, roomId, gameTypeOf(user, userCmd, 2));
+                    if (result != Hall.JoinResult.OK) {
+                        socketService.sendEventToUser(user, "joinRoomFailed", result.getReason());
                     } else {
                         users.put(user, hall);
                     }
@@ -150,6 +150,26 @@ public class Russia implements MySystem {
         // 用户回到游戏里了：如果上一局是断线判负的，把结果补发给他（那时他不在线，发不出去）。
         // 不要求他此刻还在大厅里——恰恰是被判负的人已经不在大厅了，才会需要这条补发。
         socketService.sendGameResultNotice(user);
+    }
+
+    /**
+     * 取客户端上报的游戏类型（戳泡泡 russia / 消砖块 brick），取不到按"无类型"处理。
+     *
+     * <p>位置固定放在每条入口指令参数的末尾，老客户端不会发这个参数。必须按长度判空：
+     * 直接下标访问会让老客户端在进厅/开房/进房时抛 ArrayIndexOutOfBoundsException，
+     * 而 socket 层把异常吞掉只打日志，表现就是"点了完全没反应"。
+     *
+     * <p>无类型的玩家只会和无类型的房间互配，绝不跨游戏——老版本随升级自然淘汰。
+     */
+    private static String gameTypeOf(UserVo user, UserCmd userCmd, int argIndex) {
+        String[] args = userCmd.getArgs();
+        String gameType = (args != null && args.length > argIndex) ? args[argIndex] : null;
+        if (gameType == null || gameType.isBlank()) {
+            log.warn(String.format("用户[%s]的指令[%s]没有上报游戏类型（老客户端），按无类型匹配",
+                    user.getDisplayNickName(), userCmd.getCmd()));
+            return null;
+        }
+        return gameType;
     }
 
     /**

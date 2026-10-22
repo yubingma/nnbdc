@@ -2,6 +2,7 @@ package beidanci.service.socket.system.game.russia;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -36,10 +37,14 @@ public class RussiaRoomBotTest {
     }
 
     /**
-     * 通过反射调用私有的虚构数据逻辑（与 DataSanitizeBoTest 的做法一致，无需启动 Spring 容器）
+     * 通过反射调用私有的虚构数据逻辑（与 DataSanitizeBoTest 的做法一致，无需启动 Spring 容器）.
+     *
+     * <p>房间构造时会向所属大厅锁一份用词池，所以这里必须给一个 mock 的 Hall，
+     * 不能像以前那样传 null——否则构造即 NPE，测试根本没跑到被测逻辑。
      */
     private UserVo makeBotOf(UserVo human) throws Exception {
-        RussiaRoom room = new RussiaRoom(null, null, null, null, null, null, null, null, null, null, null);
+        Hall hall = mock(Hall.class);
+        RussiaRoom room = new RussiaRoom(null, hall, null, null, null, null, null, null, null, null, null, "russia");
         UserVo bot = new UserVo();
         Method method = RussiaRoom.class.getDeclaredMethod("fillFakeUserData", UserVo.class, UserVo.class);
         method.setAccessible(true);
