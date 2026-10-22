@@ -46,6 +46,7 @@ class BdcStateUiSignature {
   final bool isWordImageEdited;
   final bool isSelectModePreferred;
   final bool isSentenceSelectModePreferred;
+  final bool voiceAnswerEnabled;
   final int? currentScore;
   final String? asrFirstCandidate;
   final bool isAiEvaluating;
@@ -89,6 +90,7 @@ class BdcStateUiSignature {
         isWordImageEdited = s.isWordImageEdited,
         isSelectModePreferred = s.isSelectModePreferred,
         isSentenceSelectModePreferred = s.isSentenceSelectModePreferred,
+        voiceAnswerEnabled = s.voiceAnswerEnabled,
         currentScore = s.currentScore,
         asrFirstCandidate = s.currentAsrCandidates.isNotEmpty ? s.currentAsrCandidates.first : null,
         isAiEvaluating = s.isAiEvaluating,
@@ -134,6 +136,7 @@ class BdcStateUiSignature {
         isWordImageEdited == other.isWordImageEdited &&
         isSelectModePreferred == other.isSelectModePreferred &&
         isSentenceSelectModePreferred == other.isSentenceSelectModePreferred &&
+        voiceAnswerEnabled == other.voiceAnswerEnabled &&
         currentScore == other.currentScore &&
         asrFirstCandidate == other.asrFirstCandidate &&
         isAiEvaluating == other.isAiEvaluating &&
@@ -178,6 +181,7 @@ class BdcStateUiSignature {
         isWordImageEdited,
         isSelectModePreferred,
         isSentenceSelectModePreferred,
+        voiceAnswerEnabled,
         currentScore,
         asrFirstCandidate,
         isAiEvaluating,

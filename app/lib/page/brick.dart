@@ -6,12 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/loading_utils.dart';
-import 'package:nnbdc/util/tts.dart';
 import '../api/vo.dart';
 import '../global.dart';
 import '../util/study_audio_session_controller.dart';
 import '../util/platform_util.dart';
 import '../util/prefs.dart';
+import '../util/utils.dart';
 import '../util/word_pack_queue.dart';
 
 /// 消砖块 · 下落英文单词大方块
@@ -275,7 +275,6 @@ class BrickPageState extends State<BrickPage>
   /// 这样对手进度落后（索引落在已经换掉的旧包）时也能显示他当前那道题。
   final Map<int, String> _spellByIndex = {};
   final List<Map<String, dynamic>> _pendingUserCmds = [];
-  final Tts _tts = Tts();
   late final _BrickSocketStatusListener _socketStatusListener;
 
   bool isIntroPlaying = false;
@@ -288,7 +287,6 @@ class BrickPageState extends State<BrickPage>
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     // 消砖块是纵向堆叠玩法，锁定竖屏，避免横屏把下落行程和答题区一起压扁
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    _tts.init();
     // 提前装载音效池和答对音，避免第一题答对时因首次解码而听不到声音
     StudyAudioSessionController.instance.prewarm();
     LoadingUtils.disableApiLoading();
@@ -675,15 +673,22 @@ class BrickPageState extends State<BrickPage>
     if (data is! List || data.length < 2) return;
     final int fromIndex = (data[0] as num).toInt();
     final entries = List<dynamic>.from(data[1] as List);
-    // 把这一包词的索引→拼写记下来，供"对手当前单词"按索引回查
+    // 把这一包词的索引→拼写记下来，供"对手当前单词"按索引回查；
+    // 同时预下载整包的真人发音，避免轮到这个词时才去取、念晚了或者退回 TTS
+    final packSpells = <String>[];
     for (int i = 0; i < entries.length; i++) {
       final entry = entries[i];
       if (entry is List && entry.isNotEmpty && entry[0] is Map) {
         final spell = (entry[0] as Map)['spell']?.toString();
         if (spell != null && spell.isNotEmpty) {
           _spellByIndex[fromIndex + i] = spell;
+          packSpells.add(spell);
         }
       }
+    }
+    if (packSpells.isNotEmpty) {
+      StudyAudioSessionController.instance
+          .prefetchSounds(packSpells.map(Util.getWordSoundUrl).toList());
     }
     _wordPack.accept(fromIndex, entries);
     _playNextWordFromPack();
@@ -723,10 +728,10 @@ class BrickPageState extends State<BrickPage>
       final size = mediaQuery?.size ?? const Size(390, 844);
       _spawnBricksForRound(size, data);
 
-      // 发音朗读下落中的英文单词
+      // 朗读下落中的英文单词：走真人录音（跟随英音/美音设置，取不到自动退回 TTS）
       Future.delayed(const Duration(milliseconds: 60), () {
         if (mounted && isPlaying && currWord != null) {
-          _tts.speak(currWord!.spell);
+          StudyAudioSessionController.instance.playWordSoundBySpell(currWord!.spell);
         }
       });
     } catch (e) {
@@ -842,7 +847,7 @@ class BrickPageState extends State<BrickPage>
     if (b.isPopping || b.isDoomed) return;
 
     // 玩家已经作答，停止正在朗读的单词，避免和答对/答错音效叠在一起
-    _tts.stop();
+    StudyAudioSessionController.instance.interruptPlayback();
 
     if (opt.isCorrect) {
       setState(() {
@@ -1209,7 +1214,7 @@ class BrickPageState extends State<BrickPage>
   void _endGame({required bool isWin}) {
     if (!mounted || _resultShown) return;
     _resultShown = true;
-    _tts.stop();
+    StudyAudioSessionController.instance.interruptPlayback();
     StudyAudioSessionController.instance.playBlockingSound(
       isWin ? 'victory.mp3' : 'failed.mp3',
       timeoutMs: 2000,
@@ -1256,17 +1261,39 @@ class BrickPageState extends State<BrickPage>
           textAlign: TextAlign.center,
         ),
         actions: [
+          // 打完一局不必只能退出去：房里还有对手就再来一局，没人了就接着单人练习
           Center(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                context.pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF38BDF8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: const Text('返回大厅', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.pop();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white70,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('返回大厅', style: TextStyle(fontSize: 14)),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    _startNextRound();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF38BDF8),
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('再来一局',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                ),
+              ],
             ),
           ),
         ],
@@ -1291,7 +1318,7 @@ class BrickPageState extends State<BrickPage>
   }
 
   void _exitBattleScreen(String message) {
-    _tts.stop();
+    StudyAudioSessionController.instance.interruptPlayback();
     setState(() {
       isPlaying = false;
       myStarted = false;
@@ -1310,7 +1337,7 @@ class BrickPageState extends State<BrickPage>
   @override
   void dispose() {
     _ticker.dispose();
-    _tts.stop();
+    StudyAudioSessionController.instance.interruptPlayback();
     SocketIoClient.instance.setInRussiaGame(false);
     SocketIoClient.instance.removeSocketStatusListener(_socketStatusListener);
     _cleanupSocketListeners();
@@ -1354,7 +1381,7 @@ class BrickPageState extends State<BrickPage>
           GestureDetector(
             onTap: () {
               if (currWord != null) {
-                _tts.speak(currWord!.spell);
+                StudyAudioSessionController.instance.playWordSoundBySpell(currWord!.spell);
               }
             },
             child: CustomPaint(
@@ -1775,6 +1802,15 @@ class BrickPageState extends State<BrickPage>
     sendUserCmd('START_EXERCISE', []);
   }
 
+  /// 结算后「再来一局」：房里还有对手就再打一局，对手已经走了就接着单人练习
+  void _startNextRound() {
+    if (_hasOpponent) {
+      _startBattle();
+    } else {
+      _startExercise();
+    }
+  }
+
   /// 练习中有人进了房间：收掉这一局练习，当场转正式对战。
   /// 对手若还没点开始，就退回「已就绪」等他，别让两个人各自干等。
   void _endPracticeAndStartBattle() {
@@ -1868,7 +1904,8 @@ class BrickPageState extends State<BrickPage>
                   color: textColor,
                   letterSpacing: -0.2,
                 ),
-                maxLines: 2,
+                // 只占一行：释义一换行，三张卡片就会把下面的道具栏顶出屏幕
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),

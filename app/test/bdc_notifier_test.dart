@@ -23,6 +23,7 @@ import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/phase_presentation_tracker.dart';
 import 'package:nnbdc/util/prefs.dart';
+import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_track.dart';
@@ -5297,5 +5298,124 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 1500));
     state = container.read(bdcNotifierProvider);
     expect(state.word?.id, isNot('word_1'), reason: '掌握毕业的单词走绿色通道自动切到下一个词');
+  });
+
+  group('语音答题开关（关掉语音后用键盘答题）', () {
+    test('答题卡档数与第一档是谁只有一份判据', () {
+      PlatformUtils.asrSupportedOverride = true;
+      PlatformUtils.englishAsrSupportedOverride = true;
+      addTearDown(() {
+        PlatformUtils.asrSupportedOverride = null;
+        PlatformUtils.englishAsrSupportedOverride = null;
+      });
+      // 单词环节：第一档（说或拼写）+ 选择题，两档恒在
+      for (final String step in ['En2Ch', 'Ch2En']) {
+        expect(BdcNotifier.answerTabCountFor(step, true), 2);
+        expect(BdcNotifier.answerTabCountFor(step, false), 2);
+      }
+      // 例句环节没有键盘答题：关掉语音后只剩选择题一档
+      for (final String step in ['EnSentence2Ch', 'ChSentence2En']) {
+        expect(BdcNotifier.answerTabCountFor(step, true), 2);
+        expect(BdcNotifier.answerTabCountFor(step, false), 1);
+      }
+      expect(BdcNotifier.voiceAnswerAvailableFor('En2Ch', true), true);
+      expect(BdcNotifier.voiceAnswerAvailableFor('En2Ch', false), false);
+    });
+
+    test('英译汉打字面板沿用中文默写语义：第一档才算默写，选择题档不算', () {
+      const typing = BdcState(studyStep: 'En2Ch', voiceAnswerEnabled: false);
+      expect(typing.copyWith().isChineseDictation, true);
+      // 切到选择题档：中文答案的题面不在了，默写标记必须撤掉
+      expect(typing.copyWith(tabIndex: 1).isChineseDictation, false);
+      // 语音答题开着时第一档是「说」，不是默写
+      expect(const BdcState(studyStep: 'En2Ch').copyWith().isChineseDictation, false);
+      // 中英环节的键盘输入是拼写，不是中文默写
+      expect(
+        const BdcState(studyStep: 'Ch2En', voiceAnswerEnabled: false)
+            .copyWith()
+            .isChineseDictation,
+        false,
+      );
+    });
+
+    test('关掉语音后进学习页不开麦，键盘提交中文释义即判对', () async {
+      final mockAsr = MockAsr();
+      StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+      PlatformUtils.asrSupportedOverride = true;
+      addTearDown(() => PlatformUtils.asrSupportedOverride = null);
+      await Prefs.write(BdcNotifier.voiceAnswerEnabledPrefKey, false);
+
+      final container = ProviderContainer(
+        overrides: [
+          asrProvider.overrideWithValue(mockAsr),
+        ],
+      );
+      final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+      addTearDown(() {
+        keepAlive.close();
+        container.dispose();
+      });
+
+      final notifier = container.read(bdcNotifierProvider.notifier);
+      await notifier.loadData(FakeBuildContext());
+      // 等"发音播完自动开麦"那段延迟过去，确认它一次都没开
+      await Future.delayed(const Duration(milliseconds: 400));
+
+      var state = container.read(bdcNotifierProvider);
+      expect(state.voiceAnswerEnabled, false);
+      expect(state.tabIndex, 0, reason: '关掉语音后第一档就是拼写');
+      expect(state.isChineseDictation, true);
+      expect(mockAsr.startAsrCallCount, 0, reason: '关掉语音后全程不能开麦');
+
+      notifier.updateAutoJumpEn2Ch(false);
+      notifier.updateMeaningTextWithoutCheck('苹果');
+      await notifier.submitTypedMeaning();
+
+      state = container.read(bdcNotifierProvider);
+      expect(state.hasFinishedAnswering, true,
+          reason: '打字提交的中文释义要与手写默写同样判对');
+      expect(state.isScorePassed, true);
+      await Future.delayed(const Duration(milliseconds: 100));
+    });
+
+    test('学习设置里关掉语音答题：立刻释放麦克风，第一档换成打字写中文', () async {
+      final mockAsr = MockAsr();
+      StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+      PlatformUtils.asrSupportedOverride = true;
+      addTearDown(() => PlatformUtils.asrSupportedOverride = null);
+
+      final container = ProviderContainer(
+        overrides: [
+          asrProvider.overrideWithValue(mockAsr),
+        ],
+      );
+      final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+      addTearDown(() {
+        keepAlive.close();
+        container.dispose();
+      });
+
+      final notifier = container.read(bdcNotifierProvider.notifier);
+      await notifier.loadData(FakeBuildContext());
+      // 语音答题开着：进入单词环节会自动开麦
+      for (var i = 0; i < 20 && mockAsr.startAsrCallCount < 1; i++) {
+        await Future.delayed(const Duration(milliseconds: 50));
+      }
+      expect(mockAsr.startAsrCallCount, greaterThanOrEqualTo(1));
+      expect(container.read(bdcNotifierProvider).isChineseDictation, false);
+
+      notifier.setVoiceAnswerEnabled(false);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      final state = container.read(bdcNotifierProvider);
+      expect(state.voiceAnswerEnabled, false);
+      expect(state.tabIndex, 0, reason: '关掉语音后第一档就是拼写');
+      expect(state.isChineseDictation, true, reason: '英译汉第一档改成打字写中文释义');
+      expect(StudyAudioSessionController.instance.activeMode, AudioMode.idle,
+          reason: '关掉当下就要松开麦克风，不能等下一词');
+      expect(Prefs.read<bool>(BdcNotifier.voiceAnswerEnabledPrefKey), false,
+          reason: '开关按设备存在本地，下次进来还是关的');
+      await Future.delayed(const Duration(milliseconds: 100));
+    });
   });
 }

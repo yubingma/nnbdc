@@ -132,6 +132,12 @@ class BdcState extends Equatable {
   final bool isSelectModePreferred;
   final bool isSentenceSelectModePreferred;
 
+  /// 「语音答题」是否开启（学习设置里可关，按设备存在本地）。
+  ///
+  /// 关掉后背单词页全程不开麦：答题卡第一档从「说」换成「拼写」，
+  /// 英译汉直接打字写中文释义、汉译英直接打拼写，安静场所也能作答。
+  final bool voiceAnswerEnabled;
+
   /// 例句环节 PTT(按下说话)按钮是否处于按住状态
   final bool isPttPressed;
 
@@ -215,6 +221,7 @@ class BdcState extends Equatable {
     this.loadErrorCause,
     this.isSelectModePreferred = false,
     this.isSentenceSelectModePreferred = false,
+    this.voiceAnswerEnabled = true,
     this.isPttPressed = false,
     this.isAiEvaluating = false,
     this.isPracticeMode = false,
@@ -307,16 +314,31 @@ class BdcState extends Equatable {
     Object? loadErrorCause = _sentinel,
     bool? isSelectModePreferred,
     bool? isSentenceSelectModePreferred,
+    bool? voiceAnswerEnabled,
     bool? isPttPressed,
     bool? isAiEvaluating,
     bool? isPracticeMode,
   }) {
-    // 「中文默写」及其进度是手写板的子状态：板子不在时一律不成立。
+    // 「中文默写」及其进度是"中文答案"这个答题语义的子状态：题面本身不在了才一律不成立。
     // 关闭手写板的路径很多（答对成功过渡、主动点「答对/认识」、换词、提示已全展示、取消），
     // 逐一清标记必漏；一旦残留，回到背单词页后的正常作答会被当成"中文默写"严格判错，
-    // 并连发"答案不正确或未写完整，请重写"。故在状态构造处收口：不开板子就不存在默写模式。
+    // 并连发"答案不正确或未写完整"。故在状态构造处收口：没有中文答案题面就不存在默写模式。
     final bool handwritingBoardVisible =
         showHandwritingBoard ?? this.showHandwritingBoard;
+    // 「中文答案」有两种呈现：手写默写板，以及关掉语音后英译汉的键盘打字面板。
+    // 两者是同一个答题语义（严格逐字匹配、只在显式提交时判题），所以打字面板在场时
+    // 同样要保留默写标记，不能按"板子关了"一律清掉 —— 否则键盘打的中文释义会被
+    // 当成语音识别结果宽松匹配，还会被输入法候选触发提前判题。
+    final String? effectiveStudyStep =
+        studyStep == _sentinel ? this.studyStep : (studyStep as String?);
+    final int effectiveTabIndex = tabIndex ?? this.tabIndex;
+    final bool typedChineseAnswer =
+        !(voiceAnswerEnabled ?? this.voiceAnswerEnabled) &&
+            !handwritingBoardVisible &&
+            effectiveStudyStep == StudyStep.en2Ch.json &&
+            effectiveTabIndex == 0;
+    final bool chineseAnswerActive =
+        handwritingBoardVisible || typedChineseAnswer;
     return BdcState(
       dataLoaded: dataLoaded ?? this.dataLoaded,
       isGettingNextWord: isGettingNextWord ?? this.isGettingNextWord,
@@ -347,13 +369,15 @@ class BdcState extends Equatable {
       words: words == _sentinel ? this.words : (words as List<WordVo>?),
       buttonsEnabled: buttonsEnabled ?? this.buttonsEnabled,
       showHandwritingBoard: handwritingBoardVisible,
-      isChineseDictation: handwritingBoardVisible
-          ? (isChineseDictation ?? this.isChineseDictation)
+      isChineseDictation: chineseAnswerActive
+          ? (typedChineseAnswer
+              ? true
+              : (isChineseDictation ?? this.isChineseDictation))
           : false,
-      dictationMatchedCount: handwritingBoardVisible
+      dictationMatchedCount: chineseAnswerActive
           ? (dictationMatchedCount ?? this.dictationMatchedCount)
           : 0,
-      dictationRequiredCount: handwritingBoardVisible
+      dictationRequiredCount: chineseAnswerActive
           ? (dictationRequiredCount ?? this.dictationRequiredCount)
           : 0,
       isSpellingSuccess: isSpellingSuccess ?? this.isSpellingSuccess,
@@ -397,6 +421,7 @@ class BdcState extends Equatable {
       loadErrorCause: loadErrorCause == _sentinel ? this.loadErrorCause : loadErrorCause,
       isSelectModePreferred: isSelectModePreferred ?? this.isSelectModePreferred,
       isSentenceSelectModePreferred: isSentenceSelectModePreferred ?? this.isSentenceSelectModePreferred,
+      voiceAnswerEnabled: voiceAnswerEnabled ?? this.voiceAnswerEnabled,
       isPttPressed: isPttPressed ?? this.isPttPressed,
       isAiEvaluating: isAiEvaluating ?? this.isAiEvaluating,
       isPracticeMode: isPracticeMode ?? this.isPracticeMode,
@@ -487,6 +512,7 @@ class BdcState extends Equatable {
     loadErrorCause,
     isSelectModePreferred,
     isSentenceSelectModePreferred,
+    voiceAnswerEnabled,
     isPttPressed,
     isAiEvaluating,
   ];

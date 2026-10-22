@@ -19,6 +19,15 @@ extension BdcPageStateUIComponents on BdcPageState {
   BdcState get state => _activeState ?? ref.read(bdcNotifierProvider);
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
 
+  /// 答题卡第一档是不是「说」（用户开着语音答题、且平台认这一环节的语音）。
+  bool get _firstTabIsVoice => BdcNotifier.voiceAnswerAvailableFor(
+      state.studyStep ?? '', state.voiceAnswerEnabled);
+
+  /// 当前选中的是不是最后那一档「选择题」（例句环节关掉语音后它也是唯一一档）。
+  bool _isChoiceTabSelected(BdcState s) =>
+      s.tabIndex >=
+      BdcNotifier.answerTabCountFor(s.studyStep ?? '', s.voiceAnswerEnabled) - 1;
+
   Widget _buildLoadingPage() {
     final isDarkMode = _cachedIsDarkMode;
     return Container(
@@ -491,21 +500,27 @@ extension BdcPageStateUIComponents on BdcPageState {
       return const SizedBox.shrink();
     }
     final isDarkMode = _cachedIsDarkMode;
-    final bool isSpeakMode = state.tabIndex == 0;
+    final bool onFirstTab = state.tabIndex == 0;
+    // 第一档是「说」还是「拼写」由语音答题开关决定；回到第一档时要按它说清去向。
+    final bool voiceAnswer = _firstTabIsVoice;
     final String targetLabel;
-    if (isSpeakMode) {
+    if (onFirstTab) {
       targetLabel = '选择题';
     } else if (state.studyStep == StudyStep.enSentence2Ch.json) {
       targetLabel = '说中文';
     } else if (state.studyStep == StudyStep.chSentence2En.json) {
       targetLabel = '说英文';
     } else if (state.studyStep == StudyStep.en2Ch.json) {
-      targetLabel = '说释义';
+      targetLabel = voiceAnswer ? '说释义' : '拼写';
     } else {
-      targetLabel = '说发音';
+      targetLabel = voiceAnswer ? '说发音' : '拼写';
     }
-    final IconData targetIcon =
-        isSpeakMode ? Icons.fact_check_outlined : Icons.mic_none_rounded;
+    final IconData targetIcon;
+    if (onFirstTab) {
+      targetIcon = Icons.fact_check_outlined;
+    } else {
+      targetIcon = voiceAnswer ? Icons.mic_none_rounded : Icons.keyboard_alt_outlined;
+    }
 
     final Color actionColor =
         isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
@@ -516,7 +531,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       child: GestureDetector(
         key: const Key('bdc_mode_switch_btn'),
         onTap: () {
-          final targetIndex = isSpeakMode ? 1 : 0;
+          final targetIndex = onFirstTab ? 1 : 0;
           ref.read(bdcNotifierProvider.notifier).updateTabIndex(targetIndex);
         },
         behavior: HitTestBehavior.opaque,
@@ -542,6 +557,79 @@ extension BdcPageStateUIComponents on BdcPageState {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// 首次点「拼写」时提一句：想一直打字答题，可以在学习设置里关掉语音答题。
+  ///
+  /// 只提一次。反复点「拼写」的人正是这个开关的目标用户 —— 不提示，他们永远
+  /// 只能一个词点一次，也正是线上反馈里"每次都要点一下"那句抱怨。
+  void _maybeHintTypingMode() {
+    const String hintKey = 'bdc_typing_mode_hint_shown';
+    if (Prefs.read<bool>(hintKey) == true) return;
+    unawaited(Prefs.write(hintKey, true));
+    ToastUtil.info('想一直用打字答题？到「更多 → 学习设置」关掉「语音答题」',
+        autoCloseDuration: const Duration(seconds: 4));
+  }
+
+  /// 答题区顶部的题目提示语：开口说，还是动手写。
+  String get _answerPromptLabel {
+    final String? step = state.studyStep;
+    if (!_firstTabIsVoice) {
+      // 关掉语音答题后只有单词环节有键盘答题：英译汉写中文释义、汉译英拼单词
+      return step == StudyStep.en2Ch.json ? '请写出中文释义：' : '请拼写单词：';
+    }
+    if (step == StudyStep.enSentence2Ch.json) return '请说出例句翻译：';
+    if (step == StudyStep.chSentence2En.json) return '请朗读英文例句：';
+    return step == StudyStep.en2Ch.json ? '请说出中文释义：' : '请说出单词发音：';
+  }
+
+  /// 顶栏要不要留「默写/手写」入口。
+  ///
+  /// 语音模式下只有英译汉有「默写」（说中文释义时的另一条路）；
+  /// 关掉语音答题后，两种语言都只剩键盘和选择题，必须各留一个手写出口。
+  bool get _showsHandwritingEntry {
+    if (state.showHandwritingBoard) return false;
+    final String? step = state.studyStep;
+    if (step != StudyStep.en2Ch.json && step != StudyStep.ch2En.json) {
+      return false;
+    }
+    return !_firstTabIsVoice || step == StudyStep.en2Ch.json;
+  }
+
+  Widget _buildHandwritingEntry() {
+    final bool chinese = state.studyStep == StudyStep.en2Ch.json;
+    final Color actionColor =
+        _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
+    return GestureDetector(
+      key: Key(chinese ? 'bdc_chinese_dictation_btn' : 'bdc_handwriting_btn'),
+      onTap: () {
+        _meaningFocusNode.unfocus();
+        if (chinese) {
+          notifier.openChineseDictation();
+        } else {
+          notifier.updateShowHandwritingBoard(true);
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.edit_outlined, size: 13.5, color: actionColor),
+            const SizedBox(width: 3.5),
+            Text(
+              _firstTabIsVoice ? '默写' : '手写',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: actionColor,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -830,8 +918,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
-                                                Icons
-                                                    .record_voice_over_outlined,
+                                                _firstTabIsVoice
+                                                    ? Icons
+                                                        .record_voice_over_outlined
+                                                    : Icons
+                                                        .keyboard_alt_outlined,
                                                 size: 13.5,
                                                 color: _cachedIsDarkMode
                                                     ? const Color(0xFF94A3B8)
@@ -840,22 +931,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                               const SizedBox(width: 4.5),
                                               Flexible(
                                                 child: Text(
-                                                  (state.studyStep ==
-                                                          StudyStep
-                                                              .enSentence2Ch
-                                                              .json)
-                                                      ? '请说出例句翻译：'
-                                                      : (state.studyStep ==
-                                                              StudyStep
-                                                                  .chSentence2En
-                                                                  .json)
-                                                          ? '请朗读英文例句：'
-                                                          : (state.studyStep ==
-                                                                  StudyStep
-                                                                      .en2Ch
-                                                                      .json)
-                                                              ? '请说出中文释义：'
-                                                              : '请说出单词发音：',
+                                                  _answerPromptLabel,
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   style: TextStyle(
@@ -875,48 +951,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                                         )
                                       else
                                         const Spacer(),
-                                      // 英译汉：中文「默写」入口（手写中文释义；不适用语音时替代）
-                                      if (state.studyStep ==
-                                              StudyStep.en2Ch.json &&
-                                          !state.isChineseDictation)
-                                        GestureDetector(
-                                          key: const Key(
-                                              'bdc_chinese_dictation_btn'),
-                                          onTap: () {
-                                            _meaningFocusNode.unfocus();
-                                            notifier.openChineseDictation();
-                                          },
-                                          behavior: HitTestBehavior.opaque,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 4, vertical: 3),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  Icons.edit_outlined,
-                                                  size: 13.5,
-                                                  color: _cachedIsDarkMode
-                                                      ? const Color(0xFF94A3B8)
-                                                      : const Color(0xFF5A716E),
-                                                ),
-                                                const SizedBox(width: 3.5),
-                                                Text(
-                                                  '默写',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: _cachedIsDarkMode
-                                                        ? const Color(
-                                                            0xFF94A3B8)
-                                                        : const Color(
-                                                            0xFF5A716E),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
+                                      // 手写入口：语音模式下只有英译汉的「默写」；
+                                      // 关掉语音答题后两种语言都要留一个「手写」出口。
+                                      if (_showsHandwritingEntry)
+                                        _buildHandwritingEntry(),
                                       _buildModeSwitchButton(),
                                     ],
                                   ),
@@ -938,9 +976,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                                           physics:
                                               const NeverScrollableScrollPhysics(),
                                           children: [
-                                            // 始终保持 Tab 数量一致性，避免抖动
+                                            // 始终保持 Tab 数量一致性，避免抖动：
+                                            // 第一档是「说」还是「拼写」由语音答题开关决定
                                             if (_tabController?.length == 2)
-                                              _buildSpeakPanel(),
+                                              _firstTabIsVoice
+                                                  ? _buildSpeakPanel()
+                                                  : _buildTypingPanel(),
                                             _buildChoiceListScrollView(),
                                           ],
                                         )
@@ -1949,6 +1990,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             notifier.updateShowHandwritingBoard(true);
                           }, tag: 'hw-open');
                           notifier.asr.stopMicrophone();
+                          _maybeHintTypingMode();
                         },
                       ),
                       const SizedBox(width: 6),
@@ -2040,6 +2082,159 @@ extension BdcPageStateUIComponents on BdcPageState {
         // 3. 例句环节底部固定"按住说话/练习"按钮：独立于滚动区，位置不随识别文本/反馈变化
         if (isSentence) _buildPttSpeakButton(),
       ],
+    );
+  }
+
+  /// 关掉语音答题后的答题面板（单词环节第一档）：答案直接由键盘打出来。
+  ///
+  /// 版式与全屏拼写板一致 —— 预览在上、输入行贴着键盘在下：
+  /// 英译汉上方是待回忆的释义（没答出的字仍是空格），汉译英不重复展示，
+  /// 因为拼写本身就逐字符标色写在输入框里。
+  Widget _buildTypingPanel() {
+    final String? step = state.studyStep;
+    if (state.word == null ||
+        (step != StudyStep.en2Ch.json && step != StudyStep.ch2En.json)) {
+      return const SizedBox.shrink();
+    }
+    final isDarkMode = _cachedIsDarkMode;
+    final bool isChineseAnswer = state.isChineseDictation;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 1. 预览区
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  controller: _speakPanelScrollController,
+                  padding: EdgeInsets.zero,
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: !isChineseAnswer
+                        ? const SizedBox.shrink()
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ...renderAsrMeaningItems(state.wordWrapper!,
+                                  isDarkMode: isDarkMode),
+                              // 已写出部分释义但未达通过线：告诉他"还差几个"，别以为写一次就完事
+                              if (state.dictationRequiredCount > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: _buildMeaningProgressText(
+                                    state.dictationMatchedCount,
+                                    state.dictationRequiredCount,
+                                    '写',
+                                  ),
+                                ),
+                            ],
+                          ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+
+        // 微柔光分割线
+        Container(
+          height: 0.6,
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
+        ),
+
+        // 2. 输入行：贴着键盘，换词后不用再点一次
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 10, 8),
+          child: Row(
+            children: [
+              Expanded(child: _buildTypingField(isChineseAnswer)),
+              const SizedBox(width: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 中文释义是手打的，没有"打完自动判"的时机，只能由用户显式提交
+                    if (isChineseAnswer) ...[
+                      _buildPanelButton(
+                        icon: Icons.send_rounded,
+                        label: '提交',
+                        onTap: () => notifier.submitTypedMeaning(),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    _buildPanelButton(
+                      icon: Icons.lightbulb_outline_rounded,
+                      label: '提示',
+                      onTap: () => notifier.giveALittleHint(),
+                      onLongPress: () => notifier.giveFullHint(),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildPanelButton(
+                      icon: Icons.refresh_rounded,
+                      label: '清除',
+                      onTap: () => notifier.clearHint(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTypingField(bool isChineseAnswer) {
+    final bool success = state.isSpellingSuccess;
+    final Color underlineColor = success
+        ? const Color(0xFF10B981)
+        : context.primaryColor.withValues(alpha: 0.35);
+    return TextField(
+      key: const Key('bdc_typing_input'),
+      controller: notifier.meaningController,
+      focusNode: _meaningFocusNode,
+      // 进这个模式就是要打字：换词时输入框会随卡片重建，autofocus 让键盘原地留着
+      autofocus: true,
+      // 中文释义要用中文输入法（拼音候选）；英文拼写用 visiblePassword 避开自动纠错与候选
+      keyboardType:
+          isChineseAnswer ? TextInputType.text : TextInputType.visiblePassword,
+      autocorrect: false,
+      enableSuggestions: isChineseAnswer,
+      style: TextStyle(
+        fontSize: 26,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.3,
+        color: success ? const Color(0xFF10B981) : context.textPrimary,
+      ),
+      decoration: InputDecoration(
+        isDense: true,
+        border: UnderlineInputBorder(
+            borderSide: BorderSide(color: underlineColor, width: 1.5)),
+        enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: underlineColor, width: 1.5)),
+        focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: underlineColor, width: 1.5)),
+        hintText: isChineseAnswer ? '在此键入中文释义...' : '在此键入单词...',
+        hintStyle: TextStyle(
+          fontSize: 26,
+          fontWeight: FontWeight.w400,
+          color: context.textMuted.withValues(alpha: 0.6),
+        ),
+        contentPadding: const EdgeInsets.only(bottom: 4),
+      ),
+      textInputAction: TextInputAction.done,
+      // 英文拼写由输入框的防抖监听自动判题，这里只是让"完成"键也能立即判一次；
+      // 中文释义必须走「提交」（输入法拼音中间态不能当答案）
+      onSubmitted: (_) => isChineseAnswer
+          ? notifier.submitTypedMeaning()
+          : notifier.checkAsrResult(),
     );
   }
 
@@ -2849,7 +3044,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             : null;
     final sentenceText = sentence?.english ?? "No sentence available";
     final spell = state.word?.spell ?? '';
-    final bool isChoiceTab = state.tabIndex == 1;
+    final bool isChoiceTab = _isChoiceTabSelected(state);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -3113,7 +3308,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             ? state.word!.sentences!.first
             : null;
     final translationText = sentence?.chinese ?? "暂无例句翻译";
-    final bool isChoiceTab = state.tabIndex == 1;
+    final bool isChoiceTab = _isChoiceTabSelected(state);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),

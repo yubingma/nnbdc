@@ -229,7 +229,7 @@ class BdcNotifier extends _$BdcNotifier {
   BdcState build() {
     asr = ref.watch(asrProvider);
     StudyAudioSessionController.instance.registerNotifier(this);
-    StudyAudioSessionController.instance.keepMicrophoneWarm = true;
+    // 录音通道要不要保温由下面的「语音答题」开关决定，这里不再无条件打开
     
     // Initialize args
     final argsJson = Prefs.read<String>("BdcPageArgs");
@@ -293,10 +293,48 @@ class BdcNotifier extends _$BdcNotifier {
     final initialSentenceSelectPreferred =
         Prefs.read<bool>('bdc_sentence_select_mode_preferred') ?? false;
 
+    final bool voiceAnswerEnabled =
+        Prefs.read<bool>(voiceAnswerEnabledPrefKey) ?? true;
+    // 关掉语音答题后不再为"下一句要开麦"保温录音通道：既没有识别要等，
+    // 也避免播放一直走 playAndRecord 那套（音量更小、在 iPad 上还可能走听筒）
+    StudyAudioSessionController.instance.keepMicrophoneWarm = voiceAnswerEnabled;
+
     return BdcState(
       isSelectModePreferred: initialWordSelectPreferred,
       isSentenceSelectModePreferred: initialSentenceSelectPreferred,
+      voiceAnswerEnabled: voiceAnswerEnabled,
     );
+  }
+
+  /// 「语音答题」开关的本地存储键。
+  ///
+  /// 按设备存（不进 StudyConfig）：安静场所是这个设备当场的处境，
+  /// 在平板上关掉不该把手机上的语音也一起关掉。
+  static const String voiceAnswerEnabledPrefKey = 'bdc_voice_answer_enabled';
+
+  /// 这个环节的第一档答题方式是不是「说」。
+  ///
+  /// 三个条件：用户开着语音答题、平台认这门语言的语音、环节本身有对应的说模式。
+  /// 页面据此决定答题卡的档数，通知器据此决定要不要开麦 —— 只此一份判据。
+  static bool voiceAnswerAvailableFor(String studyStep, bool voiceAnswerEnabled) {
+    if (!voiceAnswerEnabled) return false;
+    if (!PlatformUtils.isAsrSupported()) return false;
+    if (studyStep == StudyStep.ch2En.json ||
+        studyStep == StudyStep.chSentence2En.json) {
+      return PlatformUtils.isEnglishAsrSupported();
+    }
+    return studyStep == StudyStep.en2Ch.json ||
+        studyStep == StudyStep.enSentence2Ch.json;
+  }
+
+  /// 答题卡的档数：单词环节恒为两档（第一档＝说或拼写，第二档＝选择题）；
+  /// 例句环节没有键盘答题，关掉语音后只剩选择题一档。
+  static int answerTabCountFor(String studyStep, bool voiceAnswerEnabled) {
+    final bool isSentenceStep =
+        studyStep == StudyStep.enSentence2Ch.json ||
+            studyStep == StudyStep.chSentence2En.json;
+    if (!isSentenceStep) return 2;
+    return voiceAnswerAvailableFor(studyStep, voiceAnswerEnabled) ? 2 : 1;
   }
 
   DateTime? _lastSyncTime;
@@ -713,8 +751,9 @@ class BdcNotifier extends _$BdcNotifier {
         isLatestAnswerWrongToday: false,
       );
       
-      // 开启麦克风保温以跨越列表页
-      StudyAudioSessionController.instance.keepMicrophoneWarm = true;
+      // 开启麦克风保温以跨越列表页（关掉语音答题就不再保温，没有识别要等）
+      StudyAudioSessionController.instance.keepMicrophoneWarm =
+          state.voiceAnswerEnabled;
       
       // Redirect to batch word list
       Future.delayed(Duration.zero, () {
@@ -722,7 +761,8 @@ class BdcNotifier extends _$BdcNotifier {
           label: '下一组',
           identifier: 'e2e_study_next_group',
           onTap: () async {
-            StudyAudioSessionController.instance.keepMicrophoneWarm = true;
+            StudyAudioSessionController.instance.keepMicrophoneWarm =
+                state.voiceAnswerEnabled;
             await StudyBo().completeListStepForCurrentBatch();
             // 跳转回 BDC 页面，它会自动加载下一个非 List 环节的单词
             goRouter.pushReplacement('/bdc');
@@ -801,14 +841,15 @@ class BdcNotifier extends _$BdcNotifier {
 
     WordWrapper wordWrapper = WordWrapper(word, null);
     
-    bool speakTabAvailable = _getShouldShowSpeakTabFor(newStudyStep);
     final bool isSentenceStep = newStudyStep == StudyStep.enSentence2Ch.json || newStudyStep == StudyStep.chSentence2En.json;
+    // 选项档位按"这一档是不是选择题"决定：单词环节两档恒在，例句环节关掉语音后只有一档（选择题）。
+    final int tabCount = answerTabCountFor(newStudyStep, state.voiceAnswerEnabled);
     int newTabIndex = 0;
     final bool isPreferred = isSentenceStep
         ? state.isSentenceSelectModePreferred
         : state.isSelectModePreferred;
-    if (isPreferred) {
-      newTabIndex = speakTabAvailable ? 1 : 0;
+    if (isPreferred && tabCount > 1) {
+      newTabIndex = tabCount - 1;
     }
 
     _accumulatedAsrText = "";
@@ -886,6 +927,10 @@ class BdcNotifier extends _$BdcNotifier {
       tabIndex: newTabIndex,
       showHandwritingBoard: false,
       isKeyboardVisible: false,
+      // 中文答案的进度按词重算：关掉语音后打字面板不会像手写板那样随换词消失，
+      // 不显式清零就会把上一词"已写对 1/2"带到新词上
+      dictationMatchedCount: 0,
+      dictationRequiredCount: 0,
       hintTapCount: 0,
       isWordMastered: false,
       isPttPressed: false,
@@ -1197,8 +1242,12 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void updateTabIndex(int index) {
-    // Determine if the user is choosing the "Select" tab (always the last tab)
-    final isSelectTab = index == (_shouldShowSpeakTab ? 1 : 0);
+    // 「选择题」永远是最后一档：单词环节是第 2 档（说/拼写在前），
+    // 例句环节关掉语音后只剩它一档。
+    final int tabCount =
+        answerTabCountFor(state.studyStep ?? '', state.voiceAnswerEnabled);
+    if (index < 0 || index >= tabCount) return;
+    final bool isSelectTab = index == tabCount - 1;
     // 切换 Tab 即视为松开 PTT（防止切到"选"Tab 后例句环节识别仍在继续）
     if (_isPttPressed) {
       _isPttPressed = false;
@@ -1222,6 +1271,40 @@ class BdcNotifier extends _$BdcNotifier {
       unawaited(Prefs.write('bdc_select_mode_preferred', isSelectTab));
     }
     _handleTabChangeForAsr();
+  }
+
+  /// 学习设置里的「语音答题」开关（按设备存在本地）。
+  ///
+  /// 关掉后答题卡第一档由「说」换成「拼写」，并立刻释放麦克风；
+  /// 打开后按当前环节恢复开麦。切档位时顺手把当前档夹回有效范围
+  ///（例句环节关掉语音后只剩选择题一档）。
+  void setVoiceAnswerEnabled(bool enabled) {
+    if (state.voiceAnswerEnabled == enabled) return;
+    unawaited(Prefs.write(voiceAnswerEnabledPrefKey, enabled));
+    StudyAudioSessionController.instance.keepMicrophoneWarm = enabled;
+    final int tabCount = answerTabCountFor(state.studyStep ?? '', enabled);
+    state = state.copyWith(
+      voiceAnswerEnabled: enabled,
+      tabIndex: min(state.tabIndex, tabCount - 1),
+    );
+    if (enabled) {
+      _handleTabChangeForAsr();
+    } else {
+      // 关掉语音就是要马上闭嘴：不受"发音播放期间不开麦"的排队约束
+      _syncAudioHardware();
+    }
+  }
+
+  /// 打字面板的「提交」：把输入框里的中文释义当作一次显式作答。
+  ///
+  /// 中文答案不走输入框的防抖自动判题（输入法拼音中间态会被当成答案误判），
+  /// 只认用户这一下提交；判题口径与手写默写完全一致（严格逐字，可交大模型裁判兜底）。
+  Future<void> submitTypedMeaning() {
+    final String text = meaningController.text.trim();
+    if (text.isEmpty || state.hasFinishedAnswering) {
+      return Future<void>.value();
+    }
+    return checkAsrResult(asrInput: text, typedAnswer: true);
   }
 
   /// 当前词答案用户是否已看过：答对/看答案后揭晓，或练习模式下已看过再隐藏答案。
@@ -1380,7 +1463,8 @@ class BdcNotifier extends _$BdcNotifier {
     }
     _cancelPendingWordTimers();
     debugPrint('🕵️ [AudioDiag] showWordDetail.enter | word=${word.spell} isAnswerWrong=$isAnswerWrong');
-    StudyAudioSessionController.instance.keepMicrophoneWarm = true;
+    StudyAudioSessionController.instance.keepMicrophoneWarm =
+        state.voiceAnswerEnabled;
     // 音频与 ASR 清理不再阻塞页面转场：把清理登记为「下一次播放前必须完成」，
     // 转场立即开始，而详情页入场发音会自动排在清理之后，避免发音被旧的 stop/seek 掐断。
     // 1.5s 硬超时保留，防止底层系统音频驱动卡死拖住后续每一次播放。
@@ -1805,7 +1889,11 @@ class BdcNotifier extends _$BdcNotifier {
           currentScore: null,
         );
       }
-      if (state.studyStep == StudyStep.ch2En.json || state.showHandwritingBoard) {
+      // 输入框就是答案的三种场合都要一起清空：中英拼写、手写板、以及关掉语音后
+      // 英译汉的键盘打字面板（中文答案只存在于输入框里，不清就等于没清）
+      if (state.studyStep == StudyStep.ch2En.json ||
+          state.showHandwritingBoard ||
+          state.isChineseDictation) {
         meaningController.text = '';
       }
     }
@@ -2678,7 +2766,9 @@ class BdcNotifier extends _$BdcNotifier {
     await onComplete();
   }
 
-  Future<void> checkAsrResult({String? asrInput, bool isVoice = false, bool isFinal = false, bool silenceElapsed = false}) async {
+  /// [typedAnswer] 表示这是用户用键盘打出来的答案（打字面板的「提交」），
+  /// 与手写板传进来的识别结果同为 [asrInput]，但评语必须区分开：它是键盘输入，不是手写。
+  Future<void> checkAsrResult({String? asrInput, bool isVoice = false, bool isFinal = false, bool silenceElapsed = false, bool typedAnswer = false}) async {
     if (_isDisposed) return;
     if (!state.showHandwritingBoard && (state.hasFinishedAnswering || _isAnswerCorrectHandling)) return;
     final stopwatch = Stopwatch()..start();
@@ -2905,8 +2995,8 @@ class BdcNotifier extends _$BdcNotifier {
     String method = "键盘输入";
     if (isVoice) {
       method = "语音识别";
-    } else if (asrInput != null) {
-      // 只有手写板会显式传入 asrInput 且 isVoice 为 false
+    } else if (asrInput != null && !typedAnswer) {
+      // 手写板会显式传入 asrInput 且 isVoice 为 false；打字面板传的是输入框文本，仍算键盘输入
       method = "手写输入";
     }
 
@@ -3114,7 +3204,7 @@ class BdcNotifier extends _$BdcNotifier {
                 ? '已答对 $matched/$required，继续写出其他释义'
                 : '这个释义已经答对了，继续写出其他释义');
           } else if (!_scheduleWordAiRefereeCheck(inputs, immediate: true)) {
-            ToastUtil.error('答案不正确或未写完整，请重写');
+            ToastUtil.error('答案不正确或未写完整');
           }
           return;
         }
@@ -4267,18 +4357,9 @@ class BdcNotifier extends _$BdcNotifier {
     return tabs;
   }
 
-  bool get _shouldShowSpeakTab => _getShouldShowSpeakTabFor(state.studyStep ?? '');
-
-  bool _getShouldShowSpeakTabFor(String studyStep) {
-    if (!PlatformUtils.isAsrSupported()) return false;
-    if (studyStep == StudyStep.ch2En.json || studyStep == StudyStep.chSentence2En.json) {
-      return PlatformUtils.isEnglishAsrSupported();
-    }
-    if (studyStep == StudyStep.en2Ch.json || studyStep == StudyStep.enSentence2Ch.json) {
-      return true;
-    }
-    return false;
-  }
+  /// 当前环节是否用「说」答题：假则全程不开麦（关掉语音答题，或平台/环节不支持语音）。
+  bool get _shouldShowSpeakTab =>
+      voiceAnswerAvailableFor(state.studyStep ?? '', state.voiceAnswerEnabled);
 
   void updateIsUpdatingByHint(bool value) {
     state = state.copyWith(isUpdatingByHint: value);
@@ -4709,9 +4790,9 @@ class BdcNotifier extends _$BdcNotifier {
           await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
           if (!_isDisposed) _handleTabChangeForAsr();
         } else if (forChineseDictation) {
-          // 中文默写是用户主动点「提交」：裁判不认可也必须明确告诉他"不对、请重写"，
-          // 否则判题结论只留在后台，用户看到的就是"点了提交没反应"。
-          ToastUtil.error('答案不正确或未写完整，请重写');
+          // 中文答案（手写默写或键盘打字）都是用户主动点「提交」：裁判不认可也必须
+          // 明确告诉他"不对"，否则判题结论只留在后台，用户看到的就是"点了提交没反应"。
+          ToastUtil.error('答案不正确或未写完整');
         }
       }
     } catch (e, st) {

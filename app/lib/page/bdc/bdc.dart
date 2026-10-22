@@ -163,11 +163,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     
     // Initialize TabController with a default length
     _tabController = TabController(length: 2, vsync: this);
-    _tabController!.addListener(() {
-      if (_tabController!.index != ref.read(bdcNotifierProvider).tabIndex) {
-        ref.read(bdcNotifierProvider.notifier).updateTabIndex(_tabController!.index);
-      }
-    });
+    _tabController!.addListener(_onTabControllerChanged);
 
     // Sync state tabIndex to controller
     ref.listenManual(bdcNotifierProvider.select((s) => s.tabIndex), (previous, next) {
@@ -176,9 +172,10 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       }
     });
     
-    // 监听答题完成状态，自动收起键盘/手写板，从而退出沉浸式拼写模式
+    // 监听答题完成状态，自动收起键盘/手写板，从而退出沉浸式拼写模式。
+    // 打字面板（关掉语音答题后的键盘答题）例外：键盘要留在原地，下一词直接接着打。
     ref.listenManual(bdcNotifierProvider.select((s) => s.hasFinishedAnswering), (previous, next) {
-      if (next == true) {
+      if (next == true && !_showsTypingPanel(ref.read(bdcNotifierProvider))) {
         _meaningFocusNode.unfocus();
       }
     });
@@ -211,28 +208,17 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       if (next == true) _checkStudyGuide();
     }, fireImmediately: true);
 
-    // Listen for studyStep changes to update TabController length safely
-    ref.listenManual(bdcNotifierProvider.select((s) => _getShouldShowSpeakTab(s)), (previous, next) {
-      final newLength = next ? 2 : 1;
-      if (_tabController?.length != newLength) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          updateUI(() {
-            _tabController?.dispose();
-            _tabController = TabController(length: newLength, vsync: this);
-            _tabController!.addListener(() {
-              if (_tabController!.index != ref.read(bdcNotifierProvider).tabIndex) {
-                ref.read(bdcNotifierProvider.notifier).updateTabIndex(_tabController!.index);
-              }
-            });
-            // Re-sync after recreation
-            final currentTabIndex = ref.read(bdcNotifierProvider).tabIndex;
-            if (currentTabIndex < newLength) {
-              _tabController!.index = currentTabIndex;
-            }
-          }, tag: 'tab-recreate');
-        });
-      }
+    // 答题卡档数随「环节 + 语音答题开关」变化：例句环节关掉语音后只剩选择题一档，
+    // 单词环节恒为两档。档数一变就得换一个 TabController，否则 TabBarView 会越界。
+    ref.listenManual(
+        bdcNotifierProvider.select((s) =>
+            BdcNotifier.answerTabCountFor(s.studyStep ?? '', s.voiceAnswerEnabled)),
+        (previous, next) {
+      if (_tabController?.length == next) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        updateUI(() => _resetTabController(next), tag: 'tab-recreate');
+      });
     });
 
     // Animation controllers
@@ -415,8 +401,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   Future<void> _checkStudyGuide() async {
     if (_studyGuideChecked) return;
     _studyGuideChecked = true;
-    // 引导只讲开口说，平台不支持语音识别时弹出来只会误导
+    // 引导只讲开口说，平台不支持语音识别、或用户关掉了语音答题时弹出来只会误导
     if (!PlatformUtils.isAsrSupported()) return;
+    if (!ref.read(bdcNotifierProvider).voiceAnswerEnabled) return;
     final cacheKey = 'bdcStudyGuideShown_${Global.currentUserId}';
     try {
       if (Prefs.read<bool>(cacheKey) == true) return;
@@ -468,10 +455,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     _activeState = state;
 
     {
-      int expectedTabLength = _getShouldShowSpeakTab(state) ? 2 : 1;
+      final int expectedTabLength = _tabCountFor(state);
       if (_tabController == null || _tabController!.length != expectedTabLength) {
-        _tabController?.dispose();
-        _tabController = TabController(length: expectedTabLength, vsync: this);
+        _resetTabController(expectedTabLength);
       }
     }
 
@@ -570,8 +556,14 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       );
     }
 
+    // 打字面板本身就是答题面：它的输入框拿到焦点时必须留在原页面，
+    // 不能被"输入框有焦点就进全屏拼写板"的旧判据抢走（那是说面板点输入框时的老路径）。
+    final bool typingPanelShown =
+        state.tabIndex == 0 && _showsTypingPanel(state);
     final isImmersive = state.showHandwritingBoard ||
-        (_meaningFocusNode.hasFocus && !state.hasFinishedAnswering);
+        (_meaningFocusNode.hasFocus &&
+            !state.hasFinishedAnswering &&
+            !typingPanelShown);
 
     final mainContent = Stack(
       children: [
@@ -710,12 +702,34 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     );
   }
 
-  bool _getShouldShowSpeakTab(BdcState state) {
-    if (!PlatformUtils.isAsrSupported()) return false;
-    if (state.studyStep == StudyStep.ch2En.json ||
-        state.studyStep == StudyStep.chSentence2En.json) {
-      return PlatformUtils.isEnglishAsrSupported();
+  /// 答题卡的档数（见 [BdcNotifier.answerTabCountFor]）：单词环节两档，例句环节关语音后一档。
+  int _tabCountFor(BdcState state) =>
+      BdcNotifier.answerTabCountFor(state.studyStep ?? '', state.voiceAnswerEnabled);
+
+  /// 当前是不是关掉语音答题后的「拼写」键盘答题面板（只发生在单词环节的第一档）。
+  bool _showsTypingPanel(BdcState state) {
+    final String? step = state.studyStep;
+    if (step != StudyStep.en2Ch.json && step != StudyStep.ch2En.json) {
+      return false;
     }
-    return true;
+    return !BdcNotifier.voiceAnswerAvailableFor(step!, state.voiceAnswerEnabled);
+  }
+
+  void _onTabControllerChanged() {
+    final TabController? controller = _tabController;
+    if (controller == null) return;
+    if (controller.index != ref.read(bdcNotifierProvider).tabIndex) {
+      ref.read(bdcNotifierProvider.notifier).updateTabIndex(controller.index);
+    }
+  }
+
+  /// 换一个档数不同的 TabController：档数永远是唯一的入口，监听器也只在这里挂一次。
+  void _resetTabController(int length) {
+    final int currentIndex = ref.read(bdcNotifierProvider).tabIndex;
+    final int initialIndex = currentIndex < length ? currentIndex : length - 1;
+    _tabController?.dispose();
+    _tabController =
+        TabController(length: length, vsync: this, initialIndex: initialIndex);
+    _tabController!.addListener(_onTabControllerChanged);
   }
 }

@@ -45,7 +45,20 @@ class FeatureChallengeRepository {
         '连击两次屏幕空白处',
       ],
       correctIndex: 1,
-      explanation: '背单词时直接开口说出答案，无需手动点按。',
+      explanation: '背单词时直接开口说出答案，无需手动点按。不方便开口时，可以在「更多 → 学习设置」里关掉「语音答题」。',
+    ),
+    FeatureChallenge(
+      id: 'tip_voice_off_typing',
+      category: '学习操作',
+      title: '安静场所怎么背单词',
+      question: '在地铁、图书馆这类不方便开口的地方，怎样让背单词全程只用键盘打字？',
+      options: [
+        '背单词页右上角「更多 → 学习设置」里关掉「语音答题」，之后英译汉打字写释义、汉译英打字拼写',
+        '把手机调成静音就够了',
+        '必须每个词点一下「拼写」',
+      ],
+      correctIndex: 0,
+      explanation: '关掉「语音答题」后不再开麦，答题卡第一档从「说」换成「拼写」，换词也不用再点一次：英译汉打中文释义（写完点「提交」），汉译英打拼写（拼对自动判）。这个开关只对当前这台设备生效，平板上关掉不会影响手机。',
     ),
     FeatureChallenge(
       id: 'tip_voice_round_feedback',

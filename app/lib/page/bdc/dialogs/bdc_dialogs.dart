@@ -384,6 +384,8 @@ extension BdcPageStateDialogs on BdcPageState {
     var localMixWithOthersForIos = studyConfig.mixWithOthersForIos;
     var localShowWordDetailAfterCorrect =
         studyConfig.showWordDetailAfterCorrect;
+    // 语音答题是设备级开关（本地存储），不走 StudyConfig
+    var localVoiceAnswerEnabled = ref.read(bdcNotifierProvider).voiceAnswerEnabled;
 
     if (!mounted) return;
 
@@ -496,6 +498,16 @@ extension BdcPageStateDialogs on BdcPageState {
                                         localDistractorStrategy = value;
                                       });
                                     },
+                                  ),
+                                  _buildSettingItem(
+                                    '语音答题',
+                                    localVoiceAnswerEnabled,
+                                    (value) {
+                                      setState(() {
+                                        localVoiceAnswerEnabled = value;
+                                      });
+                                    },
+                                    subtitle: '关掉后不再开麦：英译汉打字写释义、汉译英打字拼写',
                                   ),
                                   _buildSettingItem(
                                     '自动播放单词发音',
@@ -714,6 +726,9 @@ extension BdcPageStateDialogs on BdcPageState {
 
                                     // 在异步操作后检查context是否仍然有效
                                     if (context.mounted) {
+                                      // 语音答题先落地：它会换答题卡档位，后面的设置刷新在此基础上重算
+                                      notifier.setVoiceAnswerEnabled(
+                                          localVoiceAnswerEnabled);
                                       notifier.applyStudyConfig(studyConfigToSave);
                                       Navigator.pop(context, true);
                                     }

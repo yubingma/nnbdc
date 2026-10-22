@@ -288,6 +288,9 @@
 | 词形判断 | `WordFormJudge`（`app/lib/util/word_form_judge.dart`） | 判题前先判断"识别词是不是目标词本身"，结论分五种：同一个词 / 同音词 / 词尾被吞 / 另一个词形 / 无关词 | 同词干的不同词形（nation / national、develop / development、walk / walked）原则上判错；只有"词尾被吞"这一种例外可放行。身份判断只看识别第一候选；无关词仍走原音素分与 AI 裁判 |
 | 词尾被吞 | 词形判断的一种结论 | 目标词比识别词多出一个**不含元音**的辅音尾巴，例如目标 walked、识别 walk；目标 books、识别 book | 多出的是一个完整音节（needed 对 need、walking 对 walk、development 对 develop）不算吞音，判错。判断依据是发音，不是拼写：同样是 -ed，walked 丢 /t/ 可放行，needed 丢 /ɪd/ 不放行 |
 | 本轮开口结论 | 数字：背单词页 `BdcState.currentScore`（英中环节由 `_bestMeaningMatchScore` 算出"中文释义匹配度"，中英环节是音素分）与词表页 `WordWrapper.roundMatchScore`；没听清：`BdcState.asrRoundHeardNothing` / `WordWrapper.roundHeardNothing` | 用户说完一句之后，答题行上给出的结论：一个 **0~100 的匹配度数字**（「匹配度 32」），或（什么都没听清时）一句「没听清，再说一遍」 | **刻意不回显用户说的原话**：说一长句时那行字既放不下，又会让整行被等比缩成几像素的小字（线上反馈"波形那里冒出一堆黄色小字"）。只在**说完之后**（停顿约 1.5 秒）定论；重新开口、换词、说中释义时清空。数字只回答"听清了、离释义有多远"，**不参与判题**；0 分也要显示，否则又与"程序没反应"无法区分。只有语音才有"没听清"，键盘敲一个字不算 |
+| 语音答题 | `BdcState.voiceAnswerEnabled`（本地键 `bdc_voice_answer_enabled`，设置入口在背单词页「更多 → 学习设置」） | 学习设置里的一项开关：开着时答题卡第一档是「说」（开口作答、麦克风自动打开）；关掉后全程不开麦，第一档换成「拼写」 | **按设备存，不进 `StudyConfig`**：安静场所是这台设备当场的处境，在平板上关掉不该把手机上的语音也一起关掉。判据只有一份：`BdcNotifier.voiceAnswerAvailableFor`（要不要开麦）与 `BdcNotifier.answerTabCountFor`（答题卡几档） |
+| 拼写面板（关掉语音后） | 背单词页 `_buildTypingPanel`（`app/lib/page/bdc/widgets/bdc_ui_components.dart`） | 关掉语音答题后单词环节的第一档：上面是待回忆的释义、下面是贴着键盘的输入行，换词不用再点一次「拼写」 | 英译汉打中文释义（**只能点「提交」或键盘「完成」判题**，输入法拼音中间态不算答案）、汉译英打拼写（拼对即判）。它沿用「中文默写」的判题语义（严格逐字）而不是语音的宽松匹配，见 `BdcState.copyWith` 里对 `isChineseDictation` 的推导 |
+| 答题卡档数 | `BdcNotifier.answerTabCountFor(studyStep, voiceAnswerEnabled)` | 答题卡有几档：单词环节恒为两档（说或拼写 + 选择题），例句环节关掉语音后只剩选择题一档 | 页面 `TabController` 的档数、`tabIndex` 的语义（选择题永远是最后一档）都从这里派生，禁止各处再写 `tabIndex == 1` 之类的判据 |
 | 练习模式 | `_isPracticeMode`（`app/lib/page/bdc/providers/bdc_notifier.dart:1107` 的 `hideAnswer` 进入） | 例句环节"看答案"后点「隐藏答案继续练习」：练习答对只给反馈与揭晓答案，不改今日测评结果、不写学习记录 | 离开练习模式时用的仍是"看答案"那次已受理的评分凭据 |
 | 待计分作答凭据 | `_pendingGrade` | 受理一次作答时登记、流转下一词时消费一次的凭据 | 同一呈现只受理一次；练习模式不得把它清空，否则「下一词」会被判成重复提交而点不动 |
 | 所见即所改 | 面板身份判据 `BdcNotifier.hasUnsubmittedAnswer`（`app/lib/page/bdc/providers/bdc_notifier.dart`） | 评分面板那一行显示的是哪条记录，点它改的就必须是同一条：本次作答 = `lastFsrsRating` + 本次推算 `fsrsItem`；其余 = **当天最近一次计分作答** `todayLatestRating` + `todayLatestScheduledDays`（`todayLatestLogIndex` 标明它是当天第几条） | 标签按"这一行此刻代表谁"给三种：本次作答且是测评环节＝**测评结果**；本次作答且是后续环节＝**本次评分**；其余（还没作答 / 本环节重练 / 回看历史，显示的是这个词当前已记入的评分）＝**当前评分**。**改评分改的是"当天最近一条学习记录"**（用户最近那次作答），不是"当天首条测评"。标签、数据源、修改对象三者共用同一个判据；回看历史时绝不能拿"被回看那条的作答事实"或"当天首条"互相顶替 —— 否则用户对着"巩固的良好"改回良好，改掉的却是测评首条，天数从 16 天变成 `init(良好)` 的 3 天 |
@@ -395,6 +398,7 @@
 | 词汇星系 | `pca_projection_config` | 词向量降维到 3D 的投影配置，用于可视化 | |
 | AI 情境故事 | `ai_story` | DeepSeek 生成的串记多词短文 | |
 | 原声例句 | `sentence` / `sentence_chinese` | 英文原句 + 音频 + 中文翻译 | |
+| 单词发音 | `Util.getWordSoundUrl` + `StudyAudioSessionController.playWordSound` / `playWordSoundBySpell`（`app/lib/util/study_audio_session_controller.dart`），兜底才是本地 TTS（`app/lib/util/tts.dart`） | 读单词时放的那段英文音频：CDN 上的真人录音 mp3，按「英音/美音」设置取 `_uk`/`_us`，命中缓存直接播、取不到才退回系统 TTS | 游戏也走这条线：消砖块朗读下落中的英文单词，并在收到 `wordPack` 时预取整包发音；戳泡泡只念中文释义（题型是"看中文释义点正确的英文拼写"，念英文等于报答案），真人库没有中文，只能 TTS |
 | 例句点评 | `sentence_chinese_remark` | 对例句翻译的点评与纠错 | |
 | 单词配图 | 客户端 `word_images` / 服务端 `word_image`，图片文件走 `https://www.nnbdc.com/img/word/<image_file>` | 单词详情页词条下方那张图（作者上传 + AI 审核），一个单词最多 2 张 | 与「词核心图 `word_core_image`」不是一回事：配图存在服务端数据库和磁盘上，客户端的 `word_images` 行只是"这个词有哪几张图"的索引 |
 | 配图投票 | 客户端 `voted_word_images` / 服务端 `info_vote_log` | 单词配图的有用/无用投票 | 两端表名不同 |
