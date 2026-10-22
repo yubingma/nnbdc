@@ -16,6 +16,7 @@ import beidanci.service.po.Dict;
 import org.springframework.web.context.request.async.DeferredResult;
 import java.io.IOException;
 import beidanci.service.exception.ParseException;
+import beidanci.service.util.SysParamUtil;
 
 @RestController
 public class SystemController {
@@ -52,6 +53,19 @@ public class SystemController {
 
     @Autowired
     private CigenBo cigenBo;
+
+    @Autowired
+    private SysParamUtil sysParamUtil;
+
+    /**
+     * 是否隐藏中小学教育类内容（K12 词书分组与游戏大厅）。
+     *
+     * 系统管理员在 sys_param 表配置 hideK12Content，客户端每次启动拉取一次。
+     */
+    @GetMapping("/getHideK12Content.do")
+    public Result<Boolean> getHideK12Content() {
+        return Result.success(sysParamUtil.isK12ContentHidden());
+    }
 
     /**
      * 系统词书自愈（第一步：对账）：按 word_id 游标分页返回某本词书的单词 ID 清单。

@@ -1,6 +1,12 @@
 class Config {
   static String profileName = "prod";
 
+  /// 中小学教育类分组名称：命中后整体隐藏（词书分类与游戏大厅共用同一套分组名）。
+  /// 只有【小米系机型】且服务端参数 `hideK12Content` 为 true 时才隐藏；
+  /// 其他厂商机型永远显示。机型判断见 PlatformUtils.isXiaomiDevice。
+  static const Set<String> k12GroupNames = {'小学', '初中', '高中'};
+
+
   static final Map profiles = {
     "prod": {
       // 后端域名支持 HTTPS，iOS/macOS 也建议强制走 HTTPS，避免 ATS/审核问题

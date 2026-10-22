@@ -20,6 +20,17 @@ public class SysParamUtil {
         return Boolean.parseBoolean(sysParamBO.findById("gameEnabled", true).getParamValue());
     }
 
+    /**
+     * 是否隐藏中小学教育类内容（K12 词书分组与游戏大厅）。
+     *
+     * 由系统管理员在 sys_param 表配置，默认 false（显示）。
+     * 小米商店把"含中小学词书"的应用判定为特殊行业（中小学教育类），要求教育移动应用备案，
+     * 审核期间可置为 true 全局隐藏，过审后再置回 false。
+     */
+    public boolean isK12ContentHidden() {
+        return Boolean.parseBoolean(sysParamBO.findById("hideK12Content", false).getParamValue());
+    }
+
 
     public String getImageBaseDir() {
         return sysParamBO.findById("imgBaseDir", false).getParamValue();

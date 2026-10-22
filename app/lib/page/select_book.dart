@@ -7,12 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/db/dict_import_worker.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/pinyin.dart';
+import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/content_config.dart';
 import 'package:nnbdc/services/user_privilege_manager.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -214,6 +217,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
 
   void loadData({bool keepSelection = false}) async {
+    // 先刷新服务端内容开关（K12 是否隐藏），管理员改完配置无需重启 App
+    await ContentConfig.refresh();
+
     setState(() {
       _isLoading = true;
     });
@@ -279,6 +285,15 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         && g.name != 'root' && g.name != '其他'
       ).toList();
       topGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
+
+      // 系统管理员可通过服务端参数隐藏中小学教育类分组（K12 词书）。
+      // 只有明确是其他厂商机型（华为/荣耀/OPPO/vivo 等白名单）才显示，
+      // 小米系机型以及厂商读不到的设备都由该配置决定。
+      if (!PlatformUtils.isConfirmedNonXiaomiDevice && Prefs.hideK12Content) {
+        topGroups = topGroups
+            .where((g) => !Config.k12GroupNames.contains(g.name))
+            .toList();
+      }
 
       // 2. 构建 parentCategories
       parentCategories = [DictGroupVo(id: 'custom_root', name: '自定义', dicts: [])];

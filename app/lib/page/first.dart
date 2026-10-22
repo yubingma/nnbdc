@@ -15,6 +15,7 @@ import '../global.dart';
 import '../db/db.dart';
 import '../services/update_service.dart';
 import '../util/subscription_util.dart';
+import '../util/content_config.dart';
 import '../page/index.dart';
 
 class FirstPage extends ConsumerStatefulWidget {
@@ -71,10 +72,15 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
     } else {
       _initVersion().then((_) {
         _mark('_initVersion 完成');
+        _loadContentConfig();
         checkNewVersion();
       });
     }
   }
+
+  /// 拉取服务端内容开关（是否隐藏中小学教育类内容）。
+  /// 失败时沿用上次配置，不阻断启动。
+  Future<void> _loadContentConfig() => ContentConfig.refresh();
 
   Future<void> _initVersion() async {
     final pi = await PackageInfo.fromPlatform();

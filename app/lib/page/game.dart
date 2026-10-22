@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
 import '../api/vo.dart';
+import '../config.dart';
 import '../db/db.dart';
+import '../util/prefs.dart';
 import '../global.dart';
 import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
@@ -15,6 +17,8 @@ import '../theme/app_theme_background.dart';
 import '../widget/frosted_glass_card.dart';
 import '../widget/page_back_button.dart';
 import '../util/error_handler.dart';
+import '../util/platform_util.dart';
+import '../util/content_config.dart';
 import '../util/toast_util.dart';
 
 class GamePage extends StatefulWidget {
@@ -112,6 +116,8 @@ class _GamePageState extends State<GamePage> {
 
   Future<void> loadData() async {
     if (_isLoading) return;
+    // 先刷新服务端内容开关（K12 是否隐藏），管理员改完配置无需重启 App
+    await ContentConfig.refresh();
     setState(() {
       _isLoading = true;
       errorMessage = null;
@@ -124,6 +130,13 @@ class _GamePageState extends State<GamePage> {
       var hallsByName = HashMap<String, HallVo>();
       for (var hall in gameHallDataResult!.halls) {
         hallsByName[hall.name] = hall;
+      }
+
+      // 系统管理员可通过服务端参数隐藏中小学教育类大厅分组（K12）。
+      // 只有明确是其他厂商机型（华为/荣耀/OPPO/vivo 等白名单）才显示。
+      if (!PlatformUtils.isConfirmedNonXiaomiDevice && Prefs.hideK12Content) {
+        gameHallDataResult!.hallGroups.removeWhere(
+            (hg) => Config.k12GroupNames.contains(hg.groupName));
       }
 
       // 计算大厅分组及每个大厅中的在线人数

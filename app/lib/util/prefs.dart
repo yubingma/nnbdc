@@ -187,6 +187,13 @@ class Prefs {
   /// 读取全屏模式偏好，默认开启
   static bool get isFullScreen => read<bool>(fullScreenModePref) ?? true;
 
+  /// 是否隐藏中小学教育类内容（K12 词书分组与游戏大厅）。
+  /// 由服务端参数 hideK12Content 控制，系统管理员在后台开关，客户端启动时拉取。
+  static bool get hideK12Content => read<bool>('hideK12Content') ?? false;
+
+  static Future<void> setHideK12Content(bool value) =>
+      write('hideK12Content', value);
+
   /// 设置全屏模式偏好并立即应用
   static Future<bool> setFullScreen(bool enabled) async {
     final ok = await write(fullScreenModePref, enabled);

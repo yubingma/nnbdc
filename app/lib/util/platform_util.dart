@@ -173,4 +173,16 @@ class PlatformUtils {
 
   /// 是否运行在 Flutter 单元测试环境中
   static bool get isUnitTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+  /// 是否为小米系设备（小米 / Redmi / POCO）。
+  ///
+  /// 厂商信息由 [initAndroidDeviceInfo] 在启动时读取并归并。
+  static bool get isXiaomiDevice => _androidVendor == 'Xiaomi';
+
+  /// 是否「明确不是小米」——即白名单内的其他厂商机型（华为/荣耀/OPPO/vivo 等）。
+  ///
+  /// 厂商信息没读到时返回 false（按"可能是小米"处理），确保小米审核用云真机
+  /// 读不到品牌时也不会漏隐藏 K12 内容。
+  static bool get isConfirmedNonXiaomiDevice =>
+      _androidVendor != null && _androidVendor != 'Xiaomi';
 }

@@ -1014,6 +1014,10 @@ abstract class RestClient {
   @GET("/admin/getAllSysParams.do")
   Future<Result<List<SysParamVo>>> getAllSysParams();
 
+  /// 是否隐藏中小学教育类内容（K12 词书分组与游戏大厅），由系统管理员在服务端配置
+  @GET("/getHideK12Content.do")
+  Future<Result<bool>> getHideK12Content();
+
   @POST("/admin/saveSysParam.do")
   @FormUrlEncoded()
   Future<Result<String>> saveSysParam(
