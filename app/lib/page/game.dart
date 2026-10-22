@@ -548,46 +548,47 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  /// 游戏模式选择卡片栏（对标极简高级感规范，三款游戏平铺选择）
+  /// 打哭小馋怪的入口只对管理员开放（玩法仍在打磨，暂不对外）
+  bool get _monsterEntryVisible => Global.getLoggedInUser()?.isAdmin == true;
+
+  /// 游戏模式选择卡片栏（对标极简高级感规范，游戏平铺选择）
   Widget _buildGameShowcase(AppThemeConfig themeConfig) {
+    final tabs = [
+      // 1. 戳泡泡（PVP 对战）
+      _buildGameTabCard(
+        id: 'bubble',
+        title: '戳泡泡',
+        tag: '1v1 对战',
+        icon: Icons.bubble_chart_rounded,
+        themeConfig: themeConfig,
+      ),
+      // 2. 消砖块（PVP 对战，经典下落消除）
+      _buildGameTabCard(
+        id: 'brick',
+        title: '消砖块',
+        tag: '1v1 消除',
+        icon: Icons.grid_view_rounded,
+        themeConfig: themeConfig,
+      ),
+      // 3. 打哭小馋怪（单人守桥）
+      if (_monsterEntryVisible)
+        _buildGameTabCard(
+          id: 'monster',
+          title: '小馋怪',
+          tag: '单人守桥',
+          icon: Icons.pets_rounded,
+          themeConfig: themeConfig,
+        ),
+    ];
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Row(
         children: [
-          // 1. 戳泡泡（PVP 对战）
-          Expanded(
-            child: _buildGameTabCard(
-              id: 'bubble',
-              title: '戳泡泡',
-              tag: '1v1 对战',
-              icon: Icons.bubble_chart_rounded,
-              themeConfig: themeConfig,
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // 2. 消砖块（PVP 对战，经典下落消除）
-          Expanded(
-            child: _buildGameTabCard(
-              id: 'brick',
-              title: '消砖块',
-              tag: '1v1 消除',
-              icon: Icons.grid_view_rounded,
-              themeConfig: themeConfig,
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // 3. 打哭小馋怪（单人守桥）
-          Expanded(
-            child: _buildGameTabCard(
-              id: 'monster',
-              title: '小馋怪',
-              tag: '单人守桥',
-              icon: Icons.pets_rounded,
-              themeConfig: themeConfig,
-            ),
-          ),
+          for (var i = 0; i < tabs.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(child: tabs[i]),
+          ],
         ],
       ),
     );
@@ -708,19 +709,19 @@ class _GamePageState extends State<GamePage> {
       title = '打哭小馋怪 · 守桥保卫战';
       subtitle = '左摇杆走位 · 自动投掷 · 走位答词';
       description =
-          '成群结队的小馋怪正迈着小短腿压过长桥，企图抢走桥头守护的水果！左下摇杆带着小宠物在桥头前后左右走位，小宠物自动朝正前方投掷坚果：桥两侧悬着一对单词牌，把队伍挪到正确那个单词的正下方，坚果就会打中它——答对火力升级，打错或超时火力下降；小馋怪被打哭会抹着眼泪跑掉，水果被抢光就输啦！';
+          '小馋怪成群压过长桥来抢水果。用摇杆带小宠物走位，自动投掷的坚果会打中它脚下那块单词牌：答对火力升级，答错或超时火力下降。把小馋怪全部打哭即通关，水果被抢光则失败。';
     } else if (_selectedGame == 'brick') {
       icon = Icons.dashboard_rounded;
       title = '消砖块 · 1v1 经典下落消除';
       subtitle = '单词下落触底 · 辨析中文释义';
       description =
-          '单局从顶部缓缓下落 1 个英文单词方块；看准词义在底部 3 个中文释义中快速点选正确答案。答对爆破方块消除，连对可获得道具：左侧「治疗」用在自己这边，右侧「攻击」打向对手；若未在方块触底前答出或答错，该方块会落到防线前堆成死词层——两侧竖排防线会同步长高，堆得越高下一题的下落行程越短，压力越来越大；名字上方会实时显示双方当前单词，两人共用同一份共享词序、同一索引永远是同一个词；堆满 10 层防线失守，先耗尽者判负。';
+          '英文单词方块从顶部下落，在触底前从 3 个中文释义中选出正确项。答对消除方块并攒道具：左侧治疗自己，右侧攻击对手；答错或超时会堆成死词层，堆满 10 层即失守。';
     } else {
       icon = Icons.bubble_chart_rounded;
       title = '戳泡泡 · 1v1 海底对决';
       subtitle = '单词泡泡升腾 · 抢点正确拼写';
       description =
-          '底部显示中文释义，英文单词泡泡从海底升腾；在泡泡冒过顶部警戒线之前，点中拼写正确的那一个。每连续答对 3 题可获道具：水雷轰击对手，海星回复生命，双方各有 10 格生命，先被扣光判负。';
+          '看中文释义，在泡泡越过顶部警戒线前点中拼写正确的英文单词。每连对 3 题获得道具：水雷攻击对手，海星回复生命；双方各 10 格生命，先扣光者判负。';
     }
 
     return Padding(
