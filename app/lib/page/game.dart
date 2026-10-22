@@ -549,7 +549,10 @@ class _GamePageState extends State<GamePage> {
   }
 
   /// 打哭小馋怪的入口只对管理员开放（玩法仍在打磨，暂不对外）
-  bool get _monsterEntryVisible => Global.getLoggedInUser()?.isAdmin == true;
+  bool get _monsterEntryVisible {
+    final user = Global.getLoggedInUser();
+    return user?.isAdmin == true || user?.isSuperAdmin == true;
+  }
 
   /// 游戏模式选择卡片栏（对标极简高级感规范，游戏平铺选择）
   Widget _buildGameShowcase(AppThemeConfig themeConfig) {
@@ -709,7 +712,7 @@ class _GamePageState extends State<GamePage> {
       title = '打哭小馋怪 · 守桥保卫战';
       subtitle = '左摇杆走位 · 自动投掷 · 走位答词';
       description =
-          '小馋怪成群压过长桥来抢水果。用摇杆带小宠物走位，自动投掷的坚果会打中它脚下那块单词牌：答对火力升级，答错或超时火力下降。把小馋怪全部打哭即通关，水果被抢光则失败。';
+          '小馋怪成群压过长桥来抢水果。摇杆带着小宠物走位，自动投掷的坚果只打正前方：把队伍挪到正确单词牌下方才算答对，答对火力升级，答错或超时火力下降。全部打哭即通关，水果被抢光则失败。';
     } else if (_selectedGame == 'brick') {
       icon = Icons.dashboard_rounded;
       title = '消砖块 · 1v1 经典下落消除';
