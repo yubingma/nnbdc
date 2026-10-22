@@ -8,6 +8,8 @@
 
 import os
 import sys
+import re
+import io
 import argparse
 import subprocess
 import urllib.request
@@ -18,6 +20,8 @@ import base64
 import datetime
 import uuid
 import json
+
+from PIL import Image
 
 def get_env_var(name: str) -> str:
     """获取环境变量，若当前进程未导出则从 ~/.zprofile 加载"""
@@ -36,14 +40,44 @@ def percent_encode(s: str) -> str:
     res = res.replace("+", "%20").replace("*", "%2A").replace("%7E", "~")
     return res
 
-def send_email_report(to_email: str, subject: str, html_content: str) -> bool:
-    """调用阿里云邮件推送 SingleSendMail 接口"""
+def _data_uri(path: str, max_width: int = 120, quality: int = 60) -> str:
+    """截图压成 120px 宽的 JPEG 再 base64：报告里 72px 展示够用，正文也压得住。
+
+    尺寸不是随便定的：阿里云 DirectMail 的垃圾邮件过滤会拦掉 369KB 的正文
+    （23 张 240px 截图，报 InvalidSendMail.Spam），120px 后正文约 110KB 能正常送达。
+    """
+    image = Image.open(path).convert("RGB")
+    if image.width > max_width:
+        image = image.resize((max_width, round(image.height * max_width / image.width)),
+                             Image.LANCZOS)
+    buf = io.BytesIO()
+    image.save(buf, "JPEG", quality=quality, optimize=True)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+def inline_report_images(html: str, base_dir: str) -> str:
+    """把截图内联进正文。
+
+    报告里的 <img src="screenshots/x.png"> 是相对路径，收件人的邮件客户端根本没有这些文件，
+    不内联就是满屏破图——所以邮件必须是自带内容的完整报告，不能靠本机路径或外链。
+    """
+    def repl(match):
+        src = _data_uri(os.path.join(base_dir, match.group(1)))
+        return f'<img src="{src}" style="width:72px;border-radius:6px;" />'
+    return re.sub(r'<a href="(screenshots/[^"]+)"[^>]*>\s*<img[^>]*>\s*</a>', repl, html)
+
+def send_email_report(to_email: str, subject: str, html_content: str,
+                      base_dir: str = None) -> bool:
+    """调用阿里云邮件推送 SingleSendMail 接口，正文即完整报告"""
     ak = get_env_var("aliyun_access_key_id")
     sk = get_env_var("aliyun_access_key_secret")
     
     if not ak or not sk:
         print("[!] 错误: 未检测到 aliyun_access_key_id 或 aliyun_access_key_secret")
         return False
+
+    if base_dir:
+        html_content = inline_report_images(html_content, base_dir)
+    print(f"[*] 邮件正文 {len(html_content.encode('utf-8')) / 1024:.0f} KB（完整报告 + 内联截图）")
         
     from_address = "pp@nnbdc.com"
     from_alias = "泡泡单词"
@@ -107,7 +141,7 @@ def main():
         html = f.read()
         
     subject = args.subject or f"泡泡单词 Android E2E 全量自动化回归测试报告 ({datetime.datetime.now().strftime('%Y-%m-%d %H:%M')})"
-    ok = send_email_report(args.to, subject, html)
+    ok = send_email_report(args.to, subject, html, base_dir=os.path.dirname(args.report))
     sys.exit(0 if ok else 1)
 
 if __name__ == "__main__":

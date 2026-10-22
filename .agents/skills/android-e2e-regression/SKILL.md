@@ -134,6 +134,19 @@ python3 -u .agents/skills/android-e2e-regression/scripts/run_regression.py --no-
 已知还能再省的地方（尚未做）：学习前的释义已经从生产库直接查（0.5 秒），不再为此拉整库；
 但审计与跨天仍需各拉/推一次 194MB 的库，这是目前最大的一块固定成本。
 
+## 报告怎么发（硬规矩）
+
+**邮件正文就是整份报告，不是一个链接、一个本机路径。** 收件人打开邮件就该读完 28 条用例的逐条断言、
+耗时、时间与截图，不需要回到这台机器 `open` 任何文件。只发「完整报告见 /Volumes/ssd/.../report.html」
+等于没发。
+
+- `run_regression.send_report()` 把 `report.html` 全文当正文发出，并把 `screenshots/*.png` 内联成
+  `data:` 图片（`send_report_email.inline_report_images`）——报告里的相对路径在别人的邮箱里只会是破图。
+- 尺寸有硬约束：正文 369KB（23 张 240px 截图）被阿里云 DirectMail 垃圾过滤拒收
+  （`Code: InvalidSendMail.Spam`）；压到 120px / quality 60、正文约 110KB 稳定送达。
+  要改截图尺寸，先看发信时打印的「邮件正文 xx KB」。
+- 纯文字 15KB 也能过，但丢了截图证据，不算完整报告。
+
 ## 老版本覆盖升级检查（单独一条）
 
 装包升级与本地库迁移不在上面 28 条里，单跑：

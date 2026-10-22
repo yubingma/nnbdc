@@ -1370,10 +1370,12 @@ td.shot{{text-align:center;}}
     def send_report(self, report_path, total, passed, failed, skipped):
         print("\n--- 邮件推送 ---")
         subject = f"【泡泡单词回归】通过 {passed} / 失败 {failed} / 未执行 {skipped}（{datetime.now():%m-%d %H:%M}）"
-        body = (f"<p>共 {len(CASES)} 条用例：通过 {passed}，失败 {failed}，未执行 {skipped}，"
-                f"总耗时 {total}s。</p><p>完整报告见附件路径：{report_path}</p>")
+        # 邮件正文就是整份报告（截图内联），收件人不需要回到这台机器打开任何文件
+        with open(report_path, "r", encoding="utf-8") as f:
+            body = f.read()
         try:
-            if send_report_email.send_email_report(self.target_email, subject, body):
+            if send_report_email.send_email_report(self.target_email, subject, body,
+                                                   base_dir=os.path.dirname(report_path)):
                 print(f"[*] 报告已推送到 {self.target_email}")
             else:
                 print("[!] 邮件推送未成功（不影响测试结论）")
