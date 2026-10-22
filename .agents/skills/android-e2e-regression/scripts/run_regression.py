@@ -489,6 +489,15 @@ class Runner:
                 return n
         return None
 
+    def _wait_edit_text(self, timeout: float = 6.0):
+        """等输入框出现再动手。页面是滑入动画，固定等一小会儿就抓树会抓到上一个页面。"""
+        deadline = time.time() + timeout
+        while True:
+            field = self._first_edit_text()
+            if field or time.time() >= deadline:
+                return field
+            time.sleep(0.3)
+
     def _day_is_fresh(self) -> bool:
         """主页状态行还写着「未开始」才算今天没动过；开过工的计划会被锁死。"""
         return "未开始" in self._labels(self.device.dump())
@@ -504,10 +513,9 @@ class Runner:
         self.device.tap_node(agree)
         time.sleep(0.3)
         self.device.tap_node(entry)
-        time.sleep(0.8)
 
         manage_e2e_account.clear_old_codes()
-        email_field = self._first_edit_text()
+        email_field = self._wait_edit_text()
         if not email_field:
             raise CaseFailure("邮箱登录页没有可输入的邮箱框")
         self.device.tap_node(email_field)

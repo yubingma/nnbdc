@@ -232,6 +232,7 @@
 | 选词排序 | `dict.sort_alg` | RANDOM 真乱序 / ALPHABETIC 字母序 / FREQUENCY 高频优先 | |
 | 系统词书 | `dict.owner_id = Constants.SYS_USER_SYS_ID`（`'15118'`，用户 `sys`） | 官方词书，作者是系统用户 sys，其 ID 硬编码为 15118 | 生产库实测 761 本官方词书、NULL 为 0 本；v62 的错误说明已由 v67 修正 |
 | 用户自建词书 | `dict.owner_id` = 用户 ID | 用户自己导入的书，可用 `is_shared` 发布共享 | |
+| 词书主键迁移 | `DictBo.migrateDictId`（`server/.../bo/DictBo.java`） | 同一用户在两台设备离线各建了一本同名词书、服务端只允许一本时，把这本词书的旧 ID 换成客户端上来的新 ID：把旧行连同 `dict_word`/`learning_dict`/`meaning_item`/`group_and_dict_link` 的引用一起搬到新 ID，再删掉旧行 | 由同步里的「同名冲突」触发（`dict` 有唯一约束 `(owner_id, name)`）；同一批日志里迁移之后的子表日志仍带旧 ID，必须一并改写（`UserDbSyncBo.applyDictIdMigrations`），否则整批回滚、客户端永久重试 |
 | 释义展示档位 | `StudyConfig.meaningDisplayLimit`（`app/lib/util/study_config.dart`） | 用户自己设的「通用词典释义最多显示几条」：0 = 全部显示，正数 = 只给热度最靠前的 N 条，在「我」页面的「释义展示」里设置 | 只约束通用词典释义；在学词书里的定制释义永远全给 |
 | 释义过滤阈值（已弃用） | `dict.popularity_limit`（默认 `Constants.DEFAULT_POPULARITY_LIMIT = 5`） | **旧机制**：曾按每本词书的阈值隐藏通用词典里 `popularity` 大于它的释义项 | 自 2026-10-14 起不再参与任何展示（原叫「释义过滤阈值」，机制已被「释义展示档位」取代）；字段仍在导入搬运、管理端编辑、端云同步与数据体检中流转，改它不会影响 App 显示 |
 
@@ -414,6 +415,13 @@
 | 底栏 | `app/lib/page/index.dart`、`app/lib/model/nav_tab_config.dart` | App 最底下那一排图标（学习 / 词表 / 查词 / 比赛 / 我），点一下就切页面 | 分两类：**切页型**（`NavTabKey`，选中后就停在那一页、用户可把它移出底栏）与**唤起型**（`NavBarShortcut`，点开就推一个独立全屏页、没有选中态，目前只有随身听）。用户口中的「底部导航」「下方按钮」都是它 |
 | 功能收纳 | `app/lib/widget/nav_stash_widgets.dart` | 底栏放不下的功能统一收在这里，有两个入口：「我」页面的【功能收纳】毛玻璃卡片，以及长按底栏弹出的「快捷功能收纳」弹窗 | 单一认知锚点：底栏没有的，一律去收纳区找。底栏已经有的（含已经被用户放进底栏的随身听）不在收纳区重复出现 |
 | 随身听 | `app/lib/page/walkman.dart`、`app/lib/page/walkman_launcher.dart`，路由 `/walkman` | 不看屏幕连续听词的沉浸全屏页，听哪本词表由「上次收听的来源」决定 | 必须先登录（游客点了只弹提示）。默认只住在「快捷功能收纳」里；想让它常驻的人去「我」页面的「底栏导航管理」行（`app/lib/page/me.dart`，弹窗标题为「底栏导航定制」）打开开关，默认关闭。听到生词要细看：先点暂停键，播放键上方才会浮现「查看详情」，点它进单词详情页；左上角返回仍停在暂停的那个词，接着由用户决定何时继续播放 |
+
+### 4.9 发布与渠道
+
+| 标准叫法 | 代码标识 | 人话解释 | 注意 |
+|---|---|---|---|
+| 应用名（备案名） | `app/android/app/src/main/res/values/strings.xml` 的 `app_name`；`devops/build-and-upload-xiaomi.sh` 的 `CHANNEL_APP_NAME` 与 `APP_NAME` | 桌面图标下显示、各 Android 应用商店展示的名字，必须与工信部 App 备案登记的名称一致；当前备案名为「泡泡单词英语版」（备案号 蜀ICP备12032137号-4A） | 小米、华为等渠道后台都会拿 APK 内应用名与备案名比对，不一致直接驳回。改名时三处同步改，漏改时小米脚本的断言会先拦下 |
+| 应用内品牌名 | `Global.appName`（`app/lib/global.dart:22`） | App 界面里露出的品牌简称：首屏 logo 文字、打卡/勋章海报、分享文案、PDF 导出、通知标题、隐私政策；当前为「泡泡单词」 | 与备案名不必一致；iOS 桌面显示名同样是「泡泡单词」。改它只影响应用内文案，不影响 Android APK 的桌面名 |
 
 ---
 

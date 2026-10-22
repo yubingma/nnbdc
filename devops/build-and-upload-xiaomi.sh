@@ -38,15 +38,13 @@ if [ -z "$PACKAGE_NAME" ]; then
 fi
 
 # ==============================================================================
-# 渠道应用名：小米用工信部 APP 备案登记的「泡泡单词」，即仓库里 strings.xml 的默认值。
-# 小米后台会拿 APK 内的应用名去对比工信部备案名（服务备案号
-# 蜀ICP备12032137号-4A），不一致会直接拦下："您上传包体中的应用名称与备案名称不一致"。
-# 华为渠道包才在 build-and-upload-huawei.sh 里临时改成「泡泡单词英语版」（华为重名）。
-# 所以这里必须先断言名字没被上一次中断的构建改脏，否则会被备案名称校验驳回。
-# 商店里展示的应用名称是另一个字段，可以和 APK 名不同（本应用商店名用「泡泡单词英语版」，
-# 与公安联网备案及安全评估报告的服务名称保持一致）。
+# 渠道应用名：所有 Android 渠道统一使用工信部 APP 备案登记的名称「泡泡单词英语版」，
+# 即仓库里 strings.xml 的默认值。小米后台会拿 APK 内的应用名去对比工信部备案名
+# （服务备案号 蜀ICP备12032137号-4A），不一致会直接拦下：
+# "您上传包体中的应用名称与备案名称不一致"。
+# 因此这里仍保留断言：名字被改脏时立刻停下，别等上传时才被驳回。
 # ==============================================================================
-CHANNEL_APP_NAME="泡泡单词"
+CHANNEL_APP_NAME="泡泡单词英语版"
 STRINGS_FILE="$PROJECT_ROOT/android/app/src/main/res/values/strings.xml"
 CHANNEL_APK="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release-xiaomi.apk"
 
@@ -140,7 +138,7 @@ UPDATE_DESC="优化学习体验，修复已知问题"
 # 平板截图 1536×2048，均至少 4 张、最多 5 张、单张不超过 5MB、不得重复。
 # ==============================================================================
 STORE_ASSET_DIR="$SCRIPT_DIR/应用上架资源/xiaomi"
-APP_NAME="泡泡单词"                                              # 必须与 APK 内 strings.xml 的 app_name 及工信部备案名称一致
+APP_NAME="泡泡单词英语版"                                           # 必须与 APK 内 strings.xml 的 app_name 及工信部备案名称一致
 CATEGORY="12"                                                   # 12 = 学习教育
 KEYWORDS="背单词 英语单词 四六级 考研 雅思 默写 词库"              # 最多 8 个，每个不超过 5 个汉字
 BRIEF="以输出为核心的背单词应用"                                  # 5~16 个字符
@@ -346,7 +344,7 @@ build_apk() {
     if ! grep -q "<string name=\"app_name\">${CHANNEL_APP_NAME}</string>" "$STRINGS_FILE"; then
         echo "❌ 错误: $STRINGS_FILE 里的应用名不是「${CHANNEL_APP_NAME}」。"
         echo "   小米会拿包体内的应用名与工信部备案名称比对，不一致会被驳回。"
-        echo "   若上一次华为渠道构建被中断，strings.xml 可能留在「泡泡单词英语版」，请检查后重试。"
+        echo "   请把 $STRINGS_FILE 的 app_name 改回「${CHANNEL_APP_NAME}」后重试。"
         exit 1
     fi
 
@@ -363,7 +361,7 @@ build_apk() {
         exit 1
     fi
 
-    # 5. 另存一份小米渠道产物：华为渠道会用不同的应用名再构建一次，同一个文件名会互相覆盖
+    # 5. 另存一份小米渠道产物：华为渠道会再构建一次，同一个文件名会互相覆盖
     cp "$APK_PATH" "$CHANNEL_APK"
 
     echo "✅ Build successful: $CHANNEL_APK"

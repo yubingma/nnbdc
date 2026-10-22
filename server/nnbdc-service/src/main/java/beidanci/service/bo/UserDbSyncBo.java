@@ -368,9 +368,13 @@ public class UserDbSyncBo {
 
             // 执行数据同步
             Date now = new Date();
+            // 本批日志里发生过的词书主键迁移（旧ID → 客户端ID）。迁移会把旧词书行及已有的子表引用搬到新ID，
+            // 但同一批里排在后面的日志仍带着旧ID，必须一并改写到新ID，否则会写入指向已删除词书的子表行。
+            Map<String, String> dictIdMigrations = new HashMap<>();
             for (UserDbLogDto log : logs) {
                 String recordJson = null;
                 try {
+                    applyDictIdMigrations(log, dictIdMigrations);
                     recordJson = JsonUtils.enrichRecordJson(log.getRecord());
 
                     // 【防御】历史坏数据可能包含超长 book_mark_name（varchar(255) 上限），强行入库会回滚整个同步事务。
@@ -382,7 +386,7 @@ public class UserDbSyncBo {
                         }
                     }
 
-                    processSyncLog(userId, log, recordJson);
+                    processSyncLog(userId, log, recordJson, dictIdMigrations);
 
                     // 检查record id是否超出长度限制
                     if (log.getRecordId().length() > 131) {
@@ -493,9 +497,12 @@ public class UserDbSyncBo {
 
     /**
      * 处理单个同步日志
+     *
+     * @param dictIdMigrations 本批已发生的词书主键迁移（旧ID → 新ID），遇到同名自建词书时由
+     *                         {@link #processDictSync} 登记，供后续日志改写旧ID引用
      */
-    private void processSyncLog(String userId, UserDbLogDto log, String recordJson)
-            throws IllegalAccessException {
+    private void processSyncLog(String userId, UserDbLogDto log, String recordJson,
+            Map<String, String> dictIdMigrations) throws IllegalAccessException {
         String tableName = log.getTblName().toLowerCase();
         String operation = log.getOperate().toUpperCase();
 
@@ -503,7 +510,7 @@ public class UserDbSyncBo {
             case "learning_word" -> processLearningWordSync(userId, recordJson, operation);
             case "learning_dict" -> processLearningDictSync(userId, recordJson, operation);
             case "user" -> processUserSync(userId, recordJson, operation);
-            case "dict" -> processDictSync(userId, recordJson, operation);
+            case "dict" -> processDictSync(userId, recordJson, operation, dictIdMigrations);
             case "book_mark" -> processBookMarkSync(userId, recordJson, operation);
             case "user_study_step" -> processUserStudyStepSync(userId, log.getRecordId(), recordJson, operation);
             case "daka" -> processDakasSync(userId, recordJson, operation);
@@ -529,6 +536,52 @@ public class UserDbSyncBo {
                 throw new IllegalArgumentException(errorMsg);
             }
         }
+    }
+
+    /**
+     * 登记一次词书主键迁移，并把此前迁移到旧 ID 的映射顺延到最新 ID。
+     *
+     * 同一批日志里同名冲突可能连续发生（旧ID→A，A→B），后续日志引用旧ID时必须落到最终的 B，
+     * 否则会指向一个已经被再次迁移掉的中间 ID。
+     */
+    static void recordDictIdMigration(Map<String, String> dictIdMigrations, String oldDictId, String newDictId) {
+        dictIdMigrations.replaceAll((fromId, toId) -> toId.equals(oldDictId) ? newDictId : toId);
+        dictIdMigrations.put(oldDictId, newDictId);
+    }
+
+    /**
+     * 把日志里对「已被迁移掉的旧词书 ID」的引用改写到新 ID。
+     *
+     * 客户端本地词表条目都挂在它自己的词书 ID 上：当服务端因同名冲突把旧词书迁移成客户端的
+     * 新 ID 后，同一批日志里排在迁移之后的 dict_word / learning_dict / meaning_item 仍带着旧 ID。
+     * 不跟着改写，就会写入一条指向已删除词书的子表行，触发外键约束、回滚整次同步，
+     * 客户端则拿着同一批日志永久重试。
+     */
+    void applyDictIdMigrations(UserDbLogDto log, Map<String, String> dictIdMigrations) {
+        if (dictIdMigrations.isEmpty()) {
+            return;
+        }
+        String table = log.getTblName().toLowerCase();
+        if (!"dict_word".equals(table) && !"learning_dict".equals(table) && !"meaning_item".equals(table)) {
+            return;
+        }
+
+        Object dictId = JsonUtils.parseMap(log.getRecord()).get("dictId");
+        if (dictId == null) {
+            return;
+        }
+        String newDictId = dictIdMigrations.get(dictId.toString());
+        if (newDictId == null) {
+            return;
+        }
+
+        String oldRecordId = log.getRecordId();
+        log.setRecord(JsonUtils.replaceStringField(log.getRecord(), "dictId", newDictId));
+        if (oldRecordId != null && oldRecordId.contains(dictId.toString())) {
+            log.setRecordId(oldRecordId.replace(dictId.toString(), newDictId));
+        }
+        logger.info("词书主键迁移后改写同步日志的旧ID: table={}, recordId={} -> {}",
+                table, oldRecordId, log.getRecordId());
     }
 
     /**
@@ -711,9 +764,11 @@ public class UserDbSyncBo {
 
     /**
      * 处理词书同步
+     *
+     * @param dictIdMigrations 本批已发生的词书主键迁移（旧ID → 新ID），发生迁移时登记
      */
-    private void processDictSync(String userId, String recordJson, String operation)
-            throws IllegalAccessException {
+    private void processDictSync(String userId, String recordJson, String operation,
+            Map<String, String> dictIdMigrations) throws IllegalAccessException {
         DictDto dictDto = JsonUtils.makeObject(recordJson, DictDto.class);
     
         // 只允许用户同步自己的词书或共享词书
@@ -772,6 +827,7 @@ public class UserDbSyncBo {
                             logger.info("同步检测到自建词书同名冲突，将主键由 [{}] 迁移对齐为客户端ID [{}]，词书名=[{}], ownerId=[{}]",
                                     existingSameName.getId(), dictDto.getId(), name, ownerId);
                             dictBo.migrateDictId(existingSameName.getId(), dictDto.getId());
+                            recordDictIdMigration(dictIdMigrations, existingSameName.getId(), dictDto.getId());
                             dict = dictBo.findById(dictDto.getId());
                             isMigrated = true;
                         }

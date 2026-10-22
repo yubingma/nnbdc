@@ -17,8 +17,10 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class JsonUtils {
     private static final Logger logger = LoggerFactory.getLogger(JsonUtils.class);
@@ -79,6 +81,33 @@ public class JsonUtils {
             return new HashMap<>();
         }
         return makeObject(json, Map.class);
+    }
+
+    /**
+     * 替换 JSON 对象中某个字符串字段的值，其余字段原样保留（包括显式的 null 字段）。
+     *
+     * 与 parseMap + toJson 的往返不同，这里走 Jackson 树模型，不会因为序列化时忽略 null 而改变记录结构。
+     * 字段缺失或不是字符串时原样返回。
+     */
+    public static String replaceStringField(String json, String field, String newValue) {
+        if (StringUtils.isBlank(json)) {
+            return json;
+        }
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(json);
+            if (!node.isObject()) {
+                return json;
+            }
+            JsonNode current = node.get(field);
+            if (current == null || !current.isTextual() || newValue.equals(current.asText())) {
+                return json;
+            }
+            ((ObjectNode) node).put(field, newValue);
+            return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(String.format("替换 JSON 字段[%s]失败: %s", field, json), e);
+        }
     }
 
     /**

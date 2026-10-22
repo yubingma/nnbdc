@@ -11,9 +11,8 @@
 # 1. 统一前置预检 (版本号、min_ver_code、工具链、全渠道凭证提前验证，避免中途报错)
 # 2. 全局单元测试只跑 1 次，严禁多渠道重复测试浪费时间
 # 3. 串行编译确保文件与配置安全，杜绝 config.dart 踩踏
-# 4. 各渠道构建各自的 Android APK：小米渠道包的应用名是「泡泡单词」（工信部备案名，
-#    小米会校验 APK 名与备案名一致），华为渠道包是「泡泡单词英语版」（华为商店重名），
-#    因此两个渠道不能共用同一个包
+# 4. 各渠道构建各自的 Android APK：所有渠道的应用名统一是工信部备案名「泡泡单词英语版」
+#    （小米、华为都会校验 APK 名与备案名一致），但仍各产出一份独立包，避免互相覆盖
 # 5. 流水线并发上传：iOS 构建完成立刻在后台启动上传，同时前台构建 Android，
 #    各市场构建完成后所有上传后台并发进行，彻底掩盖网络等待延迟
 # 6. 全渠道完成后自动统一打 Git Tag (v{VERSION})
@@ -372,7 +371,7 @@ pipeline_build_and_upload() {
         fi
     fi
 
-    # --- 阶段 2: Android APK 构建（两个渠道的应用名不同，各构建一份独立产物） ---
+    # --- 阶段 2: Android APK 构建（各渠道应用名相同，但仍各构建一份独立产物，避免互相覆盖） ---
     if [ "$ENABLE_HUAWEI" = true ]; then
         print_step "3.2 开始构建华为渠道 APK（应用名：泡泡单词英语版，同时 iOS 正在后台上传）..."
         bash "$SCRIPT_DIR/build-and-upload-huawei.sh" --build-only --skip-tests
@@ -380,7 +379,7 @@ pipeline_build_and_upload() {
     fi
 
     if [ "$ENABLE_XIAOMI" = true ]; then
-        print_step "3.3 开始构建小米渠道 APK（应用名：泡泡单词，与工信部备案一致）..."
+        print_step "3.3 开始构建小米渠道 APK（应用名：泡泡单词英语版，与工信部备案一致）..."
         bash "$SCRIPT_DIR/build-and-upload-xiaomi.sh" --build-only --skip-tests
         print_succ "小米渠道 APK 构建成功！"
     fi
