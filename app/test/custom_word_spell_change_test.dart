@@ -310,7 +310,7 @@ void main() {
     expect(dict!.wordCount, 1);
   });
 
-  test('大小写不同的同拼写系统词：同样按替换处理，不会因多条记录报错', () async {
+  test('精确拼写命中系统词：按替换处理，不会因大小写变体多条记录报错', () async {
     await insertWord(id: customWordId, spell: 'Apple', ownerId: userId);
     await insertWord(id: systemWordId, spell: 'apple', ownerId: Global.sysUserId);
     await insertDictWord(customWordId);
@@ -322,6 +322,37 @@ void main() {
     expect(await db.wordsDao.getWordById(customWordId), isNull);
     final link = await db.dictWordsDao.getById(dictId, systemWordId);
     expect(link, isNotNull);
+  });
+
+  test('US 与 us 并存时：改成 US 只合并到 US，绝不并到 us', () async {
+    const upperWordId = 'system_word_US';
+    await insertWord(id: customWordId, spell: 'aple', ownerId: userId);
+    await insertWord(id: upperWordId, spell: 'US', ownerId: Global.sysUserId);
+    await insertWord(id: systemWordId, spell: 'us', ownerId: Global.sysUserId);
+    await insertDictWord(customWordId);
+
+    final result = await WordBo().changeCustomWordSpell(customWordId, 'US');
+
+    expect(result.success, true);
+    expect(result.data, upperWordId);
+    expect(await db.wordsDao.getWordById(customWordId), isNull);
+    expect(await db.wordsDao.getWordById(systemWordId), isNotNull);
+    expect(await db.dictWordsDao.getById(dictId, upperWordId), isNotNull);
+    expect(await db.dictWordsDao.getById(dictId, systemWordId), isNull);
+  });
+
+  test('目标拼写只有大小写不同、精确没有的词：不改并，改名后两条并存', () async {
+    await insertWord(id: customWordId, spell: 'aple', ownerId: userId);
+    await insertWord(id: systemWordId, spell: 'apple', ownerId: Global.sysUserId);
+    await insertDictWord(customWordId);
+
+    final result = await WordBo().changeCustomWordSpell(customWordId, 'APPLE');
+
+    expect(result.success, true);
+    expect(result.data, customWordId);
+    final renamed = await db.wordsDao.getWordById(customWordId);
+    expect(renamed!.spell, 'APPLE');
+    expect(await db.wordsDao.getWordById(systemWordId), isNotNull);
   });
 
   test('只改大小写、没有撞车：保留在原来的词上', () async {

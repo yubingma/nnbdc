@@ -2613,8 +2613,9 @@ class WordBo {
     if (custom.ownerId != userId) return Result<String>("ERROR", "只能修改自己添加的单词", false);
     if (custom.spell == spell) return Result<String>("SUCCESS", "拼写未变化", true)..data = wordId;
 
-    // 按小写比较查重：既拦住同一用户的两条自建词，也拦住大小写不同的同一拼写。
-    final sameSpellWords = await (db.select(db.words)..where((w) => w.spell.lower().equals(spell.toLowerCase()))).get();
+    // 大小写是拼写的一部分：词库里 US（美国）与 us（我们）就是两个词，
+    // 所以这里按精确拼写查重，绝不为了“看起来一样”把词并到另一个大小写形式去。
+    final sameSpellWords = await (db.select(db.words)..where((w) => w.spell.equals(spell))).get();
     final others = sameSpellWords.where((w) => w.id != custom.id).toList();
     final otherCustom = others.where((w) => w.ownerId == userId).firstOrNull;
     if (otherCustom != null) {
