@@ -312,29 +312,31 @@ class Util {
     );
   }
 
+  /// 结尾需要去掉的标点、引号与括号（含中文标点）
+  static const String _trailingSpellPunctuation = ",?.\"')”：:;!，。；！？）";
+
+  /// 开头需要去掉的引号与括号（含中文引号）
+  static const String _leadingSpellPunctuation = "\"'“”‘’(";
+
   static String purifySpell(String spell) {
     bool isPhase = spell.trim().contains(" "); // 是否是短语
     if (isPhase) {
       return spell;
     }
 
+    var purified = spell.trim();
+
     // 如果单词以逗号、句号等结束，首先将这些符号去掉
-    while (spell.endsWith(",") || spell.endsWith("?") || spell.endsWith(".") || spell.endsWith("\"") || spell.endsWith(""") ||
-        spell.endsWith("'") ||
-        spell.endsWith(")") ||
-        spell.endsWith(":") ||
-        spell.endsWith("!") ||
-        spell.endsWith(";")) {
-      spell = spell.substring(0, spell.length - 1);
+    while (purified.isNotEmpty && _trailingSpellPunctuation.contains(purified[purified.length - 1])) {
+      purified = purified.substring(0, purified.length - 1);
     }
 
     // 如果单词以引号、括号等开始，首先将这些符号去掉
-    while (spell.startsWith("\"") ||
-        spell.startsWith(""") || spell.startsWith("'") || spell.startsWith("(")) {
-      spell = spell.substring(1, spell.length);
+    while (purified.isNotEmpty && _leadingSpellPunctuation.contains(purified[0])) {
+      purified = purified.substring(1);
     }
 
-    return spell;
+    return purified;
   }
 
   /// 获取一个单词所有可能的变体形式

@@ -19,6 +19,10 @@ class EnglishAsrInputWidget extends StatefulWidget {
   /// 这一轮什么都没听清：状态行改说「没听清，再说一遍」，而不是继续提示"请说…"。
   final bool heardNothing;
 
+  /// 这一轮说的是目标词的另一个词形（如说 national 对 nation）：
+  /// 分数再高也不通过，状态行要直接说清原因。
+  final bool wrongWordForm;
+
   const EnglishAsrInputWidget({
     super.key,
     required this.controller,
@@ -31,6 +35,7 @@ class EnglishAsrInputWidget extends StatefulWidget {
     this.isSentenceStep = false,
     this.isAiEvaluating = false,
     this.heardNothing = false,
+    this.wrongWordForm = false,
   });
 
   @override
@@ -176,6 +181,10 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
       } else {
         statusText = "回答正确";
       }
+    } else if (widget.wrongWordForm) {
+      // 听清了，但说的是同词干的另一个词形：不能拿"发音像"冒充"说对了"。
+      // 不显示目标词拼写，只说明原因。
+      statusText = asrWrongWordFormText;
     } else if (widget.heardNothing) {
       // 这一轮什么都没听清：必须说出来，否则与"程序没反应"无法区分
       statusText = asrHeardNothingText;

@@ -4,13 +4,18 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/edit_distance.dart';
 import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/word_form_judge.dart';
 
 /// ASR 候选结果及其匹配分数
 class AsrCandidateResult {
   final String text;
   final int score;
 
-  AsrCandidateResult(this.text, this.score);
+  /// 识别词是目标词的另一个词形（如说 national 对 nation）。
+  /// 此时 [score] 只描述"发音有多像"，调用方不得拿它判过。
+  final bool wrongWordForm;
+
+  AsrCandidateResult(this.text, this.score, {this.wrongWordForm = false});
 }
 
 /// 语音识别结果预处理工具类
@@ -276,29 +281,43 @@ class AsrUtil {
     final preprocessedCandidates =
         candidates.map((c) => expandAbbreviations(preprocessEnglish(c, targetWord))).toList();
 
-    // 快速路径：精确匹配时跳过音素加载和计算，避免 3.5MB cmudict 加载阻塞 ASR 响应
-    for (int i = 0; i < preprocessedCandidates.length; i++) {
-      final trimmedCandidate = preprocessedCandidates[i];
-      if (trimmedCandidate == lowerTarget) {
-        return AsrCandidateResult(candidates[i], 100);
-      }
-      // 符号映射匹配：如果候选词是一个符号，且目标词是该符号的发音之一
-      final spokenWords = _symbolToSpokenWords[trimmedCandidate];
-      if (spokenWords != null && spokenWords.contains(lowerTarget)) {
-        return AsrCandidateResult(candidates[i], 100);
-      }
-      // 单字拼接容错：目标为单字但识别结果被 ASR 拆成了多个词（如 headmaster → said master）
-      // 尝试去掉空格拼接后再精确匹配
-      if (targetIsSingleWord && trimmedCandidate.contains(' ')) {
-        if (trimmedCandidate.replaceAll(' ', '') == lowerTarget) {
-          return AsrCandidateResult(candidates[i], 100);
-        }
-      }
+    // 快速路径只看第一候选：它才是识别引擎认为用户最可能说的那个。
+    // 不能遍历所有候选找精确匹配——用户说派生词时，只要候选里恰好有目标词，
+    // 就会被挑出来按 100 分放行，等于从识别结果里"找一个能过关的答案"。
+    final topCandidate = preprocessedCandidates.first;
+    final topLetters = topCandidate.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final targetLetters = lowerTarget.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (topCandidate == lowerTarget ||
+        (targetIsSingleWord && topLetters == targetLetters)) {
+      return AsrCandidateResult(candidates.first, 100);
+    }
+    // 符号映射匹配：如果候选词是一个符号，且目标词是该符号的发音之一
+    final spokenWords = _symbolToSpokenWords[topCandidate];
+    if (spokenWords != null && spokenWords.contains(lowerTarget)) {
+      return AsrCandidateResult(candidates.first, 100);
+    }
+    // 单字拼接容错：目标为单字但识别结果被 ASR 拆成了多个词（如 headmaster → said master）
+    // 尝试去掉空格拼接后再精确匹配
+    if (targetIsSingleWord && topCandidate.contains(' ') &&
+        topCandidate.replaceAll(' ', '') == lowerTarget) {
+      return AsrCandidateResult(candidates.first, 100);
     }
 
     // 音素词典只是"锦上添花"：有界等待，拿不到就按拼写相似度降级
     // （见 calculateOverallSimilarity 的降级分支），绝不允许它把本轮判定无限期挂住。
     await PhonemeUtil.ensureReady();
+
+    // 词形判断只看识别引擎的第一候选（它认为用户最可能说的那个）。
+    // 不能从候选里挑"最像目标词"的那个来判身份：用户说派生词时，
+    // 只要候选里恰好出现目标词，就会被挑出来按 100 分放行。
+    final topText = preprocessedCandidates.first;
+    final relation = await WordFormJudge.judge(topText, lowerTarget);
+    if (relation == WordFormRelation.differentForm) {
+      final topScore = await calculateOverallSimilarity(topText, lowerTarget);
+      Global.logger.d('ASR FORM: 第一候选 "$topText" 是 "$lowerTarget" 的另一个词形'
+          '（音素分 $topScore），不判过');
+      return AsrCandidateResult(candidates.first, topScore, wrongWordForm: true);
+    }
 
     // 构建评分输入：对每个候选计算相似分。当目标为单字且候选含空格时，
     // 额外对拼接版（去掉空格）也计算一次，取两者中的最高分。

@@ -65,15 +65,17 @@ class _AddWordDialogState extends State<AddWordDialog> {
         return;
       }
 
-      // 通用词典没有这个词：先展开释义输入，让用户补齐后再建词。
-      if (!_needMeaning) {
-        setState(() => _needMeaning = true);
+      // 查不到才校验拼写：收录词沿用查词的容错（如尾部句读），
+      // 而新词拼写要写进词库，必须先确认它确实是一个英文单词或短语。
+      final spell = rawSpell.replaceAll(RegExp(r'\s+'), ' ');
+      if (!englishSpellPattern.hasMatch(spell)) {
+        ToastUtil.error('单词只能是英文字母，可含空格、撇号、连字符或句点');
         return;
       }
 
-      final spell = rawSpell.replaceAll(RegExp(r'\s+'), ' ');
-      if (!englishSpellPattern.hasMatch(spell)) {
-        ToastUtil.error('拼写只能包含英文字母、空格、撇号、连字符或句点');
+      // 通用词典没有这个词：先展开释义输入，让用户补齐后再建词。
+      if (!_needMeaning) {
+        setState(() => _needMeaning = true);
         return;
       }
 

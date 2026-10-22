@@ -155,6 +155,10 @@ class WordWrapper {
   /// 这一轮什么都没听清（与"匹配度为 0"是两回事：那是听清了但不对）。
   bool roundHeardNothing = false;
 
+  /// 这一轮的识别词是目标词的另一个词形（如说 national 对 nation）。
+  /// 分数再高也不能判过；换词、重新作答、答对后复位。
+  bool wrongWordForm = false;
+
   /// 缓存进度信息，用于 UI 展示
   double? currentProgress;
   double? maxProgress;
@@ -219,6 +223,7 @@ class WordWrapper {
       ..lastAsrResult = lastAsrResult
       ..roundMatchScore = roundMatchScore
       ..roundHeardNothing = roundHeardNothing
+      ..wrongWordForm = wrongWordForm
       ..currentProgress = currentProgress
       ..maxProgress = maxProgress;
   }
@@ -359,6 +364,10 @@ bool chineseInputMatchesAnyMeaning(WordVo word, Object input, {bool strict = fal
 
 /// 这一轮什么都没听清时的提示（背单词页与词表页共用，够短，不会撑爆一行）。
 const String asrHeardNothingText = '没听清，再说一遍';
+
+/// 这一轮说的是目标词的另一个词形时的提示（背单词页与词表页共用）。
+/// 只说明原因，不写目标词拼写。
+const String asrWrongWordFormText = '说的是另一个词形，请再说一次';
 
 /// 匹配度数字：告诉用户"系统听清了、离目标有多远"，**不回显原话**。
 ///

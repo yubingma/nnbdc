@@ -100,8 +100,8 @@ pray P R EY1
     const shouldPass = <List<String>>[
       ['sink', 'think'], // th 读成 s
       ['fink', 'think'], // th 读成 f
-      ['walked', 'walk'], // 词尾 -ed 脱落
-      ['stopped', 'stop'],
+      ['walk', 'walked'], // 目标带 -ed、识别丢了 /t/：词尾被吞
+      ['stop', 'stopped'], // 同上
       ['very', 'wary'], // v/w 混淆
       ['annie', 'any'], // 真机日志：说 any 被识别成 Annie
       ['glass', 'grass'], // l/r 不分
@@ -114,6 +114,21 @@ pray P R EY1
         expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold),
             reason: '「${pair[0]}」是「${pair[1]}」的合理口音/识别近似，'
                 '却只算得 $score 分，低于 ${Constants.phonemeMatchThreshold} 的判定线');
+      });
+    }
+  });
+
+  group('同词干不同词形不得判过', () {
+    // 分数仍然可能很高（音素只量"像不像"），但词形判断必须拦住。
+    for (final pair in const <List<String>>[
+      ['walked', 'walk'], // 用户多说了 -ed
+      ['stopped', 'stop'],
+    ]) {
+      test('说「${pair[0]}」对「${pair[1]}」', () async {
+        final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
+            [pair[0]], pair[1]);
+        expect(result.wrongWordForm, isTrue,
+            reason: '「${pair[0]}」是「${pair[1]}」的另一个词形，不能被音素分放行');
       });
     }
   });

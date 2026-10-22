@@ -40,6 +40,7 @@ import 'package:nnbdc/util/study_consistency_checker.dart';
 import 'package:nnbdc/util/sync.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:nnbdc/util/word_form_judge.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/bdc_page_args.dart';
@@ -879,6 +880,7 @@ class BdcNotifier extends _$BdcNotifier {
       lastFsrsRatingReason: null,
       currentAsrCandidates: [],
       asrRoundHeardNothing: false, // 换词：上一词的"没听清"不能带到新词
+      asrWrongWordForm: false, // 换词：上一词的"词形不对"不能带到新词
       loadError: null, // Successfully loaded a word, clear error
       loadErrorCause: null,
       tabIndex: newTabIndex,
@@ -1306,6 +1308,7 @@ class BdcNotifier extends _$BdcNotifier {
       currentScore: null,
       currentAsrCandidates: [],
       asrRoundHeardNothing: false, // 练习＝这一轮重来
+      asrWrongWordForm: false, // 练习＝这一轮重来
     );
     _heardNothingTimer?.cancel();
     _heardNothingTimer = null;
@@ -1785,6 +1788,7 @@ class BdcNotifier extends _$BdcNotifier {
         isUpdatingByHint: !state.isUpdatingByHint,
         currentAsrCandidates: [],
         asrRoundHeardNothing: false, // 用户主动清空＝重新作答
+        asrWrongWordForm: false, // 用户主动清空＝重新作答
       );
       _heardNothingTimer?.cancel();
       _heardNothingTimer = null;
@@ -2531,7 +2535,17 @@ class BdcNotifier extends _$BdcNotifier {
               return;
             }
             processedResult = AsrUtil.preprocessEnglish(result.text, state.word!.spell);
-            _updateState(state.copyWith(currentScore: result.score, currentAsrCandidates: roundCandidates), tag: 'asr-result');
+            _updateState(
+              state.copyWith(
+                currentScore: result.score,
+                currentAsrCandidates: roundCandidates,
+                // 说的是另一个词形：分数照实显示（它只描述发音有多像），
+                // 但判题与状态行都由这个标记接管，不能拿分数放行。
+                asrWrongWordForm: result.wrongWordForm,
+              ),
+              tag: 'asr-result',
+            );
+
           } else {
             // 单词英中模式：支持跨端点（Endpoint reset）分段增量拼接
             final rawBest = best.trim();
@@ -2907,9 +2921,12 @@ class BdcNotifier extends _$BdcNotifier {
       // 且只在中英环节成立：那里的 currentScore 是"这个英文单词的发音分"；
       // 英中环节的 currentScore 是"中文释义的匹配度"，拿它当拼写命中会把
       // "说对了中文释义"错当成"拼对了英文单词"。
+      // 说的是另一个词形（如说 national 对 nation）时，分数再高也不放行：
+      // 音素分只回答"发音有多像"，不回答"是不是这个字"。
       if (!isSpellingMatch &&
           isVoice &&
           asrInput != null &&
+          !state.asrWrongWordForm &&
           state.studyStep == StudyStep.ch2En.json &&
           (state.currentScore ?? 0) >= Constants.phonemeMatchThreshold) {
         isSpellingMatch = true;
@@ -3163,10 +3180,13 @@ class BdcNotifier extends _$BdcNotifier {
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         }
-      } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling && isVoice) {
+      } else if (!state.hasFinishedAnswering &&
+          !_isAnswerCorrectHandling &&
+          isVoice) {
         final isFromAsr = asrInput != null || meaningController.text == _handlingChinese;
         final inputs = isFromAsr ? state.currentAsrCandidates : [_handlingChinese];
-        _scheduleCh2EnAiRefereeCheck(inputs);
+        // 词形不对：本地已经判死，不请裁判；停口后只推进"已判过前缀"。
+        _scheduleCh2EnAiRefereeCheck(inputs, advanceOnly: state.asrWrongWordForm);
       }
     }
     Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');
@@ -3279,6 +3299,8 @@ class BdcNotifier extends _$BdcNotifier {
       showHandwritingBoard: false,
       // 这次答对：红色提示随即撤掉（本次评分已成为"今天最近一次"）
       isLatestAnswerWrongToday: false,
+      // 已经答对：上一轮的"词形不对"结论作废
+      asrWrongWordForm: false,
     );
     _handleTabChangeForAsr();
     
@@ -3654,10 +3676,23 @@ class BdcNotifier extends _$BdcNotifier {
         }
       }
 
-      final result = bestSim >= matchThreshold ? bestMatch : iw;
-      final action = bestSim >= matchThreshold
-          ? 'CORRECTED "$iw"→"$result" window=[$wStart..$wEnd] sim=$bestSim'
-          : 'KEPT "$iw" (bestSim=$bestSim<$matchThreshold)';
+      // 同词干不同词形（如 national 对 nation）不纠错：保留用户真说的词，
+      // 让整句评分如实反映它，而不是先把证据改成目标词再评分。
+      String result = iw;
+      if (bestSim >= matchThreshold) {
+        final relation = await WordFormJudge.judge(iw, bestMatch);
+        if (relation != WordFormRelation.differentForm) {
+          result = bestMatch;
+        }
+      }
+      final String action;
+      if (result != iw) {
+        action = 'CORRECTED "$iw"→"$result" window=[$wStart..$wEnd] sim=$bestSim';
+      } else if (bestSim >= matchThreshold) {
+        action = 'KEPT "$iw" (different word form, sim=$bestSim)';
+      } else {
+        action = 'KEPT "$iw" (bestSim=$bestSim<$matchThreshold)';
+      }
       Global.logger.d('~~~~~[CORRECT] $action');
       corrected.add(result);
       i += 1 + consumeNext;
@@ -4460,7 +4495,11 @@ class BdcNotifier extends _$BdcNotifier {
       _heardNothingTimer = null;
       if (_isDisposed || state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
       if (_isWordAiRefereeJudging) return;
-      state = state.copyWith(asrRoundHeardNothing: true);
+      state = state.copyWith(
+        asrRoundHeardNothing: true,
+        // 这一轮没听到东西，就不能再挂着上一轮的"词形不对"
+        asrWrongWordForm: false,
+      );
     });
   }
 
@@ -4735,7 +4774,11 @@ class BdcNotifier extends _$BdcNotifier {
       .toList();
 
   /// 当用户说英文停顿一小段时间后，触发单词中英（ch2En）大模型发音与同义词智能裁判
-  void _scheduleCh2EnAiRefereeCheck(List<String> inputs) {
+  ///
+  /// [advanceOnly] 为 true 时不请裁判，只在停口后推进"已判过前缀"。
+  /// 词形不对已由本地判死，但基线仍要推进：否则用户重说正确的词时，
+  /// 前面那个错误词会一直挂在整段转写里，把音素分拖住。
+  void _scheduleCh2EnAiRefereeCheck(List<String> inputs, {bool advanceOnly = false}) {
     _wordAiRefereeDebounceTimer?.cancel();
     if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
 
@@ -4768,6 +4811,7 @@ class BdcNotifier extends _$BdcNotifier {
       // 发起裁判"无关——即便答案已判过、或裁判额度已用尽，下一轮也必须只算新增发音，
       // 否则用户之后说出的正确发音会被前面的错误历史拖住音素分而永远判不过。
       _ch2EnJudgedAsrText = judgedUpToAsrText;
+      if (advanceOnly) return;
 
       // 同一个词刚判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
       // 只能放在停顿回调里——调度入口每一帧识别都会进一次，提示会刷屏。

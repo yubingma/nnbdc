@@ -104,6 +104,7 @@ class WordListAsrController extends ChangeNotifier {
           final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidateStrings, targetSpell);
           if (activeWord != null) {
             activeWord.pronunciationScore = result.score;
+            activeWord.wrongWordForm = result.wrongWordForm;
           }
           processedEvent = AsrUtil.preprocessEnglish(result.text, targetSpell);
           Global.logger.d('~~~~~ASR (Phoneme): Selected & Preprocessed: "$processedEvent" (score: ${result.score})');
@@ -113,6 +114,7 @@ class WordListAsrController extends ChangeNotifier {
           processedEvent = result.text;
           if (activeWord != null) {
             activeWord.pronunciationScore = result.score;
+            activeWord.wrongWordForm = result.wrongWordForm;
           }
           Global.logger.d('~~~~~ASR (Phoneme): Single result: "$event" -> "$processedEvent" (score: ${result.score})');
         }

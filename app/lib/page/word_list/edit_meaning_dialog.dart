@@ -31,9 +31,16 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
   late List<MeaningItemController> controllers;
   bool _hasDiffFromDefault = false;
 
+  /// 拼写输入框：只有本人自建词才允许修改，系统词保持只读。
+  final TextEditingController _spellController = TextEditingController();
+  bool _isCustomWord = false;
+
   @override
   void initState() {
     super.initState();
+
+    _spellController.text = widget.word.word.spell;
+    _loadCustomWordFlag();
 
     // 为每个释义项创建控制器
     List<MeaningItemVo>? meaningItems = widget.word.word.meaningItems;
@@ -77,6 +84,17 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
 
     // 异步比较当前内容与默认释义
     _checkDiffFromDefault(meaningItems);
+  }
+
+  /// 判断这个词是不是本人添加的自建词（只有自建词才允许改拼写）。
+  Future<void> _loadCustomWordFlag() async {
+    final wordId = widget.word.word.id;
+    if (wordId == null) return;
+    final row = await MyDatabase.instance.wordsDao.getWordById(wordId);
+    if (!mounted) return;
+    setState(() {
+      _isCustomWord = row != null && row.ownerId == Global.getLoggedInUser()?.id;
+    });
   }
 
   Future<void> _checkDiffFromDefault(List<MeaningItemVo>? currentItems) async {
@@ -158,6 +176,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
 
   @override
   void dispose() {
+    _spellController.dispose();
     for (var controller in controllers) {
       controller.dispose();
     }
@@ -168,7 +187,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 8),
-      title: Text('编辑释义: ${widget.word.word.spell}'),
+      title: Text(_isCustomWord ? '编辑单词: ${widget.word.word.spell}' : '编辑释义: ${widget.word.word.spell}'),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       content: SizedBox(
         width: double.maxFinite,
@@ -177,6 +196,25 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (_isCustomWord) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _spellController,
+                  autocorrect: false,
+                  decoration: const InputDecoration(
+                    labelText: '拼写',
+                    hintText: '输入单词拼写',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '改成通用词典里已有的词时，这条自建词会替换成词典词条，学习进度与错题记录都会保留。',
+                  style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
+                ),
+              ],
               const SizedBox(height: 16),
               ...controllers.asMap().entries.map((entry) {
                 int index = entry.key;
@@ -353,12 +391,31 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       return;
     }
 
+    // 自建词允许改拼写；改成通用词典已有的词时整体替换，拿到替换后的词条 ID。
+    final originalWordId = widget.word.word.id!;
+    final newSpell = _spellController.text.trim();
+    final spellChanged = _isCustomWord && newSpell != widget.word.word.spell;
+    var targetWordId = originalWordId;
+    String? spellChangeMessage;
+    if (spellChanged) {
+      final change = await WordBo().changeCustomWordSpell(originalWordId, newSpell);
+      if (!change.success || change.data == null) {
+        ToastUtil.error(change.msg ?? '拼写修改失败');
+        return;
+      }
+      targetWordId = change.data!;
+      spellChangeMessage = change.msg;
+    }
+
     final success = await widget.wordModifier.updateMeanings(
-      widget.word.word.id!,
+      targetWordId,
       newMeanings,
     );
 
     if (success) {
+      widget.word.word.id = targetWordId;
+      if (spellChanged) widget.word.word.spell = newSpell;
+
       // 立即更新内存中的数据，以便 UI 立刻显示最新内容
       widget.word.word.meaningItems = newMeanings.map((e) => MeaningItemVo(
         'custom_meaning_placeholder', // 设置一个足够长的 ID 以便被识别为自定义
@@ -378,6 +435,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
         }).join("; ");
 
         if (!mounted) return;
+        if (spellChangeMessage != null) ToastUtil.success(spellChangeMessage);
         Navigator.of(context).pop();
         StudyAudioSessionController().playAddSuccessSound();
       widget.onSuccess();

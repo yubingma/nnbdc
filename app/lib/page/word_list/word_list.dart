@@ -320,6 +320,7 @@ class WordListPageState extends State<WordListPage>
           word.pronunciationScore = null;
           word.roundMatchScore = null;
           word.roundHeardNothing = false;
+          word.wrongWordForm = false;
           _aiRefereeDebounceTimer?.cancel();
           _heardNothingTimer?.cancel();
           _failedAiEvaluationsForCurrentWord.clear();
@@ -834,14 +835,21 @@ class WordListPageState extends State<WordListPage>
 
         // 判定通过条件：
         // 1. 精确拼写匹配
-        // 2. 音素相似度达到阈值
+        // 2. 音素相似度达到阈值，且说的不是另一个词形
+        //    （如说 national 对 nation：分数再高也不通过）
         bool isMatch = inputText == correctSpell;
         if (!isMatch && currWordIndex >= 0 && currWordIndex < words.length) {
           final score = words[currWordIndex].pronunciationScore;
-          if (score != null && score >= Constants.phonemeMatchThreshold) {
+          final wrongWordForm = words[currWordIndex].wrongWordForm;
+          if (score != null &&
+              score >= Constants.phonemeMatchThreshold &&
+              !wrongWordForm) {
             Global.logger.d(
                 '背英文: 拼写不匹配("$inputText" != "$correctSpell")，但音素相似度($score)达到阈值(${Constants.phonemeMatchThreshold})，判定通过');
             isMatch = true;
+          } else if (wrongWordForm) {
+            Global.logger.d(
+                '背英文: 拼写不匹配("$inputText" != "$correctSpell")，音素相似度($score)虽高，但说的是另一个词形，不通过');
           }
         }
 
@@ -850,6 +858,7 @@ class WordListPageState extends State<WordListPage>
           canLeaveCurrWord = true;
           words[currWordIndex].answeredAllMeanings = true;
           words[currWordIndex].speakEnglishPassed = true;
+          words[currWordIndex].wrongWordForm = false;
           
           try {
             // 答对时，使用 stopAsr 进行热停止以维持麦克风保温状态，完全消除高频物理切流延迟与设备假死
@@ -1615,6 +1624,7 @@ class WordListPageState extends State<WordListPage>
           _isAiRefereeJudging = false;
           asrResult = "";
           word.pronunciationScore = null;
+          word.wrongWordForm = false;
           word.lastAsrResult = null;
           handlingAsrChinese = "";
           asrController.resetResult();
@@ -1638,6 +1648,7 @@ class WordListPageState extends State<WordListPage>
           asrResult = "";
           if (!word.sentenceTranslatedPassed) {
             word.pronunciationScore = null;
+            word.wrongWordForm = false;
             word.lastAsrResult = null;
           }
           handlingAsrChinese = "";
@@ -2182,6 +2193,7 @@ class WordListPageState extends State<WordListPage>
       word.lastAsrResult = null;
       word.roundMatchScore = null;
       word.roundHeardNothing = false;
+      word.wrongWordForm = false;
     }
     _heardNothingTimer?.cancel();
     _heardNothingTimer = null;
@@ -2205,6 +2217,7 @@ class WordListPageState extends State<WordListPage>
       setState(() {
         wordWrapper.roundHeardNothing = true;
         wordWrapper.roundMatchScore = null; // 这一轮没听到东西，就不能再挂着上一轮的分数
+        wordWrapper.wrongWordForm = false; // 这一轮没听到东西，就不能再挂着上一轮的"词形不对"
       });
     });
   }
@@ -2758,6 +2771,7 @@ class WordListPageState extends State<WordListPage>
       _heardNothingTimer?.cancel();
       word.roundMatchScore = null;
       word.roundHeardNothing = false;
+      word.wrongWordForm = false;
       // 在背英文和翻译例句模式下，清除提示时也清空识别结果
       if (studyMode == WordListStudyMode.speakEnglish ||
           studyMode == WordListStudyMode.translateSentence) {
@@ -2767,6 +2781,7 @@ class WordListPageState extends State<WordListPage>
         _isAiRefereeJudging = false;
         asrResult = "";
         word.pronunciationScore = null;
+        word.wrongWordForm = false;
         word.lastAsrResult = null;
         if (studyMode == WordListStudyMode.speakEnglish) {
           word.speakEnglishPassed = false;

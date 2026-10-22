@@ -1886,6 +1886,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                     // 答错则靠波形旁的匹配度数字表达（说一长句时回显原话读不清，不再回显）。
                     final heardNothing = ref.watch(
                         bdcNotifierProvider.select((s) => s.asrRoundHeardNothing));
+                    final wrongWordForm = ref.watch(
+                        bdcNotifierProvider.select((s) => s.asrWrongWordForm));
 
                     final bool isChineseInput =
                         state.studyStep == StudyStep.en2Ch.json ||
@@ -1919,6 +1921,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             isSentenceStep: isSentence,
                             isAiEvaluating: isAiEvaluating,
                             heardNothing: heardNothing,
+                            wrongWordForm: wrongWordForm,
                           );
                   },
                 ),

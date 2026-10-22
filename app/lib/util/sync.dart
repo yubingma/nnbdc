@@ -218,6 +218,9 @@ int getTableSyncPriority(String tableName) {
   switch (tableName) {
     case 'users':
       return 1;
+    case 'words':
+      // 用户自建私有词（Excel 导入 / 手动加词）会以 word 表上行，必须参与排序
+      return 1;
     case 'dicts':
       return 2; // dicts必须在dictWords之前
     case 'dictWords':

@@ -65,6 +65,12 @@ class BdcState extends Equatable {
   /// 与"匹配度为 0"是两回事：那是听清了但不对，由 [currentScore] 表达。
   final bool asrRoundHeardNothing;
 
+  /// 这一轮的识别词是目标词的另一个词形（如说 national 对 nation）。
+  ///
+  /// 只用于拦住"发音像但说错了词形"的作答，并让状态行说清原因；不参与评分。
+  /// 换词、重新作答、答对后复位。
+  final bool asrWrongWordForm;
+
   final bool isKeyboardVisible;
   final bool autoJumpAfterCorrectCh2En;
   final bool autoJumpAfterCorrectEn2Ch;
@@ -173,6 +179,7 @@ class BdcState extends Equatable {
     this.asrResult = "",
     this.currentAsrCandidates = const [],
     this.asrRoundHeardNothing = false,
+    this.asrWrongWordForm = false,
     this.isKeyboardVisible = false,
     this.autoJumpAfterCorrectCh2En = true,
     this.autoJumpAfterCorrectEn2Ch = true,
@@ -264,6 +271,7 @@ class BdcState extends Equatable {
     String? asrResult,
     List<String>? currentAsrCandidates,
     bool? asrRoundHeardNothing,
+    bool? asrWrongWordForm,
     bool? isKeyboardVisible,
     bool? autoJumpAfterCorrectCh2En,
     bool? autoJumpAfterCorrectEn2Ch,
@@ -353,6 +361,7 @@ class BdcState extends Equatable {
       asrResult: asrResult ?? this.asrResult,
       currentAsrCandidates: currentAsrCandidates ?? this.currentAsrCandidates,
       asrRoundHeardNothing: asrRoundHeardNothing ?? this.asrRoundHeardNothing,
+      asrWrongWordForm: asrWrongWordForm ?? this.asrWrongWordForm,
       isKeyboardVisible: isKeyboardVisible ?? this.isKeyboardVisible,
       autoJumpAfterCorrectCh2En: autoJumpAfterCorrectCh2En ?? this.autoJumpAfterCorrectCh2En,
       autoJumpAfterCorrectEn2Ch: autoJumpAfterCorrectEn2Ch ?? this.autoJumpAfterCorrectEn2Ch,
@@ -442,6 +451,7 @@ class BdcState extends Equatable {
     asrResult,
     currentAsrCandidates,
     asrRoundHeardNothing,
+    asrWrongWordForm,
     isKeyboardVisible,
     autoJumpAfterCorrectCh2En,
     autoJumpAfterCorrectEn2Ch,

@@ -140,15 +140,17 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
     return '「$answer」是单词 $word 的意思，注意区分形近词';
   }
 
-  /// 单词中英（ch2En）裁判系统提示词（音素近似/发音容错与同义词区分引导）
+  /// 单词中英（ch2En）裁判系统提示词（音素近似/发音容错、词形区分与同义词引导）
   static const String ch2EnWordRefereeSystemPrompt = '''
 You are an expert English pronunciation and vocabulary referee for Chinese ESL learners.
-Your task is to judge whether the user's spoken input represents an attempt to pronounce the target English word, or if they said a different synonym word.
+Your task is to judge whether the user's spoken input represents an attempt to pronounce the target English word, or if they said a different word.
 
 CRITICAL INSTRUCTIONS & CONSTRAINTS:
 1. PHONETIC / ACOUSTIC APPROXIMATION OF TARGET WORD (MUST ACCEPT as TRUE):
    - The user input comes from an automatic speech recognition (ASR) system (phoneme/acoustic model) and Chinese learners' natural pronunciation.
-   - If the user's input consists of phonetically similar syllables, sound fragments, or common ASR transcription errors of the TARGET WORD (e.g. for "beside": "be side", "besides", "biside", "be side of"; for "discipline": "displain", "disiplin"; for "think": "sink", "fink"; for "walked": "walk"), you MUST judge as TRUE {"isCorrect": true}.
+   - If the user's input consists of phonetically similar syllables, sound fragments, or common ASR transcription errors of the TARGET WORD (e.g. for "beside": "be side", "biside", "be side of"; for "discipline": "displain", "disiplin"; for "think": "sink", "fink"), you MUST judge as TRUE {"isCorrect": true}.
+   - A different word form is a DIFFERENT word, NOT a pronunciation of the target. Plurals, past tense, -ing forms, comparatives, and words sharing the same root MUST be judged FALSE with isSynonym true, e.g. target "walk" but input "walked"; target "develop" but input "development"; target "nation" but input "national"; target "man" but input "men".
+   - The ONLY exception: the target itself carries a final weak inflectional ending and the input is the target with that ending missing (e.g. target "walked", input "walk"; target "books", input "book"). Treat it as a truncated pronunciation and judge TRUE. If the missing part is a whole syllable (target "needed", input "need"; target "walking", input "walk"; target "development", input "develop"), judge FALSE.
 
 2. SEMANTIC SYNONYM OR CHINESE POLYSEMY OVERLAP (JUDGE FALSE with FRIENDLY EXPLANATION):
    - The user input may also be an ASR phonetic transcription artifact of a synonym or polysemous word (e.g., ASR transcribed "albeit" / "albe" / "all bit" when user spoke "orbit"; or "bye" for "buy").
@@ -166,9 +168,14 @@ CRITICAL INSTRUCTIONS & CONSTRAINTS:
    - If the spoken input is neither phonetically similar to the target word nor related to any literal Chinese meaning:
    - Judge as FALSE {"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}
 
+4. THE ASR CANDIDATE LIST:
+   - The list may contain the target word even when the user said something else.
+   - Judge the user's spoken input, NEVER the mere presence of the target word in the candidate list.
+
 Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 {"isCorrect": true}
 {"isCorrect": false, "isSynonym": true, "explanation": "「intended_word」多指...，请尝试回忆本词"}
+{"isCorrect": false, "isSynonym": true, "explanation": "「walked」是另一个词形，请尝试回忆本词"}
 {"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}
 ''';
 

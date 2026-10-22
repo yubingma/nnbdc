@@ -148,4 +148,42 @@ void main() {
     // 等错误提示自动收起，避免测试结束时仍有 Toast 定时器
     await tester.pump(const Duration(seconds: 4));
   });
+
+  testWidgets('中文不能当单词：直接拒绝，不展开释义也不建词', (tester) async {
+    final modifier = _RecordingWordModifier();
+    await openDialog(tester, modifier, onAdded: () {});
+
+    await tester.enterText(find.byType(TextField).first, '苹果');
+    await tester.tap(find.widgetWithText(TextButton, '添加'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('通用词典中没有这个词'), findsNothing);
+    expect(modifier.addedWordIds, isEmpty);
+    expect(modifier.addedItems, isEmpty);
+    expect(find.byType(AddWordDialog), findsOneWidget);
+
+    // 等错误提示自动收起，避免测试结束时仍有 Toast 定时器
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  testWidgets('通用词典已收录的词带尾部标点：仍按原口径加入', (tester) async {
+    final now = DateTime.now();
+    await database.into(database.words).insert(Word(
+          id: 'w2',
+          spell: 'apple',
+          popularity: 1,
+          createTime: now,
+          updateTime: now,
+        ));
+
+    final modifier = _RecordingWordModifier();
+    await openDialog(tester, modifier, onAdded: () {});
+
+    await tester.enterText(find.byType(TextField).first, 'apple,');
+    await tester.tap(find.widgetWithText(TextButton, '添加'));
+    await tester.pumpAndSettle();
+
+    expect(modifier.addedWordIds, ['w2']);
+    expect(modifier.addedItems, isEmpty);
+  });
 }

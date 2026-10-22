@@ -278,6 +278,20 @@ class FeatureChallengeRepository {
           '词表页右上角的「+」就是手动加词：通用词典里有的词直接加入；没有的词会展开词性与释义输入，补充后按新词建入当前词表，不必先去做表格。',
     ),
     FeatureChallenge(
+      id: 'tip_edit_word_spell',
+      category: '词书功能',
+      title: '给自建词改拼写',
+      question: '手动添加的自建词拼写写错了（比如把 apple 打成了 aple），想改成正确的拼写，该怎么做？',
+      options: [
+        '在词表里左滑该词点「编辑」直接改拼写；改成通用词典已有的词时，会自动替换成词典词条并保留学习进度',
+        '只能删掉整本词表重新导入',
+        '自建词一旦添加就无法再修改拼写',
+      ],
+      correctIndex: 0,
+      explanation:
+          '自建词（含生词本里手动加的词）左滑点「编辑」即可改拼写。如果改成的拼写是通用词典里已有的词，这条自建词会替换成词典词条，学习进度、错题次数和释义都会保留，不会丢。',
+    ),
+    FeatureChallenge(
       id: 'tip_fullscreen_mode',
       category: '常用设置',
       title: '全屏模式',

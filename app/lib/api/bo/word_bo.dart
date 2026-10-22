@@ -14,6 +14,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/excel_import_parser.dart';
 import 'package:nnbdc/util/level_util.dart';
 
 import 'package:nnbdc/util/utils.dart';
@@ -2588,6 +2589,214 @@ class WordBo {
       Global.logger.e('批量导入单词失败: $e', stackTrace: s);
       return Result<DictImportStats>("ERROR", "导入失败: $e", false);
     }
+  }
+
+  /// 修改自建词的拼写。
+  ///
+  /// - 新拼写空闲：只改这一行单词记录，词表条目、释义、学习记录都不动；
+  /// - 新拼写是本用户另一条自建词：拒绝，避免出现两条同拼写记录让本地查词失败；
+  /// - 新拼写是通用词典里的词：把这条自建词替换成通用词典词条，
+  ///   词表条目、定制释义、学习进度、错题次数与学习记录一并迁移，再删掉自建词，
+  ///   保证用户学到的是同一个词、进度不倒退。
+  Future<Result<String>> changeCustomWordSpell(String wordId, String newSpell) async {
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return Result<String>("ERROR", "用户未登录", false);
+
+    final spell = newSpell.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (!englishSpellPattern.hasMatch(spell)) {
+      return Result<String>("ERROR", "单词只能是英文字母，可含空格、撇号、连字符或句点", false);
+    }
+
+    final db = MyDatabase.instance;
+    final custom = await db.wordsDao.getWordById(wordId);
+    if (custom == null) return Result<String>("ERROR", "单词不存在", false);
+    if (custom.ownerId != userId) return Result<String>("ERROR", "只能修改自己添加的单词", false);
+    if (custom.spell == spell) return Result<String>("SUCCESS", "拼写未变化", true)..data = wordId;
+
+    // 按小写比较查重：既拦住同一用户的两条自建词，也拦住大小写不同的同一拼写。
+    final sameSpellWords = await (db.select(db.words)..where((w) => w.spell.lower().equals(spell.toLowerCase()))).get();
+    final others = sameSpellWords.where((w) => w.id != custom.id).toList();
+    final otherCustom = others.where((w) => w.ownerId == userId).firstOrNull;
+    if (otherCustom != null) {
+      return Result<String>("ERROR", "已有一条同拼写的自建词「${otherCustom.spell}」，请先去那条上修改", false);
+    }
+    final common = others.where((w) => w.ownerId != userId).firstOrNull;
+    if (common != null) {
+      return _mergeCustomWordIntoCommonWord(userId: userId, custom: custom, common: common);
+    }
+
+    final now = AppClock.now();
+    final renamed = custom.copyWith(spell: spell, updateTime: now);
+    await db.transaction(() async {
+      await db.wordsDao.insertEntity(renamed);
+      await DbLogUtil.logOperation(userId, 'UPDATE', 'words', custom.id, renamed);
+    });
+    ThrottledDbSyncService().requestSync();
+    return Result<String>("SUCCESS", "拼写已修改", true)..data = wordId;
+  }
+
+  /// 把自建词整体替换为通用词典里的同拼写词条。
+  ///
+  /// 所有以 wordId 引用它的地方都要跟着换过去：词表条目、定制释义、学习进度、
+  /// 错题次数、学习记录、按拼写定位的书签。任何一处漏掉，用户都会看到
+  /// 「学习页还是旧词」「错题次数归零」这类状态不一致。
+  Future<Result<String>> _mergeCustomWordIntoCommonWord({
+    required String userId,
+    required Word custom,
+    required Word common,
+  }) async {
+    final db = MyDatabase.instance;
+    final now = AppClock.now();
+    final dictIds = <String>{};
+
+    await db.transaction(() async {
+      // 1. 词表条目：挪到通用词典词条名下；目标词表已收录时直接去掉重复条目。
+      final links = await (db.select(db.dictWords)..where((dw) => dw.wordId.equals(custom.id))).get();
+      for (final link in links) {
+        dictIds.add(link.dictId);
+        final existing = await db.dictWordsDao.getById(link.dictId, common.id);
+        final dict = await db.dictsDao.findById(link.dictId);
+        await db.dictWordsDao.deleteEntity(link, true);
+        if (existing != null || dict == null) continue;
+        final moved = link.copyWith(wordId: common.id, updateTime: now);
+        await db.dictWordsDao.insertEntity(moved, false, invalidateTspCache: false);
+        await DbLogUtil.logOperation(dict.ownerId, 'INSERT', 'dictWords', '${link.dictId}-${common.id}', moved);
+      }
+
+      // 2. 定制释义：换到通用词典词条名下；同词表已有相同（词性 + 释义）时去重。
+      final meanings = await (db.select(db.meaningItems)..where((mi) => mi.wordId.equals(custom.id))).get();
+      for (final meaning in meanings) {
+        final duplicate = await (db.select(db.meaningItems)
+              ..where((mi) =>
+                  mi.wordId.equals(common.id) &
+                  mi.ciXing.equals(meaning.ciXing) &
+                  mi.meaning.equals(meaning.meaning) &
+                  (meaning.dictId == null ? mi.dictId.isNull() : mi.dictId.equals(meaning.dictId!)))
+              ..limit(1))
+            .getSingleOrNull();
+        if (duplicate != null) {
+          await db.meaningItemsDao.deleteEntity(meaning.id, true);
+        } else {
+          await db.meaningItemsDao.insertEntity(
+            meaning.copyWith(id: Util.uuid(), wordId: common.id, updateTime: now),
+            true,
+          );
+          await db.meaningItemsDao.deleteEntity(meaning.id, true);
+        }
+      }
+
+      // 3. 学习进度：没有冲突就直接换 id；两边都学过则合并，进度不倒退。
+      final customLearning = await db.learningWordsDao.getById(userId, custom.id);
+      if (customLearning != null) {
+        final commonLearning = await db.learningWordsDao.getById(userId, common.id);
+        await db.learningWordsDao.deleteEntity(customLearning, true);
+        final target = commonLearning == null
+            ? customLearning.copyWith(wordId: common.id, updateTime: now)
+            : _mergeLearningWords(customLearning, commonLearning, common.id, now);
+        await db.learningWordsDao.saveEntity(target, true);
+      }
+
+      // 4. 错题次数：两边都有则相加，不丢错误记录。
+      final customWrong = await db.userWrongWordsDao.getEntity(userId, custom.id);
+      if (customWrong != null) {
+        final commonWrong = await db.userWrongWordsDao.getEntity(userId, common.id);
+        await db.userWrongWordsDao.deleteEntity(customWrong, true);
+        final target = commonWrong == null
+            ? customWrong.copyWith(wordId: common.id, updateTime: now)
+            : commonWrong.copyWith(
+                wrongCount: commonWrong.wrongCount + customWrong.wrongCount,
+                inWrongBook: commonWrong.inWrongBook || customWrong.inWrongBook,
+                updateTime: now,
+              );
+        await db.userWrongWordsDao.saveEntity(target, true);
+      }
+
+      // 5. 学习记录：历史评分跟着词走，保证当天首答与天数统计连续。
+      final logs = await (db.select(db.learningLogs)
+            ..where((log) => log.userId.equals(userId) & log.wordId.equals(custom.id)))
+          .get();
+      for (final log in logs) {
+        final moved = log.copyWith(wordId: common.id, updateTime: now);
+        await db.update(db.learningLogs).replace(moved);
+        await DbLogUtil.logOperation(userId, 'UPDATE', 'learningLogs', log.id, moved);
+      }
+
+      // 6. 书签按拼写定位，旧拼写的书签要跟着改，否则续播时找不到位置。
+      final marks = await (db.select(db.bookMarks)
+            ..where((mark) => mark.userId.equals(userId) & mark.spell.equals(custom.spell)))
+          .get();
+      for (final mark in marks) {
+        await db.bookmarksDao.saveBookmark(mark.copyWith(spell: common.spell, updateTime: now), true);
+      }
+
+      // 7. 最后删除自建词本身。
+      await (db.delete(db.words)..where((w) => w.id.equals(custom.id))).go();
+      await DbLogUtil.logOperation(userId, 'DELETE', 'words', custom.id, custom);
+      if (LocalEmbeddingCache.instance.isInitialized) {
+        LocalEmbeddingCache.instance.updateWord(custom.id, null);
+      }
+
+      // 8. 词表条目可能因去重少了一条，词数要按实际条数重算。
+      for (final dictId in dictIds) {
+        await db.dictsDao.updateWordCount(dictId, true);
+      }
+    });
+
+    for (final dictId in dictIds) {
+      clearTspCache(dictId);
+    }
+    ThrottledDbSyncService().requestSync();
+    return Result<String>(
+      "SUCCESS",
+      "已替换为通用词典里的「${common.spell}」，学习进度与错题记录已保留",
+      true,
+    )..data = common.id;
+  }
+
+  /// 合并两条学习记录（同一个人、同一个词的两个身份）。
+  ///
+  /// 记忆参数整体取「最近一次学习」的那条，学习次数相加；只要有一条是正式词，
+  /// 合并后就不算加量，避免把已经计入打卡进度的词变成不计进度的加量词。
+  static LearningWord _mergeLearningWords(
+    LearningWord a,
+    LearningWord b,
+    String targetWordId,
+    DateTime now,
+  ) {
+    final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+    final base = (a.lastLearningDate ?? epoch).isAfter(b.lastLearningDate ?? epoch) ? a : b;
+
+    final batchA = a.batchId ?? 0;
+    final batchB = b.batchId ?? 0;
+    final int? batchId;
+    if (batchA == 0 && batchB == 0) {
+      batchId = a.batchId ?? b.batchId;
+    } else {
+      batchId = batchA >= batchB ? batchA : batchB;
+    }
+
+    return LearningWord(
+      userId: base.userId,
+      wordId: targetWordId,
+      addDay: a.addDay < b.addDay ? a.addDay : b.addDay,
+      addTime: a.addTime.isBefore(b.addTime) ? a.addTime : b.addTime,
+      lastLearningDate: base.lastLearningDate,
+      learningOrder: a.learningOrder < b.learningOrder ? a.learningOrder : b.learningOrder,
+      batchId: batchId,
+      isExtra: a.isExtra && b.isExtra,
+      stability: base.stability,
+      difficulty: base.difficulty,
+      elapsedDays: base.elapsedDays,
+      scheduledDays: base.scheduledDays,
+      reps: base.reps,
+      lapses: base.lapses,
+      state: base.state,
+      isTodayNewWord: a.isTodayNewWord || b.isTodayNewWord,
+      learnedTimes: a.learnedTimes + b.learnedTimes,
+      todayLearnedTimes: a.todayLearnedTimes + b.todayLearnedTimes,
+      createTime: a.createTime.isBefore(b.createTime) ? a.createTime : b.createTime,
+      updateTime: now,
+    );
   }
 
   /// 用给定释义替换某个词在指定词表中的全部定制释义。

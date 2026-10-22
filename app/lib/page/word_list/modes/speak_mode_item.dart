@@ -127,6 +127,17 @@ class SpeakModeItem extends StatelessWidget {
         ),
       ));
     }
+    if (word.wrongWordForm) {
+      children.add(const Text(
+        asrWrongWordFormText,
+        style: TextStyle(
+          fontSize: 10,
+          height: 1.3,
+          color: Colors.orange,
+          fontWeight: FontWeight.w500,
+        ),
+      ));
+    }
     if (children.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: 4),
