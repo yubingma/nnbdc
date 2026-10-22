@@ -28,6 +28,11 @@ public class UserGameData {
     private boolean isExercise;
 
     /**
+     * 本房间内的连续输局数（赢一局清零），见 {@link #getConsecutiveLosses()}
+     */
+    private int consecutiveLosses;
+
+    /**
      * 用户或客户端最后一次下达的命令
      */
     private UserCmd lastUserCmd;
@@ -160,6 +165,18 @@ public class UserGameData {
 
     public boolean isExercise() {
         return isExercise;
+    }
+
+    /**
+     * 本房间内的连续输局数（赢一局清零）。
+     * 机器人靠它决定"输了这么多次还要不要接着开下一局"，真人玩家不读这个值。
+     */
+    public int getConsecutiveLosses() {
+        return consecutiveLosses;
+    }
+
+    public void setConsecutiveLosses(int consecutiveLosses) {
+        this.consecutiveLosses = Math.max(0, consecutiveLosses);
     }
 
     public void setExercise(boolean isExercise) {

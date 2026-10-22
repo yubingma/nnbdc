@@ -329,6 +329,29 @@ public class RussiaRoom {
     }
 
     /**
+     * 机器人连输若干把之后，还想不想再开下一局。
+     * 0 连败 5%，每多输一局 +15%，封顶 60%——真人被连虐几把也会走，
+     * 而不是像现在这样连输十几局还一局接一局地陪打。
+     */
+    public static double botLeaveChanceAfterLosses(int consecutiveLosses) {
+        return Math.min(0.60, 0.05 + 0.15 * Math.max(0, consecutiveLosses));
+    }
+
+    /**
+     * 本房间机器人的"不想再来一局"概率（按它在你手里的连败局数算）；房里没有机器人时返回 0。
+     */
+    public double getBotLeaveChance() {
+        for (Map.Entry<UserVo, UserGameData> entry : users.entrySet()) {
+            UserVo user = entry.getKey();
+            if (user.getUserName() != null && user.getUserName().startsWith("bot_")) {
+                UserGameData data = entry.getValue();
+                return botLeaveChanceAfterLosses(data != null ? data.getConsecutiveLosses() : 0);
+            }
+        }
+        return 0;
+    }
+
+    /**
      * 检查机器人是否应该离开房间
      * 在非比赛状态下，机器人有15%的概率离开房间
      */

@@ -589,6 +589,16 @@ public class ReadyState extends RoomState {
                             if (room.getUsers().containsKey(botUser)) {
                                 UserGameData botData = room.getUserPlayData(botUser);
                                 if (botData != null && !botData.isMatchStarted() && !isPlaying) {
+                                    // 连败之后的机器人未必还想再打：按它在你手里的连败局数掷一次"走不走"
+                                    double leaveChance = room.getBotLeaveChance();
+                                    if (Math.random() < leaveChance) {
+                                        LoggerFactory.getLogger(ReadyState.class).info(String.format(
+                                                "机器人[%s]已连败%d局，不想再开一局（离开概率%.0f%%），离开房间",
+                                                Util.getNickNameOfUser(botUser), botData.getConsecutiveLosses(),
+                                                leaveChance * 100));
+                                        room.userLeave(botUser);
+                                        return;
+                                    }
                                     // 模拟机器人点击开始按钮
                                     UserCmd startCmd = new UserCmd(userBo);
                                     startCmd.setUserBo(userBo);
@@ -861,9 +871,9 @@ public class ReadyState extends RoomState {
                             return;
                         }
 
-                        // 机器人有10%的概率选择离开而不是开始游戏，更真实
-                        // （因为人类已经点击开始，所以离开概率略低于主动开始时的概率）
-                        double leaveChance = 0.10;
+                        // 连败越多越可能不打了：真人被连虐几把也会走，
+                        // 而不是像以前那样固定 10%、连输十几局还接着陪打
+                        double leaveChance = room.getBotLeaveChance();
                         if (Math.random() < leaveChance) {
                             LoggerFactory.getLogger(ReadyState.class)
                                     .info(String.format("机器人[%s]在人类玩家开始后选择离开游戏（延迟%.1f秒后的决定）",
