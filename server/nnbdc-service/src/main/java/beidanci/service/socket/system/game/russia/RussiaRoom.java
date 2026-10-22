@@ -329,23 +329,29 @@ public class RussiaRoom {
     }
 
     /**
-     * 机器人连输若干把之后，还想不想再开下一局。
-     * 0 连败 5%，每多输一局 +15%，封顶 60%——真人被连虐几把也会走，
-     * 而不是像现在这样连输十几局还一局接一局地陪打。
+     * 机器人还想不想再开下一局：连输会烦，连赢也会腻。
+     *
+     * <p>基础 5%；每多输一局 +15%，每多赢一局 +8%（被虐比赢腻更劝退，所以输的权重更大）；
+     * 封顶 60%——真人连输三把多半就走，连着赢五六把也开始觉得没意思。
      */
-    public static double botLeaveChanceAfterLosses(int consecutiveLosses) {
-        return Math.min(0.60, 0.05 + 0.15 * Math.max(0, consecutiveLosses));
+    public static double botLeaveChanceAfterStreak(int consecutiveLosses, int consecutiveWins) {
+        int losses = Math.max(0, consecutiveLosses);
+        int wins = Math.max(0, consecutiveWins);
+        return Math.min(0.60, 0.05 + 0.15 * losses + 0.08 * wins);
     }
 
     /**
-     * 本房间机器人的"不想再来一局"概率（按它在你手里的连败局数算）；房里没有机器人时返回 0。
+     * 本房间机器人的"不想再来一局"概率（按它在当前房间的连胜/连败局数算）；房里没有机器人时返回 0。
      */
     public double getBotLeaveChance() {
         for (Map.Entry<UserVo, UserGameData> entry : users.entrySet()) {
             UserVo user = entry.getKey();
             if (user.getUserName() != null && user.getUserName().startsWith("bot_")) {
                 UserGameData data = entry.getValue();
-                return botLeaveChanceAfterLosses(data != null ? data.getConsecutiveLosses() : 0);
+                if (data == null) {
+                    return botLeaveChanceAfterStreak(0, 0);
+                }
+                return botLeaveChanceAfterStreak(data.getConsecutiveLosses(), data.getConsecutiveWins());
             }
         }
         return 0;

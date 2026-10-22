@@ -589,13 +589,13 @@ public class ReadyState extends RoomState {
                             if (room.getUsers().containsKey(botUser)) {
                                 UserGameData botData = room.getUserPlayData(botUser);
                                 if (botData != null && !botData.isMatchStarted() && !isPlaying) {
-                                    // 连败之后的机器人未必还想再打：按它在你手里的连败局数掷一次"走不走"
+                                    // 连败会烦、连赢也会腻：按它在当前房间的连胜/连败掷一次"走不走"
                                     double leaveChance = room.getBotLeaveChance();
                                     if (Math.random() < leaveChance) {
                                         LoggerFactory.getLogger(ReadyState.class).info(String.format(
-                                                "机器人[%s]已连败%d局，不想再开一局（离开概率%.0f%%），离开房间",
-                                                Util.getNickNameOfUser(botUser), botData.getConsecutiveLosses(),
-                                                leaveChance * 100));
+                                                "机器人[%s]当前%d连胜/%d连败，不想再开一局（离开概率%.0f%%），离开房间",
+                                                Util.getNickNameOfUser(botUser), botData.getConsecutiveWins(),
+                                                botData.getConsecutiveLosses(), leaveChance * 100));
                                         room.userLeave(botUser);
                                         return;
                                     }
@@ -871,13 +871,14 @@ public class ReadyState extends RoomState {
                             return;
                         }
 
-                        // 连败越多越可能不打了：真人被连虐几把也会走，
-                        // 而不是像以前那样固定 10%、连输十几局还接着陪打
+                        // 连败会烦、连赢也会腻：真人这两种情况下都会走，不再固定 10%
                         double leaveChance = room.getBotLeaveChance();
                         if (Math.random() < leaveChance) {
                             LoggerFactory.getLogger(ReadyState.class)
-                                    .info(String.format("机器人[%s]在人类玩家开始后选择离开游戏（延迟%.1f秒后的决定）",
-                                            Util.getNickNameOfUser(bot), delayMs / 1000.0));
+                                    .info(String.format(
+                                            "机器人[%s]当前%d连胜/%d连败，在人类玩家开始后离开游戏（延迟%.1f秒后的决定）",
+                                            Util.getNickNameOfUser(bot), botPlayData.getConsecutiveWins(),
+                                            botPlayData.getConsecutiveLosses(), delayMs / 1000.0));
                             // 让机器人离开房间
                             room.userLeave(bot);
                             return;

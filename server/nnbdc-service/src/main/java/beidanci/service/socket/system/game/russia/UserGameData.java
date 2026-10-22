@@ -33,6 +33,12 @@ public class UserGameData {
     private int consecutiveLosses;
 
     /**
+     * 本房间内的连续赢局数（输一局清零）。
+     * 真人连着赢也会觉得没意思走人，机器人同样要能"赢腻了"。
+     */
+    private int consecutiveWins;
+
+    /**
      * 用户或客户端最后一次下达的命令
      */
     private UserCmd lastUserCmd;
@@ -177,6 +183,17 @@ public class UserGameData {
 
     public void setConsecutiveLosses(int consecutiveLosses) {
         this.consecutiveLosses = Math.max(0, consecutiveLosses);
+    }
+
+    /**
+     * 本房间内的连续赢局数（输一局清零）。
+     */
+    public int getConsecutiveWins() {
+        return consecutiveWins;
+    }
+
+    public void setConsecutiveWins(int consecutiveWins) {
+        this.consecutiveWins = Math.max(0, consecutiveWins);
     }
 
     public void setExercise(boolean isExercise) {

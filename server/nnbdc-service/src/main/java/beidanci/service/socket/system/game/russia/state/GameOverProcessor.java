@@ -72,23 +72,25 @@ public class GameOverProcessor {
                 // 直接使用本地逻辑进行积分与魔法泡泡结算
                 adjustUserScore(winer, loser);
             }
-            recordLoseStreak(loser, winer);
+            recordStreak(loser, winer);
         }
         room.broadcastUsersInfo();
     }
 
     /**
-     * 记一笔连败：输的一方连败 +1，赢的一方清零。
-     * 机器人靠这条决定"连输这么多把还要不要接着打"（见 RussiaRoom#getBotLeaveChance），
-     * 否则它连输十局也毫无走人的意思，完全不像真人。
+     * 记一局的连胜/连败：输的一方连败 +1、连胜清零，赢的一方反过来。
+     * 机器人靠这两条决定"还要不要接着打"（见 RussiaRoom#getBotLeaveChance）：
+     * 连输会烦，连赢也会腻——真人两种都会走，不能只在它输的时候才想走。
      */
-    private void recordLoseStreak(UserVo loser, UserVo winer) {
+    private void recordStreak(UserVo loser, UserVo winer) {
         UserGameData loserData = room.getUserPlayData(loser);
         if (loserData != null) {
             loserData.setConsecutiveLosses(loserData.getConsecutiveLosses() + 1);
+            loserData.setConsecutiveWins(0);
         }
         UserGameData winerData = winer != null ? room.getUserPlayData(winer) : null;
         if (winerData != null) {
+            winerData.setConsecutiveWins(winerData.getConsecutiveWins() + 1);
             winerData.setConsecutiveLosses(0);
         }
     }
