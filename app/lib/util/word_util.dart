@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nnbdc/util/meaning_render_util.dart';
 import 'package:nnbdc/util/pinyin.dart';
 import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/global.dart';
@@ -435,7 +436,11 @@ List<Widget> renderAsrMeaningItems(WordWrapper word,
     );
   }
 
-  List<MeaningItemVo> meaningItems = word.word.getMergedMeaningItems();
+  final List<MeaningItemVo> meaningItems = word.word.getMergedMeaningItems();
+  // 与单词详情页同一口径：只有多义项才需要圆点来区分常用度
+  final bool showDots = MeaningRenderUtil.hasMultipleMeanings(meaningItems);
+  final Color dotColor =
+      isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151);
   for (var i = 0; i < meaningItems.length; i++) {
     var meaningItem = meaningItems[i];
     items.add(Wrap(
@@ -457,9 +462,9 @@ List<Widget> renderAsrMeaningItems(WordWrapper word,
               ),
             ),
           ),
-        ...renderMeaningItemParts(meaningItem.meaning!, i, word.hintLetterCount,
+        ...renderMeaningItemParts(meaningItem, i, word.hintLetterCount,
             word.asrMatchedMeaningItemParts, word.asrRevealedMeaningItemParts,
-            isDarkMode: isDarkMode),
+            isDarkMode: isDarkMode, showDots: showDots, dotColor: dotColor),
       ],
     ));
   }
@@ -467,20 +472,25 @@ List<Widget> renderAsrMeaningItems(WordWrapper word,
 }
 
 /// 渲染一个释义项的子项
+///
+/// [showDots] 为 true 时，在每个释义子项末尾追加常用度小圆点（与单词详情页一致），
+/// 小圆点同时取代「；」承担子项分隔。
 List<Widget> renderMeaningItemParts(
-    String meaning,
+    MeaningItemVo meaningItem,
     int meaningIndex,
     int hintLetterCount,
     List<Pair<int, int>> asrMatchedMeaningItemParts,
     List<Pair<int, int>> asrRevealedMeaningItemParts,
-    {bool isDarkMode = false}) {
+    {bool isDarkMode = false,
+    bool showDots = false,
+    required Color dotColor}) {
   // 把释义拆分为子项
   var partWidgets = <Widget>[];
-  var parts = splitMeaning2Parts(meaning);
+  final parts = MeaningRenderUtil.resolveParts(meaningItem);
 
   // 渲染每个子项
   for (var i = 0; i < parts.length; i++) {
-    var part = parts[i];
+    var part = parts[i].text;
 
     // 释义项已经被用户答对
     if (asrMatchedMeaningItemParts.contains(Pair(meaningIndex, i))) {
@@ -558,14 +568,18 @@ List<Widget> renderMeaningItemParts(
       partWidgets.add(widget);
     }
 
-    // 显示释义项分隔符
-    if (i != parts.length - 1) {
-      partWidgets.add(Text(
-        "；",
-        style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: isDarkMode ? Colors.white54 : Colors.black38),
+    // 常用度小圆点：与单词详情页同一口径，紧跟在该释义子项之后，
+    // 并取代「；」来分隔各子项（showDots 为 false 时子项数必为 1，无需分隔符）
+    if (showDots) {
+      partWidgets.add(Padding(
+        padding: EdgeInsets.only(
+          left: 4.0,
+          right: i == parts.length - 1 ? 0.0 : 7.0,
+        ),
+        child: MeaningRenderUtil.buildDotWidget(
+          percent: parts[i].popularityPercent,
+          color: dotColor,
+        ),
       ));
     }
   }

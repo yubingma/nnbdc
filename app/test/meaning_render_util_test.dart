@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/util/meaning_render_util.dart';
+import 'package:nnbdc/util/word_util.dart';
 
 void main() {
   group('MeaningRenderUtil 规格与判定测试', () {
@@ -164,6 +165,64 @@ void main() {
       expect(nItem.parts!.length, 1);
       expect(nItem.parts![0].text, '奔跑');
       expect(nItem.parts![0].popularityPercent, 5);
+    });
+  });
+
+  group('MeaningRenderUtil.resolveParts 与合并释义对齐', () {
+    test('子项文本与分号拆分一一对应，并保留各自常用度', () {
+      final word = WordVo.c2('run')
+        ..meaningItems = [
+          MeaningItemVo('1', 'v.', '跑', null, null, null, 80),
+          MeaningItemVo('2', 'v.', '运转；经营', null, null, null, 15),
+        ];
+
+      final vItem = word
+          .getMergedMeaningItems()
+          .firstWhere((item) => item.ciXing == 'v.');
+      final parts = MeaningRenderUtil.resolveParts(vItem);
+
+      expect(parts.map((p) => p.text).toList(),
+          splitMeaning2Parts(vItem.meaning!));
+      expect(parts.map((p) => p.popularityPercent).toList(), [80, 15, 15]);
+    });
+  });
+
+  group('英译汉答案区的常用度圆点', () {
+    bool isDotWidget(Widget widget) =>
+        widget is Padding &&
+        widget.child is SizedBox &&
+        (widget.child as SizedBox).height == 17;
+
+    test('多义项：每个释义子项末尾各带一个圆点', () {
+      final word = WordVo.c2('run')
+        ..meaningItems = [
+          MeaningItemVo('1', 'v.', '跑', null, null, null, 80),
+          MeaningItemVo('2', 'v.', '运转', null, null, null, 15),
+        ];
+      final wrapper = WordWrapper(word, null);
+
+      final wraps = renderAsrMeaningItems(wrapper);
+      expect(wraps.length, 1);
+      final children = (wraps.single as Wrap).children;
+
+      // 词性 + 释义 + 圆点 + 释义 + 圆点（圆点取代分号，不再额外渲染「；」）
+      expect(children.length, 5);
+      expect(children.where(isDotWidget).length, 2);
+      expect(children.where((w) => w is Text && w.data == '；'), isEmpty);
+    });
+
+    test('单义词：答案区保持纯净，不加圆点', () {
+      final word = WordVo.c2('run')
+        ..meaningItems = [
+          MeaningItemVo('1', 'v.', '跑', null, null, null, 80),
+        ];
+      final wrapper = WordWrapper(word, null);
+
+      final children = (renderAsrMeaningItems(wrapper).single as Wrap).children;
+
+      // 词性 + 释义
+      expect(children.length, 2);
+      expect(children.where(isDotWidget), isEmpty);
     });
   });
 }

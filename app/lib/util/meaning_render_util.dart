@@ -30,13 +30,25 @@ class MeaningRenderUtil {
     }
   }
 
+  /// 圆点本体（直径与透明度由常用度决定），供行内与 Widget 两种渲染路径共用
+  static Widget buildDotCircle({required int? percent, required Color color}) {
+    final spec = getDotSpec(percent);
+    return Container(
+      width: spec.size,
+      height: spec.size,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: spec.opacity),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
   /// 构建单行或流式行内的小圆点 InlineSpan
   static InlineSpan buildDotSpan({
     required int? percent,
     required Color color,
     bool isLastInLine = false,
   }) {
-    final spec = getDotSpec(percent);
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
       child: Padding(
@@ -44,31 +56,58 @@ class MeaningRenderUtil {
           left: 4.0,
           right: isLastInLine ? 0.0 : 7.0,
         ),
-        child: Container(
-          width: spec.size,
-          height: spec.size,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: spec.opacity),
-            shape: BoxShape.circle,
-          ),
-        ),
+        child: buildDotCircle(percent: percent, color: color),
       ),
     );
+  }
+
+  /// 构建 Widget 版小圆点：纵向居中于一行 14px 释义文字（与 [buildDotSpan] 的
+  /// 中线对齐口径一致），供答案区等非 InlineSpan 的渲染路径使用
+  static Widget buildDotWidget({required int? percent, required Color color}) {
+    return SizedBox(
+      height: 17,
+      child: Center(
+        widthFactor: 1.0,
+        child: buildDotCircle(percent: percent, color: color),
+      ),
+    );
+  }
+
+  /// 把释义项解析为「按分号拆分的释义子项 + 各自常用度」。
+  /// 与 [buildMeaningSpans] 同一口径：优先使用合并后的 [MeaningItemVo.parts]，
+  /// 缺失时按排序名次平滑兜底，确保圆点与释义文本一一对应。
+  static List<MeaningPartVo> resolveParts(MeaningItemVo item) {
+    if (item.parts != null && item.parts!.isNotEmpty) {
+      return List<MeaningPartVo>.from(item.parts!);
+    }
+
+    final parts = <MeaningPartVo>[];
+    final rawTokens = (item.meaning ?? '').split(RegExp(r'[;；]'));
+    int rank = 0;
+    for (final raw in rawTokens) {
+      var trimmed = raw.trim();
+      while (trimmed.endsWith(';') ||
+          trimmed.endsWith('；') ||
+          trimmed.endsWith(',') ||
+          trimmed.endsWith('，') ||
+          trimmed.endsWith('。')) {
+        trimmed = trimmed.substring(0, trimmed.length - 1).trim();
+      }
+      if (trimmed.isNotEmpty) {
+        final pct = item.popularityPercent ??
+            defaultPercentForRank(rank, rawTokens.length);
+        parts.add(MeaningPartVo(trimmed, pct));
+        rank++;
+      }
+    }
+    return parts;
   }
 
   /// 判断该单词所有释义项是否构成多释义（总义项数 >= 2）
   static bool hasMultipleMeanings(List<MeaningItemVo> items) {
     int totalCount = 0;
     for (final item in items) {
-      if (item.parts != null && item.parts!.isNotEmpty) {
-        totalCount += item.parts!.length;
-      } else if ((item.meaning ?? '').trim().isNotEmpty) {
-        final count = item.meaning!
-            .split(RegExp(r'[;；]'))
-            .where((s) => s.trim().isNotEmpty)
-            .length;
-        totalCount += (count > 0 ? count : 1);
-      }
+      totalCount += resolveParts(item).length;
       if (totalCount >= 2) return true;
     }
     return false;
@@ -83,27 +122,7 @@ class MeaningRenderUtil {
     required bool showDots,
     String Function(String)? textTransformer,
   }) {
-    List<MeaningPartVo> parts = item.parts != null ? List.from(item.parts!) : [];
-    if (parts.isEmpty && (item.meaning ?? '').isNotEmpty) {
-      final rawTokens = item.meaning!.split(RegExp(r'[;；]'));
-      int rank = 0;
-      for (final raw in rawTokens) {
-        var trimmed = raw.trim();
-        while (trimmed.endsWith(';') ||
-            trimmed.endsWith('；') ||
-            trimmed.endsWith(',') ||
-            trimmed.endsWith('，') ||
-            trimmed.endsWith('。')) {
-          trimmed = trimmed.substring(0, trimmed.length - 1).trim();
-        }
-        if (trimmed.isNotEmpty) {
-          final pct = item.popularityPercent ??
-              defaultPercentForRank(rank, rawTokens.length);
-          parts.add(MeaningPartVo(trimmed, pct));
-          rank++;
-        }
-      }
-    }
+    final parts = resolveParts(item);
 
     if (parts.isEmpty) {
       return [TextSpan(text: '', style: meaningStyle)];
