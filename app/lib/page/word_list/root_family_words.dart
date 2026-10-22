@@ -200,7 +200,7 @@ class RootFamilyWordsProvider with WordsProvider {
       ..longDesc = entry.longDesc
       ..groupInfo = entry.groupInfo;
     wordVo.meaningItems =
-        mItems.map((mi) => MeaningItemVo.from(mi.ciXing, mi.meaning)..id = mi.id).toList();
+        mItems.map((mi) => MeaningItemVo.fromEntity(mi)).toList();
     return wordVo;
   }
 

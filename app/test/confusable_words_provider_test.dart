@@ -115,6 +115,7 @@ void main() {
       ciXing: 'n.',
       meaning: '含义$id',
       popularity: 1,
+      popularityPercent: 42,
       createTime: now,
       ownerId: '15118',
       updateTime: now,
@@ -193,6 +194,8 @@ void main() {
         expect(w.word.meaningItems, isNotNull);
         expect(w.word.meaningItems!.length, 1);
         expect(w.word.meaningItems!.first.meaning, '含义mi_${w.word.id}');
+        // 常用度百分比必须随释义一起带出，否则词表圆点退化成同一尺寸
+        expect(w.word.meaningItems!.first.popularityPercent, 42);
       }
     });
 

@@ -142,6 +142,28 @@ void main() {
       expect(pagedSlice.rows.map((dw) => dw.word.id).toList(), ['w3']);
     });
 
+    test('getDictWordsForAPage 保留释义常用度百分比（词表圆点依赖）', () async {
+      await db.into(db.words).insert(Word(
+        id: 'w_pct', spell: 'pct', popularity: 1,
+        createTime: now, updateTime: now,
+      ));
+      await db.into(db.dictWords).insert(DictWord(
+        dictId: dictId, wordId: 'w_pct', seq: 1, unit: 0,
+        createTime: now, updateTime: now,
+      ));
+      await db.into(db.meaningItems).insert(MeaningItem(
+        id: 'mi_pct', wordId: 'w_pct', dictId: dictId,
+        ciXing: 'n.', meaning: '百分比', popularity: 1,
+        popularityPercent: 82, createTime: now, ownerId: userId, updateTime: now,
+      ));
+
+      final paged = await WordBo().getDictWordsForAPage(dictId, 0, 10);
+
+      expect(paged.rows.length, 1);
+      final meanings = paged.rows.single.word.meaningItems!;
+      expect(meanings.single.popularityPercent, 82);
+    });
+
     test('getDictWordOrder returns correct TSP index', () async {
       await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding([0]), createTime: now, updateTime: now));
       await db.into(db.words).insert(Word(id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding([1, 2]), createTime: now, updateTime: now));

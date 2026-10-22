@@ -136,6 +136,31 @@ void main() {
       final hasWidgetSpan = spans.any((s) => s is WidgetSpan);
       expect(hasWidgetSpan, isTrue);
     });
+
+    test('buildInlineMeaningSpans: 常用度不同则圆点直径不同（防止百分比丢失后全等）', () {
+      // 词书单词列表曾只拷 ciXing + meaning，丢掉 popularityPercent，
+      // 导致所有圆点都退化成最小尺寸、看起来一样大。
+      final word = WordVo.c2('deny')
+        ..meaningItems = [
+          MeaningItemVo('1', 'vt.', '否认', null, null, null, 90),
+          MeaningItemVo('2', 'vt.', '拒绝', null, null, null, 8),
+        ];
+
+      final spans = MeaningRenderUtil.buildInlineMeaningSpans(
+        word: word,
+        meaningStyle: defaultStyle,
+        posStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+        dotColor: dotColor,
+      );
+
+      final dotDiameters = spans.whereType<WidgetSpan>().map((span) {
+        final padding = span.child as Padding;
+        final circle = padding.child as Container;
+        return circle.constraints!.minWidth;
+      }).toList();
+
+      expect(dotDiameters, [6.0, 3.2]);
+    });
   });
 
   group('WordVo.getMergedMeaningItems 结构验证', () {

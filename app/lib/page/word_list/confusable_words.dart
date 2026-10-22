@@ -101,7 +101,7 @@ class ConfusableWordsProvider with WordsProvider {
           ..longDesc = wordEntry.longDesc
           ..groupInfo = wordEntry.groupInfo;
         wordVo.meaningItems = mItems
-            .map((mi) => MeaningItemVo.from(mi.ciXing, mi.meaning)..id = mi.id)
+            .map((mi) => MeaningItemVo.fromEntity(mi))
             .toList();
         rawResults.add(WordWrapper(wordVo, wordVo));
         rawGroupIds.add(group);

@@ -117,6 +117,7 @@ void main() {
       ciXing: 'n.',
       meaning: '含义$id',
       popularity: 1,
+      popularityPercent: 42,
       createTime: now,
       ownerId: '15118',
       updateTime: now,
@@ -204,6 +205,8 @@ void main() {
 
       final member = result.rows.first;
       expect(member.word.meaningItems!.single.meaning, '含义mi_w_expect');
+      // 常用度百分比必须随释义一起带出，否则词表圆点退化成同一尺寸
+      expect(member.word.meaningItems!.single.popularityPercent, 42);
     });
 
     test('每个族的首词都能取到组头（不止第一个族）', () async {

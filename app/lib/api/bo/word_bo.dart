@@ -1924,8 +1924,8 @@ class WordBo {
           List<MeaningItemVo> meaningItemVos = [];
           if (meaningItemsMap.containsKey(wordEntry.id)) {
             meaningItemVos = meaningItemsMap[wordEntry.id]!.map((mi) {
-              final meaningItemVo = MeaningItemVo.from(mi.ciXing, mi.meaning);
-              meaningItemVo.id = mi.id;
+              // 必须走 fromEntity：词表的常用度圆点依赖 popularityPercent
+              final meaningItemVo = MeaningItemVo.fromEntity(mi);
               if (sentencesMap.containsKey(mi.id)) {
                 List<SentenceVo> sentenceVos = [];
                 for (var s in sentencesMap[mi.id]!) {
