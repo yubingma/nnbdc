@@ -1018,6 +1018,10 @@ abstract class RestClient {
   @GET("/getHideK12Content.do")
   Future<Result<bool>> getHideK12Content();
 
+  /// 是否隐藏 AI 能力（AI 助教对话、AI 短文、单词解释），由系统管理员在服务端配置
+  @GET("/getHideAiContent.do")
+  Future<Result<bool>> getHideAiContent();
+
   @POST("/admin/saveSysParam.do")
   @FormUrlEncoded()
   Future<Result<String>> saveSysParam(

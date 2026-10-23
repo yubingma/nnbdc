@@ -3,6 +3,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/model/feature_challenge.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/content_config.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/utils.dart';
 
@@ -77,14 +78,26 @@ class FeatureChallengeService {
   }
 
   /// 获取当天的挑战题目（每天固定 1 道，优先从未解锁题目中选出）
+  /// 当前设备可投放的题目。
+  ///
+  /// AI 能力被服务端隐藏时（小米渠道审核期），不再投放需要「AI 助教」Tab 的题目，
+  /// 否则用户会照着题目去找一个不存在的入口。
+  List<FeatureChallenge> get _visibleChallenges =>
+      ContentConfig.isAiFeatureVisible
+          ? FeatureChallengeRepository.allChallenges
+          : FeatureChallengeRepository.allChallenges
+              .where((c) => c.id != 'tip_ai_assistant')
+              .toList();
+
   FeatureChallenge getTodayChallenge() {
     final today = _currentDateStr();
     final assignedDate = Prefs.read<String>(_prefTodayAssignedDate);
     final savedTodayId = Prefs.read<String>(_prefTodayChallengeId);
+    final candidates = _visibleChallenges;
 
     // 如果今天已经分配过且该题目存在，直接沿用今天的题目
     if (assignedDate == today && savedTodayId != null) {
-      final existing = FeatureChallengeRepository.allChallenges
+      final existing = candidates
           .where((c) => c.id == savedTodayId)
           .firstOrNull;
       if (existing != null) return existing;
@@ -92,15 +105,15 @@ class FeatureChallengeService {
 
     // 重新选出今天的题目：从未解锁的题目中取第一道
     final unlocked = getUnlockedIds().toSet();
-    FeatureChallenge? selected = FeatureChallengeRepository.allChallenges
+    FeatureChallenge? selected = candidates
         .where((c) => !unlocked.contains(c.id))
         .firstOrNull;
 
     // 如果全部题目都已解锁，则按日期循环温习
     if (selected == null) {
       final dayOfYear = AppClock.now().difference(DateTime(AppClock.now().year, 1, 1)).inDays;
-      final idx = dayOfYear % FeatureChallengeRepository.allChallenges.length;
-      selected = FeatureChallengeRepository.allChallenges[idx];
+      final idx = dayOfYear % candidates.length;
+      selected = candidates[idx];
     }
 
     // 记录分配结果

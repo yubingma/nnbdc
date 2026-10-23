@@ -194,6 +194,13 @@ class Prefs {
   static Future<void> setHideK12Content(bool value) =>
       write('hideK12Content', value);
 
+  /// 是否隐藏 AI 能力（AI 助教对话、AI 短文、单词解释）。
+  /// 由服务端参数 hideAiContent 控制，系统管理员在后台开关，客户端启动时拉取。
+  static bool get hideAiContent => read<bool>('hideAiContent') ?? false;
+
+  static Future<void> setHideAiContent(bool value) =>
+      write('hideAiContent', value);
+
   /// 设置全屏模式偏好并立即应用
   static Future<bool> setFullScreen(bool enabled) async {
     final ok = await write(fullScreenModePref, enabled);

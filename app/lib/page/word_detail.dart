@@ -28,6 +28,7 @@ import '../global.dart';
 import '../state.dart';
 import '../util/study_config.dart';
 import '../services/user_privilege_manager.dart';
+import '../util/content_config.dart';
 import '../util/utils.dart';
 import '../widget/pronunciation_accent_badge.dart';
 import '../widget/data_missing_guide.dart';
@@ -304,7 +305,8 @@ class WordDetailPageState extends State<WordDetailPage>
         }
       }
 
-      _canUseAiAssistant = UserPrivilegeManager.canUseAiAssistant;
+      _canUseAiAssistant =
+          UserPrivilegeManager.canUseAiAssistant && ContentConfig.isAiFeatureVisible;
       final count = calcTabsCount();
       if (count != _tabController.length) {
         _tabController.dispose();

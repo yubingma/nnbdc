@@ -87,6 +87,11 @@ public class AiController {
         DeferredResult<Result<AiStoryVo>> deferredResult = new DeferredResult<>(60000L); // 60秒超时
         deferredResult.onTimeout(() -> deferredResult.setErrorResult(Result.fail("生成 AI 短文超时")));
 
+        if (sysParamUtil.isAiContentHidden()) {
+            deferredResult.setResult(Result.fail("AI 功能暂未开放"));
+            return deferredResult;
+        }
+
         try {
             // 验证用户身份
             if (userBo.findById(userId) == null) {
@@ -123,6 +128,14 @@ public class AiController {
         if (userBo.findById(userId) == null) {
             try {
                 emitter.send(Objects.requireNonNull(Result.fail("用户身份验证失败，请重新登录")));
+                emitter.complete();
+            } catch (Exception ignore) {}
+            return emitter;
+        }
+
+        if (sysParamUtil.isAiContentHidden()) {
+            try {
+                emitter.send(Objects.requireNonNull(Result.fail("AI 功能暂未开放")));
                 emitter.complete();
             } catch (Exception ignore) {}
             return emitter;

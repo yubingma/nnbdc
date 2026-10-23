@@ -19,6 +19,7 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
+import 'package:nnbdc/util/content_config.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/pdf_exporter.dart';
@@ -3315,7 +3316,7 @@ class WordListPageState extends State<WordListPage>
       [
         if (args.wordsProvider.supportsMastery) menuBatchSelect,
         menuWalkman,
-        if (args.showAiStory) menuAiStory,
+        if (args.showAiStory && ContentConfig.isAiFeatureVisible) menuAiStory,
       ],
       // 设置与输出
       [

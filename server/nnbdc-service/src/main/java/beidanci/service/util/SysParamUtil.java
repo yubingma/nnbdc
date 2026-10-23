@@ -31,6 +31,18 @@ public class SysParamUtil {
         return Boolean.parseBoolean(sysParamBO.findById("hideK12Content", false).getParamValue());
     }
 
+    /**
+     * 是否隐藏 AI 能力（AI 助教对话、AI 短文、单词解释）。
+     *
+     * 由系统管理员在 sys_param 表配置，默认 false（显示）。
+     * 小米商店把"含文本生成能力"的应用判定为特殊行业（深度合成类），要求算法备案与大模型备案，
+     * 审核期间可置为 true 隐藏 AI 能力，过审后再置回 false。
+     * 客户端按厂商白名单只对小米系等非白名单机型生效。
+     */
+    public boolean isAiContentHidden() {
+        return Boolean.parseBoolean(sysParamBO.findById("hideAiContent", false).getParamValue());
+    }
+
 
     public String getImageBaseDir() {
         return sysParamBO.findById("imgBaseDir", false).getParamValue();

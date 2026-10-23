@@ -70,17 +70,20 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
       _mark('未同意最新隐私协议 → 弹隐私框');
       _showPrivacyDialog();
     } else {
-      _initVersion().then((_) {
+      _initVersion().then((_) async {
         _mark('_initVersion 完成');
-        _loadContentConfig();
+        await _loadContentConfig();
         checkNewVersion();
       });
     }
   }
 
-  /// 拉取服务端内容开关（是否隐藏中小学教育类内容）。
-  /// 失败时沿用上次配置，不阻断启动。
-  Future<void> _loadContentConfig() => ContentConfig.refresh();
+  /// 拉取服务端内容开关（是否隐藏中小学教育类内容、是否隐藏 AI 能力）。
+  ///
+  /// 全 App 只在启动时拉取这一次，之后各页面直接读本地缓存。
+  /// 最多等 3 秒，失败或超时沿用上次配置，不阻断启动。
+  Future<void> _loadContentConfig() => ContentConfig.refresh()
+      .timeout(const Duration(seconds: 3), onTimeout: () {});
 
   Future<void> _initVersion() async {
     final pi = await PackageInfo.fromPlatform();
@@ -226,7 +229,9 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
             onPressed: () async {
               await Prefs.write('accepted_privacy_version', 20260310);
               if (context.mounted) Navigator.of(context).pop();
-              _initVersion().then((_) => checkNewVersion());
+              await _initVersion();
+              await _loadContentConfig();
+              checkNewVersion();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: context.primaryColor,

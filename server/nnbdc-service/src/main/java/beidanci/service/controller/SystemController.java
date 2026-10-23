@@ -68,6 +68,16 @@ public class SystemController {
     }
 
     /**
+     * 是否隐藏 AI 能力（AI 助教对话、AI 短文、单词解释）。
+     *
+     * 系统管理员在 sys_param 表配置 hideAiContent，客户端每次启动拉取一次。
+     */
+    @GetMapping("/getHideAiContent.do")
+    public Result<Boolean> getHideAiContent() {
+        return Result.success(sysParamUtil.isAiContentHidden());
+    }
+
+    /**
      * 系统词书自愈（第一步：对账）：按 word_id 游标分页返回某本词书的单词 ID 清单。
      *
      * 只给 ID、不传 seq —— 序号会被删词前移、也会被修复重排，不能当身份或游标用。

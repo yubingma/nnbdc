@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/content_config.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
@@ -531,7 +532,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '解锁全库词书畅学与 AI 助教记忆解析',
+                    ContentConfig.isAiFeatureVisible
+                        ? '解锁全库词书畅学与 AI 助教记忆解析'
+                        : '解锁全库词书畅学与个性化记忆方案',
                     style: TextStyle(
                       color: context.textSecondary,
                       fontSize: 12,
@@ -610,14 +613,15 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: _buildPrivilegeItem(
-                  icon: Icons.psychology_rounded,
-                  iconColor: const Color(0xFF8B5CF6), // 典雅紫
-                  title: 'AI 深度助教',
-                  desc: '语境联想与记忆溯源',
+              if (ContentConfig.isAiFeatureVisible)
+                Expanded(
+                  child: _buildPrivilegeItem(
+                    icon: Icons.psychology_rounded,
+                    iconColor: const Color(0xFF8B5CF6), // 典雅紫
+                    title: 'AI 深度助教',
+                    desc: '语境联想与记忆溯源',
+                  ),
                 ),
-              ),
             ],
           ),
         ],

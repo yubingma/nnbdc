@@ -18,7 +18,6 @@ import '../widget/frosted_glass_card.dart';
 import '../widget/page_back_button.dart';
 import '../util/error_handler.dart';
 import '../util/platform_util.dart';
-import '../util/content_config.dart';
 import '../util/toast_util.dart';
 
 class GamePage extends StatefulWidget {
@@ -116,8 +115,6 @@ class _GamePageState extends State<GamePage> {
 
   Future<void> loadData() async {
     if (_isLoading) return;
-    // 先刷新服务端内容开关（K12 是否隐藏），管理员改完配置无需重启 App
-    await ContentConfig.refresh();
     setState(() {
       _isLoading = true;
       errorMessage = null;

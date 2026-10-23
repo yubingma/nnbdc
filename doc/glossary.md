@@ -427,6 +427,7 @@
 |---|---|---|---|
 | 应用名（备案名） | `app/android/app/src/main/res/values/strings.xml` 的 `app_name`；`devops/build-and-upload-xiaomi.sh` 的 `CHANNEL_APP_NAME` 与 `APP_NAME` | 桌面图标下显示、各 Android 应用商店展示的名字，必须与工信部 App 备案登记的名称一致；当前备案名为「泡泡单词英语版」（备案号 蜀ICP备12032137号-4A） | 小米、华为等渠道后台都会拿 APK 内应用名与备案名比对，不一致直接驳回。改名时三处同步改，漏改时小米脚本的断言会先拦下 |
 | 应用内品牌名 | `Global.appName`（`app/lib/global.dart:22`） | App 界面里露出的品牌简称：首屏 logo 文字、打卡/勋章海报、分享文案、PDF 导出、通知标题、隐私政策；当前为「泡泡单词」 | 与备案名不必一致；iOS 桌面显示名同样是「泡泡单词」。改它只影响应用内文案，不影响 Android APK 的桌面名 |
+| 内容开关 | `sys_param` 的 `hideK12Content` / `hideAiContent`，服务端 `SysParamUtil` 与 `GET /getHideK12Content.do`、`GET /getHideAiContent.do`，客户端 `ContentConfig`（`app/lib/util/content_config.dart`） | 服务端下发、客户端启动时拉取一次的显示/隐藏开关：`hideK12Content` 隐掉中小学教育类内容（词书分组与游戏大厅），`hideAiContent` 隐掉 AI 能力（AI 助教 Tab、AI 短文菜单、单词解释、会员权益里的 AI 宣传位、功能秘籍里的 AI 助教题） | 只对非白名单厂商的 Android 机型生效（小米系、云真机、读不到厂商的设备），华为/荣耀/OPPO/vivo/三星/魅族与 iOS 等平台永远显示，白名单见 `PlatformUtils.isContentSwitchExempt`。开关在管理后台「系统设置」页按参数名编辑；服务端同时在 `/ai/chatStream.do`、`/ai/generateAiShortStory.do` 拒绝请求，老版本客户端也调不通 |
 
 ---
 

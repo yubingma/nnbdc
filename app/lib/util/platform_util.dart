@@ -174,19 +174,21 @@ class PlatformUtils {
   /// 是否运行在 Flutter 单元测试环境中
   static bool get isUnitTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
-  /// 是否「永远显示 K12 内容」——白名单厂商的 Android 机型，以及所有非 Android 平台。
+  /// 是否「永远显示 K12 内容」——等价于 [isContentSwitchExempt]。
+  static bool get isK12VisibleVendor => isContentSwitchExempt;
+
+  /// 是否豁免服务端内容开关的厂商级隐藏（`hideK12Content` 与 `hideAiContent` 共用）。
   ///
-  /// 白名单只列明确的主流手机品牌；其余情况一律返回 false，交由服务端开关
-  /// `hideK12Content` 决定是否隐藏。这样小米系机型、Rockchip 等云真机/开发板、
-  /// 以及原生通道读不到厂商时都不会漏隐藏。
-  static bool get isK12VisibleVendor {
+  /// 白名单只列明确的主流手机品牌；其余情况一律返回 false，交由服务端开关决定是否隐藏。
+  /// 这样小米系机型、Rockchip 等云真机/开发板、以及原生通道读不到厂商时都不会漏隐藏。
+  static bool get isContentSwitchExempt {
     if (!isAndroid) return true;
-    return _androidVendor != null && k12VisibleVendors.contains(_androidVendor);
+    return _androidVendor != null && contentSwitchExemptVendors.contains(_androidVendor);
   }
 
   /// 白名单厂商（取 [normalizeAndroidVendor] 归并后的值）。
   /// Redmi/POCO 已归并为 Xiaomi，一加/realme 归并为 OPPO，iQOO 归并为 vivo，故不在此列。
-  static const Set<String> k12VisibleVendors = {
+  static const Set<String> contentSwitchExemptVendors = {
     'Huawei',
     'Honor',
     'OPPO',

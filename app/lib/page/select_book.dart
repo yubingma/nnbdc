@@ -15,7 +15,6 @@ import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/pinyin.dart';
 import 'package:nnbdc/util/platform_util.dart';
-import 'package:nnbdc/util/content_config.dart';
 import 'package:nnbdc/services/user_privilege_manager.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -217,9 +216,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
 
   void loadData({bool keepSelection = false}) async {
-    // 先刷新服务端内容开关（K12 是否隐藏），管理员改完配置无需重启 App
-    await ContentConfig.refresh();
-
     setState(() {
       _isLoading = true;
     });

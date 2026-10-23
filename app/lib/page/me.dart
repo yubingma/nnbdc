@@ -30,6 +30,7 @@ import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/content_config.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/prefs.dart';
@@ -1030,15 +1031,17 @@ class MePageState extends State<MePage> implements RefreshableTab {
                   subtitleColor,
                 ),
                 const SizedBox(height: 12),
-                _buildPrivilegeRow(
-                  Icons.psychology_rounded,
-                  'AI 智能助教与深度解析',
-                  isPremium ? '无限量智能助记与答疑' : '非会员暂不支持 AI 解析',
-                  accentColor,
-                  textColor,
-                  subtitleColor,
-                ),
-                const SizedBox(height: 12),
+                if (ContentConfig.isAiFeatureVisible) ...[
+                  _buildPrivilegeRow(
+                    Icons.psychology_rounded,
+                    'AI 智能助教与深度解析',
+                    isPremium ? '无限量智能助记与答疑' : '非会员暂不支持 AI 解析',
+                    accentColor,
+                    textColor,
+                    subtitleColor,
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 _buildPrivilegeRow(
                   Icons.auto_stories_rounded,
                   '全量官方词书与导入畅学',
@@ -2197,12 +2200,13 @@ class MePageState extends State<MePage> implements RefreshableTab {
                               title: '我的小天地 (农场)',
                               onTap: () => context.push('/farm'),
                             ),
-                            _buildMenuTile(
-                              icon: Icons.psychology_outlined,
-                              iconColor: const Color(0xFFA855F7),
-                              title: '本地 AI 模型配置',
-                              onTap: () => context.push('/ai_activation'),
-                            ),
+                            if (ContentConfig.isAiFeatureVisible)
+                              _buildMenuTile(
+                                icon: Icons.psychology_outlined,
+                                iconColor: const Color(0xFFA855F7),
+                                title: '本地 AI 模型配置',
+                                onTap: () => context.push('/ai_activation'),
+                              ),
                             _buildMenuTile(
                               icon: Icons.access_time_filled_rounded,
                               iconColor: const Color(0xFFEAB308),
