@@ -5362,10 +5362,10 @@ void main() {
         PlatformUtils.englishAsrSupportedOverride = null;
       });
 
-      // 单词环节：写/说/选 三档，顺序就是界面上的顺序
+      // 单词环节：说/写/选 三档，顺序就是界面上的顺序（说排第一：开口是本 App 的核心）
       expect(AnswerModes.forStep(StudyStep.en2Ch.json), [
-        AnswerMode.write,
         AnswerMode.speak,
+        AnswerMode.write,
         AnswerMode.choose,
       ]);
       expect(AnswerModes.forStep(StudyStep.ch2En.json).length, 3);
@@ -5389,6 +5389,8 @@ void main() {
         AnswerMode.choose,
       );
       // 下标换算跟着档位表走
+      expect(AnswerModes.indexOf(StudyStep.en2Ch.json, AnswerMode.speak), 0);
+      expect(AnswerModes.indexOf(StudyStep.en2Ch.json, AnswerMode.write), 1);
       expect(AnswerModes.indexOf(StudyStep.en2Ch.json, AnswerMode.choose), 2);
       expect(AnswerModes.indexOf(StudyStep.enSentence2Ch.json, AnswerMode.choose), 1);
     });
