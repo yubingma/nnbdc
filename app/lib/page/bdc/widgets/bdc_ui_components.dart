@@ -19,9 +19,6 @@ extension BdcPageStateUIComponents on BdcPageState {
   BdcState get state => _activeState ?? ref.read(bdcNotifierProvider);
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
 
-  /// 当前是不是在用「写」答题
-  bool get _isWriting => state.answerMode == AnswerMode.write;
-
   /// 这一档在不在「选」档（选择题列表与例句卡片都按它决定呈现形态）
   bool _isChoosing(BdcState s) => s.answerMode == AnswerMode.choose;
 
@@ -586,6 +583,28 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
+  /// 写档顶栏的「全屏」小图标：只带图标不带文字，紧挨着三段控件
+  Widget _buildFullscreenIcon() {
+    final Color color =
+        _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
+    return Semantics(
+      identifier: 'e2e_study_write_fullscreen',
+      button: true,
+      child: Tooltip(
+        message: '全屏手写',
+        child: GestureDetector(
+          key: const Key('bdc_write_fullscreen_btn'),
+          behavior: HitTestBehavior.opaque,
+          onTap: _openFullscreenWriting,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+            child: Icon(Icons.open_in_full_rounded, size: 14, color: color),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 答题区顶部的题目提示语：写、说，还是选（选择题不需要提示语）。
   String? get _answerPromptLabel {
     final String? step = state.studyStep;
@@ -599,49 +618,6 @@ extension BdcPageStateUIComponents on BdcPageState {
       case AnswerMode.choose:
         return null;
     }
-  }
-
-  /// 「手写」入口只在写档出现：写档是键盘打字，想用手写就从这里进全屏手写板。
-  bool get _showsHandwritingEntry {
-    if (!_isWriting || state.showHandwritingBoard) return false;
-    final String? step = state.studyStep;
-    return step == StudyStep.en2Ch.json || step == StudyStep.ch2En.json;
-  }
-
-  Widget _buildHandwritingEntry() {
-    final bool chinese = state.studyStep == StudyStep.en2Ch.json;
-    final Color actionColor =
-        _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
-    return GestureDetector(
-      key: Key(chinese ? 'bdc_chinese_dictation_btn' : 'bdc_handwriting_btn'),
-      onTap: () {
-        _meaningFocusNode.unfocus();
-        if (chinese) {
-          notifier.openChineseDictation();
-        } else {
-          notifier.updateShowHandwritingBoard(true);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.edit_outlined, size: 13.5, color: actionColor),
-            const SizedBox(width: 3.5),
-            Text(
-              '手写',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: actionColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildMainContent() {
@@ -957,9 +933,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                                         )
                                       else
                                         const Spacer(),
-                                      // 写档是键盘打字，想手写就从这里进全屏手写板
-                                      if (_showsHandwritingEntry)
-                                        _buildHandwritingEntry(),
+                                      // 只有写档才有「全屏」：把卡片内的手写放大成整页
+                                      if (state.answerMode == AnswerMode.write)
+                                        _buildFullscreenIcon(),
                                       _buildAnswerModeSwitch(),
                                     ],
                                   ),
@@ -2088,6 +2064,11 @@ extension BdcPageStateUIComponents on BdcPageState {
   /// 版式与全屏拼写板一致 —— 预览在上、输入行贴着键盘在下：
   /// 英译汉上方是待回忆的释义（没答出的字仍是空格），汉译英不重复展示，
   /// 因为拼写本身就逐字符标色写在输入框里。
+  /// 「写」档的答题面板（单词环节）：默认直接在卡片里手写，点输入框才用键盘。
+  ///
+  /// 版式：手写画布占满剩余空间（底部自带 重写/回退/(提交/提示)），
+  /// 下面一条贴着键盘的输入行。画布右上角两个小按钮把原来的两个入口留住：
+  /// 「全屏」＝之前的整页手写/打字界面，「拼写」＝英译汉时顺手练一下这个英文单词。
   Widget _buildTypingPanel() {
     final String? step = state.studyStep;
     if (state.word == null ||
@@ -2096,47 +2077,17 @@ extension BdcPageStateUIComponents on BdcPageState {
     }
     final isDarkMode = _cachedIsDarkMode;
     final bool isChineseAnswer = state.isChineseDictation;
+    // 键盘弹起时把画布让出去：那会儿用户是在打字，硬留在卡片里既看不见也没处下笔
+    final bool keyboardTyping = state.isKeyboardVisible;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 1. 预览区
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  controller: _speakPanelScrollController,
-                  padding: EdgeInsets.zero,
-                  child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(minHeight: constraints.maxHeight),
-                    child: !isChineseAnswer
-                        ? const SizedBox.shrink()
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ...renderAsrMeaningItems(state.wordWrapper!,
-                                  isDarkMode: isDarkMode),
-                              // 已写出部分释义但未达通过线：告诉他"还差几个"，别以为写一次就完事
-                              if (state.dictationRequiredCount > 0)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: _buildMeaningProgressText(
-                                    state.dictationMatchedCount,
-                                    state.dictationRequiredCount,
-                                    '写',
-                                  ),
-                                ),
-                            ],
-                          ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
+        // 1. 手写画布（默认的做题方式）
+        if (keyboardTyping)
+          const Spacer()
+        else
+          Expanded(child: _buildInlineHandwritingBoard(isChineseAnswer)),
 
         // 微柔光分割线
         Container(
@@ -2146,47 +2097,117 @@ extension BdcPageStateUIComponents on BdcPageState {
               : Colors.black.withValues(alpha: 0.05),
         ),
 
-        // 2. 输入行：贴着键盘，换词后不用再点一次
+        // 2. 输入行：点它才弹键盘（默认手写，不抢焦点）
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 10, 8),
+          padding: const EdgeInsets.fromLTRB(14, 6, 14, 8),
           child: Row(
             children: [
               Expanded(child: _buildTypingField(isChineseAnswer)),
-              const SizedBox(width: 8),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 中文释义是手打的，没有"打完自动判"的时机，只能由用户显式提交
-                    if (isChineseAnswer) ...[
-                      _buildPanelButton(
-                        icon: Icons.send_rounded,
-                        label: '提交',
-                        onTap: () => notifier.submitTypedMeaning(),
-                      ),
-                      const SizedBox(width: 6),
-                    ],
-                    _buildPanelButton(
-                      icon: Icons.lightbulb_outline_rounded,
-                      label: '提示',
-                      onTap: () => notifier.giveALittleHint(),
-                      onLongPress: () => notifier.giveFullHint(),
-                    ),
-                    const SizedBox(width: 6),
-                    _buildPanelButton(
-                      icon: Icons.refresh_rounded,
-                      label: '清除',
-                      onTap: () => notifier.clearHint(),
-                    ),
-                  ],
+              // 打字时画布让出去了，画布上的「提交」也跟着不在：这里补一个
+              if (keyboardTyping && isChineseAnswer) ...[
+                const SizedBox(width: 8),
+                _buildPanelButton(
+                  icon: Icons.send_rounded,
+                  label: '提交',
+                  onTap: () => notifier.submitTypedMeaning(),
                 ),
-              ),
+              ],
+              if (state.dictationRequiredCount > 0) ...[
+                const SizedBox(width: 8),
+                _buildMeaningProgressText(
+                    state.dictationMatchedCount, state.dictationRequiredCount, '写'),
+              ],
             ],
           ),
         ),
       ],
     );
+  }
+
+  /// 答题卡内嵌的手写板：与整页手写板同一套识别与判题，只是没有板子标题与「关闭」。
+  Widget _buildInlineHandwritingBoard(bool isChineseAnswer) {
+    return HandwritingBoard(
+      // 每个词、每个环节都是一块新画布：内嵌板不能沿用上一词的笔迹与已识别答案。
+      // 用它自己的普通 Key（不是 GlobalKey）——从内嵌切到整页时两块板会同时存在，
+      // 共用 GlobalKey 会直接抛「Duplicate GlobalKey detected in widget tree」。
+      key: ValueKey('bdc_inline_board_${state.word?.id}_${state.studyStep}'),
+      showHeader: false,
+      // 内嵌在答题卡里没有"关闭板子"这回事：底部操作栏也不显示「关闭」
+      showCloseButton: false,
+      showCloseControl: false,
+      // 卡片里的书写面积本来就紧：操作栏只留图标，不要整条毛玻璃底衬
+      compactControls: true,
+      useBoxDecoration: false,
+      // 中文答案用 ML Kit 的中文模型；英文拼写用英文模型
+      language: isChineseAnswer ? 'zh-Hani' : 'en-US',
+      // 中文靠「提交」定稿；英文停笔即自动识别判题
+      manualSubmit: isChineseAnswer,
+      isJudging: state.isAiEvaluating,
+      cellCount: isChineseAnswer ? 2 : 1,
+      onStartWriting: () {
+        // 一旦落笔就收起键盘，并把"上次用的是手写"记下来，下一词不弹键盘
+        if (_meaningFocusNode.hasFocus) {
+          _meaningFocusNode.unfocus();
+          final config = StudyConfig.fromCurrentUser();
+          if (config.preferKeyboardInSpelling) {
+            config.preferKeyboardInSpelling = false;
+            config.saveToCurrentUser();
+          }
+        }
+      },
+      onRecognized: (text) async {
+        notifier.updateIsUpdatingByHint(false);
+        final config = StudyConfig.fromCurrentUser();
+        if (config.preferKeyboardInSpelling) {
+          config.preferKeyboardInSpelling = false;
+          config.saveToCurrentUser();
+        }
+        // 判题由这里显式触发，避免"写入输入框"这个动作本身再触发一次防抖判题
+        notifier.updateMeaningTextWithoutCheck(text);
+        await notifier.checkAsrResult(asrInput: text, isVoice: false);
+      },
+      onRecognizedPreview: (text) =>
+          notifier.updateMeaningTextWithoutCheck(text),
+      onReadCurrentText: () => notifier.meaningController.text,
+      // 键盘在用就直接交输入框里的文本；否则交回画布识别
+      onSubmit: () {
+        if (!_meaningFocusNode.hasFocus) return false;
+        notifier.submitTypedMeaning();
+        return true;
+      },
+      onUndoRequest: () {
+        if (!_meaningFocusNode.hasFocus) return false;
+        final String text = notifier.meaningController.text;
+        if (text.isNotEmpty) {
+          notifier.updateMeaningTextWithoutCheck(
+              text.substring(0, text.length - 1));
+        }
+        return true;
+      },
+      // 关闭按钮已隐藏，不会走到这里；接口要求必须给
+      onCancel: () {},
+      // 英译汉的"提示"要落在释义里，画布内没有释义可看，交给「说」档；中英才在画布上给首字母
+      onHint: isChineseAnswer ? null : () => notifier.giveALittleHint(),
+      onRecognizeFailed: () {
+        ToastUtil.error('手写识别失败，请重写');
+        unawaited(reportClientFailure(
+          errorType: kClientFeatureErrorType,
+          scene: '手写识别失败',
+          details: '内嵌手写板识别失败或超时（可能是模型未就绪或原生识别通道异常）',
+        ));
+      },
+    );
+  }
+
+  /// 「全屏」：把卡片里这块手写放大成之前的整页手写/打字界面
+  /// （英译汉是中文默写板，汉译英是英文拼写板）。图标放在写档三段控件的左边。
+  void _openFullscreenWriting() {
+    _meaningFocusNode.unfocus();
+    if (state.studyStep == StudyStep.en2Ch.json) {
+      notifier.openChineseDictation();
+    } else {
+      notifier.updateShowHandwritingBoard(true);
+    }
   }
 
   Widget _buildTypingField(bool isChineseAnswer) {
@@ -2198,15 +2219,16 @@ extension BdcPageStateUIComponents on BdcPageState {
       key: const Key('bdc_typing_input'),
       controller: notifier.meaningController,
       focusNode: _meaningFocusNode,
-      // 进这个模式就是要打字：换词时输入框会随卡片重建，autofocus 让键盘原地留着
-      autofocus: true,
+      // 默认是手写，不抢焦点；上次是打字的话（含换词重进）继续把键盘留着
+      autofocus: StudyConfig.fromCurrentUser().preferKeyboardInSpelling,
       // 中文释义要用中文输入法（拼音候选）；英文拼写用 visiblePassword 避开自动纠错与候选
       keyboardType:
           isChineseAnswer ? TextInputType.text : TextInputType.visiblePassword,
       autocorrect: false,
       enableSuggestions: isChineseAnswer,
+      textAlign: TextAlign.start,
       style: TextStyle(
-        fontSize: 26,
+        fontSize: 24,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.3,
         color: success ? const Color(0xFF10B981) : context.textPrimary,
@@ -2219,17 +2241,16 @@ extension BdcPageStateUIComponents on BdcPageState {
             borderSide: BorderSide(color: underlineColor, width: 1.5)),
         focusedBorder: UnderlineInputBorder(
             borderSide: BorderSide(color: underlineColor, width: 1.5)),
-        hintText: isChineseAnswer ? '在此键入中文释义...' : '在此键入单词...',
+        hintText: isChineseAnswer ? '点这里用键盘写释义' : '点这里用键盘拼写',
         hintStyle: TextStyle(
-          fontSize: 26,
+          fontSize: 16,
           fontWeight: FontWeight.w400,
-          color: context.textMuted.withValues(alpha: 0.6),
+          color: context.textMuted.withValues(alpha: 0.7),
         ),
         contentPadding: const EdgeInsets.only(bottom: 4),
       ),
       textInputAction: TextInputAction.done,
-      // 英文拼写由输入框的防抖监听自动判题，这里只是让"完成"键也能立即判一次；
-      // 中文释义必须走「提交」（输入法拼音中间态不能当答案）
+      // 中文释义由画布的「提交」或键盘「完成」判题；英文拼写由输入框防抖自动判题
       onSubmitted: (_) => isChineseAnswer
           ? notifier.submitTypedMeaning()
           : notifier.checkAsrResult(),
@@ -3438,20 +3459,31 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 核心单词拼写
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    key: const Key('currentstate.word_spell'),
-                    state.currentGetWordResult!.learningWord!.word.spell,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 44,
-                      color: spellColor,
-                      fontFamily: 'Roboto',
-                      letterSpacing: -0.6,
+                // 核心单词拼写（英译汉时旁边挂一个铅笔：点一下进全屏单词拼写练习）
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          key: const Key('currentstate.word_spell'),
+                          state.currentGetWordResult!.learningWord!.word.spell,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 44,
+                            color: spellColor,
+                            fontFamily: 'Roboto',
+                            letterSpacing: -0.6,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    if (state.studyStep == StudyStep.en2Ch.json) ...[
+                      const SizedBox(width: 6),
+                      _buildSpellingPracticeButton(),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 12),
                 // 音标与播音小胶囊（支持点击小按钮快速切换英美音）
@@ -3628,6 +3660,32 @@ extension BdcPageStateUIComponents on BdcPageState {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  /// 题目区单词旁边的铅笔：进全屏的单词拼写练习（只练这个词怎么拼，不改变本次作答）
+  Widget _buildSpellingPracticeButton() {
+    final bool isDark = _cachedIsDarkMode;
+    final Color color = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
+    return Semantics(
+      identifier: 'e2e_word_spelling_practice',
+      button: true,
+      child: Tooltip(
+        message: '拼写练习',
+        child: GestureDetector(
+          key: const Key('bdc_word_spelling_practice_btn'),
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            _meaningFocusNode.unfocus();
+            notifier.updateShowHandwritingBoard(true);
+          },
+          // 只留一支小笔：不要卡片底，免得跟单词抢视觉重量
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Icon(Icons.edit_outlined, size: 15, color: color),
+          ),
+        ),
       ),
     );
   }

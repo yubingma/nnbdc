@@ -104,6 +104,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   final GlobalKey<HandwritingBoardState> _handwritingBoardKey =
       GlobalKey<HandwritingBoardState>();
 
+
   /// 例句答案区(可编辑识别结果)焦点控制
   final FocusNode _sentenceAnswerFocusNode = FocusNode();
 

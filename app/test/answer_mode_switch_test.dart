@@ -169,12 +169,13 @@ void main() {
     expect(find.byKey(const Key('bdc_answer_mode_write')), findsOneWidget);
     expect(find.byKey(const Key('bdc_answer_mode_speak')), findsOneWidget);
     expect(find.byKey(const Key('bdc_answer_mode_choose')), findsOneWidget);
-    // 说档：题面是"说"，写面板不出现
+    // 说档：题面是"说"，写面板与写档才有的「全屏」都不出现
     expect(find.text('请说出中文释义：'), findsOneWidget);
     expect(find.byKey(const Key('bdc_typing_input')), findsNothing);
+    expect(find.byKey(const Key('bdc_write_fullscreen_btn')), findsNothing);
   });
 
-  testWidgets('切到「写」：英译汉直接是键盘打字面板，不再"请说"', (tester) async {
+  testWidgets('写档默认就是卡片内手写，输入框不抢焦点，全屏图标在三段控件左边', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
     await _pumpPage(
         tester,
@@ -187,14 +188,39 @@ void main() {
     // 顶栏说的是"写"而不是"说"
     expect(find.text('请写出中文释义：'), findsOneWidget);
     expect(find.text('请说出中文释义：'), findsNothing);
-    // 聚焦的是页面里的打字输入框，而不是被抢进全屏拼写板
-    expect(find.byKey(const Key('bdc_typing_input')), findsOneWidget);
-    expect(find.byType(HandwritingBoard), findsNothing);
-    // 中文释义是手打的，只能显式提交
-    expect(find.text('提交'), findsOneWidget);
+    // 答题卡里直接就是手写板（不是整页接管），键盘不自动弹
+    expect(find.byType(HandwritingBoard), findsOneWidget);
+    final TextField field =
+        tester.widget<TextField>(find.byKey(const Key('bdc_typing_input')));
+    expect(field.autofocus, false, reason: '写档默认手写，键盘由用户点输入框才弹');
+    // 英译汉：紧凑操作栏里有「提交」（只带图标），顶栏有只带图标的「全屏」
+    expect(find.byIcon(Icons.check), findsOneWidget);
+    expect(find.byKey(const Key('bdc_write_fullscreen_btn')), findsOneWidget);
+    // 三段控件里没有「拼写练习」这种额外入口了
+    expect(find.text('拼写'), findsNothing);
+
+    // 默认不弹键盘；点一下输入框才切到键盘打字
+    expect(tester.testTextInput.isVisible, false);
+    await tester.tap(find.byKey(const Key('bdc_typing_input')));
+    await tester.pump();
+    expect(tester.testTextInput.isVisible, true);
   });
 
-  testWidgets('写档：汉译英是拼写面板，没有提交按钮', (tester) async {
+  testWidgets('「全屏」把写档放大成之前的整页手写板', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+            studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write));
+
+    await tester.tap(find.byKey(const Key('bdc_write_fullscreen_btn')));
+    await tester.pumpAndSettle();
+
+    // 整页手写板的输入框提示（卡片内写档提示的是"点这里用键盘写释义"）
+    expect(find.text('在此键入中文释义...'), findsOneWidget);
+  });
+
+  testWidgets('写档：汉译英是英文手写，没有提交，全屏图标仍在', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
     await _pumpPage(
         tester,
@@ -204,9 +230,40 @@ void main() {
     expect(find.text('请拼写单词：'), findsOneWidget);
     expect(find.text('请说出单词发音：'), findsNothing);
     expect(find.byKey(const Key('bdc_typing_input')), findsOneWidget);
-    expect(find.byType(HandwritingBoard), findsNothing);
-    // 英文拼写打对即判，不需要"提交"
-    expect(find.text('提交'), findsNothing);
+    expect(find.byType(HandwritingBoard), findsOneWidget);
+    // 英文停笔即自动识别判题，不需要「提交」
+    expect(find.byIcon(Icons.check), findsNothing);
+    expect(find.byKey(const Key('bdc_write_fullscreen_btn')), findsOneWidget);
+  });
+
+  testWidgets('英译汉：题目区单词旁的铅笔直接进全屏拼写练习', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+            studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.speak));
+
+    // 说/选/写三档都能看到它（它只练这个词怎么拼，不改变当前作答方式）
+    expect(find.byKey(const Key('bdc_word_spelling_practice_btn')),
+        findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('bdc_word_spelling_practice_btn')));
+    await tester.pumpAndSettle();
+
+    // 打开的是全屏英文拼写板（不是中文默写）
+    expect(find.text('请拼写单词：'), findsOneWidget);
+    expect(find.text('在此键入单词...'), findsOneWidget);
+  });
+
+  testWidgets('汉译英：题目区没有拼写练习的铅笔', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+            studyStep: StudyStep.ch2En.json, answerMode: AnswerMode.choose));
+
+    expect(find.byKey(const Key('bdc_word_spelling_practice_btn')),
+        findsNothing);
   });
 
   testWidgets('例句环节只有 说/选 两档，没有「写」', (tester) async {

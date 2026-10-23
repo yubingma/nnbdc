@@ -17,6 +17,17 @@ class HandwritingBoard extends StatefulWidget {
   final VoidCallback? onSwipeUp;
   final VoidCallback? onSwipeDown;
   final bool showCloseButton;
+
+  /// 画布底部操作栏要不要「关闭」按钮。
+  ///
+  /// 整页手写板保留它（那是用户最常用的退出方式之一）；
+  /// 内嵌进答题卡的写档没有"关闭板子"这回事，传 false。
+  final bool showCloseControl;
+
+  /// 操作栏是否紧凑：内嵌进答题卡时用（只有图标、无文字、无毛玻璃底衬与阴影），
+  /// 免得三颗胶囊把卡片里本就有限的书写面积吃掉一大块。
+  final bool compactControls;
+
   final bool showHeader;
   final bool useBoxDecoration;
   final bool showCanvasButtons;
@@ -32,6 +43,8 @@ class HandwritingBoard extends StatefulWidget {
     this.onSwipeUp,
     this.onSwipeDown,
     this.showCloseButton = true,
+    this.showCloseControl = true,
+    this.compactControls = false,
     this.showHeader = true,
     this.useBoxDecoration = true,
     this.showCanvasButtons = true,
@@ -553,6 +566,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   onSwipeUp: widget.onSwipeUp,
                   onSwipeDown: widget.onSwipeDown,
                   showButtons: widget.showCanvasButtons,
+                  showCloseControl: widget.showCloseControl,
+                  compactControls: widget.compactControls,
                   onCancel: widget.onCancel,
                   enableNavigationGestures: widget.enableNavigationGestures,
                   smartRightZoneWidth: widget.smartRightZoneWidth,
@@ -587,6 +602,12 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback? onSwipeUp;
   final VoidCallback? onSwipeDown;
   final bool showButtons;
+
+  /// 底部操作栏要不要「关闭」：内嵌在答题卡里时没有"关闭板子"这回事
+  final bool showCloseControl;
+
+  /// 操作栏紧凑模式：只画图标，不画文字、毛玻璃底衬与阴影
+  final bool compactControls;
   final VoidCallback? onCancel;
   final bool enableNavigationGestures;
   final double smartRightZoneWidth;
@@ -613,6 +634,8 @@ class _HandwritingCanvas extends StatefulWidget {
     this.onSwipeUp,
     this.onSwipeDown,
     required this.showButtons,
+    this.showCloseControl = true,
+    this.compactControls = false,
     this.onCancel,
     this.enableNavigationGestures = true,
     this.smartRightZoneWidth = 0.0,
@@ -683,6 +706,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
     required Color background,
     required Color border,
     bool busy = false,
+    bool compact = false,
   }) {
     return Positioned(
       left: left,
@@ -706,38 +730,52 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 color: background,
                 borderRadius: BorderRadius.circular(height / 2),
                 border: Border.all(color: border, width: 0.8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.08),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                boxShadow: compact
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(alpha: isDark ? 0.28 : 0.08),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: busy
-                        ? CircularProgressIndicator(
-                            strokeWidth: 2, color: foreground)
-                        : Icon(icon, color: foreground, size: 20),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: foreground,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.2,
-                      decoration: TextDecoration.none,
+              child: compact
+                  ? Center(
+                      child: busy
+                          ? SizedBox(
+                              height: 14,
+                              width: 14,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: foreground),
+                            )
+                          : Icon(icon, color: foreground, size: 16),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: busy
+                              ? CircularProgressIndicator(
+                                  strokeWidth: 2, color: foreground)
+                              : Icon(icon, color: foreground, size: 20),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            color: foreground,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.2,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),
@@ -806,10 +844,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         final Color controlBorder = isDark
             ? Colors.white.withValues(alpha: 0.12)
             : Colors.black.withValues(alpha: 0.06);
-        final double zoneHeight = isNarrow ? 56 : 65;
-        final double bottomMargin = isNarrow ? 10 : 16; 
+        final bool compact = widget.compactControls;
+        final double zoneHeight = compact ? 30 : (isNarrow ? 56 : 65);
+        final double bottomMargin = compact ? 6 : (isNarrow ? 10 : 16); 
         // 让操作按钮在底部操作栏内垂直居中（操作栏高度 = zoneHeight + bottomMargin + 10）
-        final double zoneTop = height - zoneHeight - bottomMargin - 10 + (bottomMargin + 10) / 2;
+        final double zoneTop = compact
+            ? height - zoneHeight - bottomMargin
+            : height - zoneHeight - bottomMargin - 10 + (bottomMargin + 10) / 2;
 
         // 底部操作按钮（自左向右）。中文默写（手动提交）额外增加「提交」按钮，
         // 识别/判题进行中它显示识别中并屏蔽点击（一次点击只判一次，用户也看得见"提交已受理"）。
@@ -818,18 +859,19 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
           (icon: Icons.undo_outlined, label: '回退', onTap: _handleUndo, busy: false),
           if (widget.manualSubmit)
             (icon: Icons.check, label: '提交', onTap: _handleSubmit, busy: widget.isRecognizing),
-          (icon: Icons.close, label: '关闭', onTap: () => widget.onCancel?.call(), busy: false),
+          if (widget.showCloseControl)
+            (icon: Icons.close, label: '关闭', onTap: () => widget.onCancel?.call(), busy: false),
           if (hasHint)
             (icon: Icons.lightbulb_outline, label: '提示', onTap: () => widget.onHint?.call(), busy: false),
         ];
 
-        const double controlGap = 10;
-        final double controlSide = isNarrow ? 8 : 12;
+        final double controlGap = compact ? 8 : 10;
+        final double controlSide = compact ? 8 : (isNarrow ? 8 : 12);
         final int controlCount = controls.length;
         // 依据按钮数量自适应宽度，确保全部按钮居中且不超出屏幕
         final double zoneWidth =
             ((width - controlSide * 2 - controlGap * (controlCount - 1)) / controlCount)
-                .clamp(56.0, 110.0);
+                .clamp(compact ? 38.0 : 56.0, compact ? 46.0 : 110.0);
         final double totalWidth =
             zoneWidth * controlCount + controlGap * (controlCount - 1);
         final double startX = width / 2 - totalWidth / 2;
@@ -932,7 +974,9 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               
               if (widget.showButtons) ...[
                 // 底部操作栏：局部毛玻璃面板，把底下透出的列表文字晕成朦胧色块，避免与按钮纠缠
-                Positioned(
+                // （紧凑模式只有几颗小图标，不需要这条底衬）
+                if (!compact)
+                  Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
@@ -976,6 +1020,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     label: controls[i].label,
                     onTap: controls[i].onTap,
                     busy: controls[i].busy,
+                    compact: compact,
                     isDark: isDark,
                     foreground: controlFg,
                     background: controlBg,
@@ -1135,7 +1180,36 @@ class _CellGuidePainter extends CustomPainter {
     final bool vertical = size.height > size.width;
     final double cellMajor = (vertical ? size.height : size.width) / cellCount;
 
-    // 高亮当前格（浅色填充 + 主题色描边）
+    // 多格（中文默写）时先把格子本身画出来：只有当前格有框的话，另一格看起来像一片空白，
+    // 用户会以为那里不能写（英译汉两格默认只高亮左边那格，就是这个坑）。
+    if (cellCount > 1) {
+      final Color gridColor = (isDark ? Colors.white : Colors.black)
+          .withValues(alpha: isDark ? 0.22 : 0.14);
+      // 整块书写区的外框（圆角与答题卡一致）+ 格间分隔线：每一格始终都看得出是个格子
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromLTWH(0, 0, size.width, size.height).deflate(0.6),
+            const Radius.circular(12)),
+        Paint()
+          ..color = gridColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2,
+      );
+      final Paint line = Paint()
+        ..color = gridColor
+        ..strokeWidth = 1.0;
+      for (int i = 1; i < cellCount; i++) {
+        if (vertical) {
+          final y = cellMajor * i;
+          canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
+        } else {
+          final x = cellMajor * i;
+          canvas.drawLine(Offset(x, 0), Offset(x, size.height), line);
+        }
+      }
+    }
+
+    // 当前格：浅色填充 + 主题色描边，告诉用户"现在在这一格写"
     final Rect activeRect = vertical
         ? Rect.fromLTWH(0, activeCell * cellMajor, size.width, cellMajor)
         : Rect.fromLTWH(activeCell * cellMajor, 0, cellMajor, size.height);
@@ -1147,20 +1221,6 @@ class _CellGuidePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
     canvas.drawRect(activeRect.deflate(1.0), activeBorder);
-
-    // 分隔线
-    final line = Paint()
-      ..color = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.18)
-      ..strokeWidth = 1.0;
-    for (int i = 1; i < cellCount; i++) {
-      if (vertical) {
-        final y = cellMajor * i;
-        canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
-      } else {
-        final x = cellMajor * i;
-        canvas.drawLine(Offset(x, 0), Offset(x, size.height), line);
-      }
-    }
   }
 
   @override
