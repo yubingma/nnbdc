@@ -17,6 +17,9 @@ class _FailingMicAsr implements Asr {
   int stopMicrophoneCallCount = 0;
 
   @override
+  void Function()? onMicrophoneStopped;
+
+  @override
   AsrState get state => AsrState.unknown;
 
   @override
@@ -46,6 +49,53 @@ class _FailingMicAsr implements Asr {
   @override
   Future<void> stopMicrophone() async {
     stopMicrophoneCallCount++;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('测试桩未实现: ${invocation.memberName}');
+}
+
+/// 模拟"页面绕过状态机直接关麦"：真机上 `Asr.stopMicrophone()` 物理停掉采集流后，
+/// 必须通过 [Asr.onMicrophoneStopped] 告诉状态机硬件已经不在 record 了。
+class _ExternalStopAsr implements Asr {
+  int startMicrophoneCallCount = 0;
+  int stopMicrophoneCallCount = 0;
+  int startAsrCallCount = 0;
+
+  @override
+  void Function()? onMicrophoneStopped;
+
+  @override
+  AsrState get state => AsrState.stopped;
+
+  @override
+  AsrLanguage? get currentLanguage => null;
+
+  @override
+  Future<void> updateLanguage(AsrLanguage language) async {}
+
+  @override
+  void addStateListener(Function(AsrState) listener) {}
+
+  @override
+  void removeStateListener(Function(AsrState) listener) {}
+
+  @override
+  Future<void> startMicrophone() async {
+    startMicrophoneCallCount++;
+  }
+
+  @override
+  Future<void> stopMicrophone() async {
+    stopMicrophoneCallCount++;
+    onMicrophoneStopped?.call();
+  }
+
+  @override
+  Future<void> startAsr(AsrLanguage language,
+      {List<String>? phrases, bool playHintSound = true}) async {
+    startAsrCallCount++;
   }
 
   @override
@@ -106,6 +156,59 @@ void main() {
 
     expect(asr.startAsrCallCount, 0,
         reason: '开麦没成功就启动识别，原生必然回 NOT_RECORDING，同一次失败被报成两次');
+  });
+
+  // 线上现场：「写完一个词之后，接下来的单词全都用不了语音」。
+  // 写档的输入框一聚焦，页面就直接调 Asr.stopMicrophone() 物理关麦；状态机若还记着 record，
+  // 下次进说档就被当成"麦克风还热着"跳过 startMicrophone()，识别器空转。
+  group('页面直接关麦后状态机必须同步', () {
+    test('直接关麦后状态机回到 idle，再进说档必须重新开麦', () async {
+      final asr = _ExternalStopAsr();
+      final controller = StudyAudioSessionController.instance;
+      controller.debugSetAsrForTesting(asr);
+
+      expect(await controller.transitTo(AudioMode.record), isTrue);
+      expect(controller.activeMode, AudioMode.record);
+      expect(asr.startMicrophoneCallCount, 1);
+
+      // BDC 页输入框聚焦时就是这么关的（物理关麦，不经状态机）
+      await asr.stopMicrophone();
+      expect(controller.activeMode, AudioMode.idle,
+          reason: '硬件已经停了，状态机不能还认为自己处在 record');
+
+      await controller.startSession(
+        language: AsrLanguage.chinese,
+        phrases: const ['苹果'],
+        isSpeakMode: true,
+      );
+      expect(asr.startMicrophoneCallCount, 2,
+          reason: '再进说档必须真的重新开麦，否则界面上"正在倾听"却一句都识别不到');
+      expect(asr.startAsrCallCount, 1);
+    });
+
+    test('Asr 物理关麦成功后要通知状态机', () async {
+      mockChannel('nnbdc/asr_commands', (call) async => null);
+      final asr = Asr();
+      var notified = 0;
+      asr.onMicrophoneStopped = () => notified++;
+
+      await asr.stopMicrophone();
+
+      expect(notified, 1, reason: '关麦是硬件事实，状态机必须收到通知');
+    });
+
+    test('原生关麦失败时不通知（麦克风可能还在录）', () async {
+      mockChannel('nnbdc/asr_commands', (call) async {
+        throw PlatformException(code: 'STOP_FAILED', message: '关麦失败');
+      });
+      final asr = Asr();
+      var notified = 0;
+      asr.onMicrophoneStopped = () => notified++;
+
+      await asr.stopMicrophone();
+
+      expect(notified, 0);
+    });
   });
 
   group('原生音频现场快照', () {

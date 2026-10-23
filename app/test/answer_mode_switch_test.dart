@@ -72,8 +72,7 @@ class MockBdcNotifier extends BdcNotifier {
   }
 
   @override
-  Future<void> loadData(BuildContext? context,
-      {bool isAutoTest = false}) async {}
+  Future<void> loadData(BuildContext? context, {bool isAutoTest = false}) async {}
 }
 
 (WordVo, GetWordResult) _createTestData() {
@@ -111,6 +110,22 @@ class MockBdcNotifier extends BdcNotifier {
   return (testWord, mockGetWordResult);
 }
 
+BdcState _stateWith(
+  WordVo word,
+  GetWordResult result, {
+  required String studyStep,
+  required AnswerMode answerMode,
+}) {
+  return const BdcState().copyWith(
+    dataLoaded: true,
+    word: word,
+    wordWrapper: WordWrapper(word, null),
+    currentGetWordResult: result,
+    studyStep: studyStep,
+    answerMode: answerMode,
+  );
+}
+
 Future<void> _pumpPage(WidgetTester tester, BdcState state) async {
   final mockAsr = MockAsr();
   StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
@@ -129,7 +144,7 @@ Future<void> _pumpPage(WidgetTester tester, BdcState state) async {
     ),
   );
   await tester.pump();
-  // 输入框 autofocus 在下一帧才真正拿到焦点，而焦点变化会触发一次重建
+  // 写档的输入框 autofocus 在下一帧才真正拿到焦点，而焦点变化会触发一次重建
   await tester.pump(const Duration(milliseconds: 50));
 }
 
@@ -144,18 +159,30 @@ void main() {
     PlatformUtils.englishAsrSupportedOverride = null;
   });
 
+  testWidgets('单词环节三档都摆在答题卡上，默认「说」', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+            studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.speak));
+
+    expect(find.byKey(const Key('bdc_answer_mode_write')), findsOneWidget);
+    expect(find.byKey(const Key('bdc_answer_mode_speak')), findsOneWidget);
+    expect(find.byKey(const Key('bdc_answer_mode_choose')), findsOneWidget);
+    // 说档：题面是"说"，写面板不出现
+    expect(find.text('请说出中文释义：'), findsOneWidget);
+    expect(find.byKey(const Key('bdc_typing_input')), findsNothing);
+  });
+
   testWidgets('切到「写」：英译汉直接是键盘打字面板，不再"请说"', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
-    final state = const BdcState().copyWith(
-      dataLoaded: true,
-      word: testWord,
-      wordWrapper: WordWrapper(testWord, null),
-      currentGetWordResult: result,
-      studyStep: StudyStep.en2Ch.json,
-      answerMode: AnswerMode.write,
-    );
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+            studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.speak));
 
-    await _pumpPage(tester, state);
+    await tester.tap(find.byKey(const Key('bdc_answer_mode_write')));
+    await tester.pumpAndSettle();
 
     // 顶栏说的是"写"而不是"说"
     expect(find.text('请写出中文释义：'), findsOneWidget);
@@ -167,18 +194,12 @@ void main() {
     expect(find.text('提交'), findsOneWidget);
   });
 
-  testWidgets('切到「写」：汉译英是拼写面板，没有提交按钮', (tester) async {
+  testWidgets('写档：汉译英是拼写面板，没有提交按钮', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
-    final state = const BdcState().copyWith(
-      dataLoaded: true,
-      word: testWord,
-      wordWrapper: WordWrapper(testWord, null),
-      currentGetWordResult: result,
-      studyStep: StudyStep.ch2En.json,
-      answerMode: AnswerMode.write,
-    );
-
-    await _pumpPage(tester, state);
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+            studyStep: StudyStep.ch2En.json, answerMode: AnswerMode.write));
 
     expect(find.text('请拼写单词：'), findsOneWidget);
     expect(find.text('请说出单词发音：'), findsNothing);
@@ -186,5 +207,18 @@ void main() {
     expect(find.byType(HandwritingBoard), findsNothing);
     // 英文拼写打对即判，不需要"提交"
     expect(find.text('提交'), findsNothing);
+  });
+
+  testWidgets('例句环节只有 说/选 两档，没有「写」', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+            studyStep: StudyStep.enSentence2Ch.json,
+            answerMode: AnswerMode.choose));
+
+    expect(find.text('说'), findsOneWidget);
+    expect(find.text('选'), findsOneWidget);
+    expect(find.byKey(const Key('bdc_answer_mode_write')), findsNothing);
   });
 }

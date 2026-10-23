@@ -82,6 +82,7 @@ class StudyAudioSessionController {
       }).catchError((_) {});
     }
     _asr.addStateListener(_onAsrStateChange);
+    _asr.onMicrophoneStopped = _onMicrophoneStoppedOutsideStateMachine;
   }
 
   /// 发音托底状态监听器，提供非阻塞、零打扰的 UI 局部微交互反馈
@@ -232,6 +233,7 @@ class StudyAudioSessionController {
     _asr.removeStateListener(_onAsrStateChange);
     _asr = asr;
     _asr.addStateListener(_onAsrStateChange);
+    _asr.onMicrophoneStopped = _onMicrophoneStoppedOutsideStateMachine;
   }
 
   @visibleForTesting
@@ -1678,6 +1680,18 @@ class StudyAudioSessionController {
     } else if (state == AsrState.stopped) {
       _unsubscribeMeter();
     }
+  }
+
+  /// 麦克风已被物理关停（多由页面直接调 `Asr.stopMicrophone()` 触发）。
+  ///
+  /// 状态机唯一的账本就是 [_activeMode]：硬件既然已经停了，record 就必须让位给
+  /// idle，否则下一次进说档会走进 [transitTo] 的"同一模式热复用"短路，
+  /// 跳过 `startMicrophone()` —— iOS 回 NOT_RECORDING、Android 干脆没有采集流，
+  /// 用户看到"正在倾听"却一句都识别不到。见 `Asr.onMicrophoneStopped`。
+  void _onMicrophoneStoppedOutsideStateMachine() {
+    if (_activeMode != AudioMode.record) return;
+    debugPrint('🔊 [AudioEngine] 麦克风已被物理关停，状态机同步回 idle');
+    _activeMode = AudioMode.idle;
   }
 
   void _subscribeMeter() {

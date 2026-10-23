@@ -463,8 +463,14 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
     {
       final int expectedTabLength = AnswerModes.forStep(state.studyStep).length;
-      if (_tabController == null || _tabController!.length != expectedTabLength) {
-        _resetTabController(expectedTabLength);
+      final int expectedIndex = AnswerModes.indexOf(state.studyStep, state.answerMode);
+      // 档数变了要换控制器；档数没变但当前页与答题方式不一致（首帧、档位被夹回）也要摆正，
+      // 否则会先闪一下"别的答题方式"再跳回来
+      if (_tabController == null ||
+          _tabController!.length != expectedTabLength ||
+          (_tabController!.index != expectedIndex &&
+              !_tabController!.indexIsChanging)) {
+        _resetTabController(expectedTabLength, index: expectedIndex);
       }
     }
 
@@ -721,15 +727,16 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   }
 
   /// 换一个档数不同的 TabController：档数永远是唯一的入口，监听器也只在这里挂一次。
-  void _resetTabController(int length) {
+  void _resetTabController(int length, {int? index}) {
     final BdcState current = ref.read(bdcNotifierProvider);
-    final int initialIndex = AnswerModes.indexOf(
-        current.studyStep, AnswerModes.coerce(current.studyStep, current.answerMode));
+    final int target = index ??
+        AnswerModes.indexOf(
+            current.studyStep,
+            AnswerModes.coerce(current.studyStep, current.answerMode));
+    final int initialIndex = target < length ? target : length - 1;
     _tabController?.dispose();
     _tabController = TabController(
-        length: length,
-        vsync: this,
-        initialIndex: initialIndex < length ? initialIndex : length - 1);
+        length: length, vsync: this, initialIndex: initialIndex);
     _tabController!.addListener(_onTabControllerChanged);
   }
 }

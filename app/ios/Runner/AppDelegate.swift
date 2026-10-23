@@ -977,9 +977,13 @@ import Accelerate
             
             if let error = error {
                 let nsError = error as NSError
-                // 1110: No speech detected, 1107: Speech recognition interrupted
+                // 1110 没听到说话 / 1107 识别被打断：任务在系统侧已经结束，但这不等于"用户不听了"。
+                // 这里必须和 isFinal 走同一条重建路径 —— 过去只打一行日志就结束，request / task 原样留着，
+                // Flutter 侧 AsrState 还是 started（startAsr 因此一直短路），界面上「正在倾听」、
+                // 波形也随电平在动，却再也不会有任何识别结果：用户看到的就是"语音罢工"，只能改用键盘。
                 if nsError.domain == "kAFAssistantErrorDomain" && (nsError.code == 1110 || nsError.code == 1107) {
-                    print("IOS: [ASR] Task callback - No speech or interrupted (code: \(nsError.code))")
+                    print("IOS: [ASR] Task callback - No speech or interrupted (code: \(nsError.code)), restarting")
+                    shouldRestart = true
                 } else if nsError.code == 301 {
                     print("IOS: [ASR] Task callback - Recognition request was canceled (code: 301)")
                 } else {

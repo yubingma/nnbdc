@@ -84,6 +84,13 @@ class MePageState extends State<MePage> implements RefreshableTab {
     _isDirty = false;
   }
 
+  /// 把统计卡标记为过期：下次切到「我的」时重算，而不是继续显示上次的快照。
+  void _markStatsDirty(String reason) {
+    if (_isDirty) return;
+    _isDirty = true;
+    Global.logger.d('📊 MePage 统计已过期（$reason），下次进入「我的」时重算');
+  }
+
   var isDarkMode = false;
   final email = TextEditingController();
   final password = TextEditingController();
@@ -107,6 +114,10 @@ class MePageState extends State<MePage> implements RefreshableTab {
   StreamSubscription<DictDownloadCompletedEvent>? _dictDownloadCompletedSub;
   StreamSubscription<LearningDictChangedEvent>? _learningDictChangedSub;
   StreamSubscription<DictWordsChangedEvent>? _dictWordsChangedSub;
+  StreamSubscription<TodayStudyListChangedEvent>? _todayStudyListChangedSub;
+  StreamSubscription<TodayStudyPlanFinishedEvent>? _todayStudyPlanFinishedSub;
+  StreamSubscription<WordMasteredEvent>? _wordMasteredSub;
+  StreamSubscription<WordUnMasteredEvent>? _wordUnMasteredSub;
 
   /// 云同步状态
   SyncStatus _syncStatus = SyncStatus.idle;
@@ -368,6 +379,19 @@ class MePageState extends State<MePage> implements RefreshableTab {
       }
     });
 
+    // 学习进度、打卡、掌握词这些会进统计卡的事实：本页在 IndexedStack 里一直活着，
+    // 不把过期标出来，下次切回来就会继续显示几天前那份快照（打卡天数、专注时光、
+    // 30 天色块全都不动）。这里只记脏，不在这里重算 —— 事件发生在别的页面时，
+    // 立刻统计一遍纯属白算，切回「我的」时由 refreshData() 统一刷新。
+    _todayStudyListChangedSub = EventBus.onTodayStudyListChanged().listen(
+        (_) => _markStatsDirty('今日学习进度变化'));
+    _todayStudyPlanFinishedSub = EventBus.onTodayStudyPlanFinished().listen(
+        (_) => _markStatsDirty('今日打卡完成'));
+    _wordMasteredSub = EventBus.onWordMastered().listen(
+        (_) => _markStatsDirty('标记单词掌握'));
+    _wordUnMasteredSub = EventBus.onWordUnMastered().listen(
+        (_) => _markStatsDirty('取消单词掌握'));
+
     // 监听云同步状态变化（同步中、同步完成、同步失败响应式联动）
     SyncLogService().syncStatusNotifier.addListener(_onSyncStatusChanged);
 
@@ -399,6 +423,12 @@ class MePageState extends State<MePage> implements RefreshableTab {
 
     // 取消词表单词数变化事件监听
     _dictWordsChangedSub?.cancel();
+
+    // 取消学习进度、打卡、掌握词的事件监听
+    _todayStudyListChangedSub?.cancel();
+    _todayStudyPlanFinishedSub?.cancel();
+    _wordMasteredSub?.cancel();
+    _wordUnMasteredSub?.cancel();
 
     // 取消云同步状态监听
     SyncLogService().syncStatusNotifier.removeListener(_onSyncStatusChanged);
@@ -3284,6 +3314,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
   void _onSyncStatusChanged() {
     if (mounted) {
       final newStatus = SyncLogService().syncStatusNotifier.value;
+      // 一次同步收尾（成功或失败）都可能刚把别的设备的数据拉下来：统计卡要重算。
+      // 这里只记脏、不直接 loadData —— 本页 loadData 会再次发起同步，立刻重算等于自己叫醒自己。
+      if (newStatus != SyncStatus.syncing) _markStatsDirty('云同步收尾');
       if (_syncStatus != newStatus || _isLastSyncFailed != (newStatus == SyncStatus.failed)) {
         setState(() {
           _syncStatus = newStatus;

@@ -230,7 +230,8 @@ class BdcNotifier extends _$BdcNotifier {
   BdcState build() {
     asr = ref.watch(asrProvider);
     StudyAudioSessionController.instance.registerNotifier(this);
-    // 录音通道要不要保温由下面的「语音答题」开关决定，这里不再无条件打开
+    // 录音通道的保温意图（keepMicrophoneWarm）在 handleWord/切档时按答题方式设置，
+    // 这里不再无条件打开：写档、选档没有"马上要开麦"这回事
     
     // Initialize args
     final argsJson = Prefs.read<String>("BdcPageArgs");
@@ -3514,7 +3515,13 @@ class BdcNotifier extends _$BdcNotifier {
 
     _isSoundPlayingOrPending = false; // 播音已结束，释放状态保护
 
-    if (startAsrWhenFinish && !_isDisposed) {
+    // 播放期间可能刚切到说档：那一刻 _handleTabChangeForAsr() 被播放保护挡回，
+    // 而本次播放是按"播放开始时的答题方式"决定开不开麦的（startAsrWhenFinish），
+    // 若只认它，说档就会一直没开麦，用户怎么等都没有"正在倾听"。
+    // 播完必须按"现在"的答题方式补一次；例句环节开口由按住控制，不在这里动。
+    final bool userIsSpeakingNow =
+        _isSpeaking && !AnswerModes.isSentenceStep(state.studyStep);
+    if (!_isDisposed && (startAsrWhenFinish || userIsSpeakingNow)) {
       debugPrint('⏱️ [Latency-BDC] 播放完自动衔接 ASR...');
       _handleTabChangeForAsr();
     }

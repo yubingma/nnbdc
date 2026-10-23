@@ -28,6 +28,9 @@ class MockAsr implements Asr {
   final List<Function(AsrState)> _stateListeners = [];
 
   @override
+  void Function()? onMicrophoneStopped;
+
+  @override
   AsrState get state => _state;
 
   @override

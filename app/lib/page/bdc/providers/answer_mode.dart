@@ -32,7 +32,7 @@ enum AnswerMode {
 ///   另一套判分口径（60 分 + 核心词命中）去比，和"按住说出来"不是一杆秤。
 /// - 单词列表环节没有答题，档位只为让页面有个合法值。
 class AnswerModes {
-  /// 这个环节的语音答题能不能用（平台支持 + 环节本身有对应的说模式）。
+  /// 这个环节能不能用「说」（平台支持 + 环节本身有对应的说模式）。
   static bool asrAvailableFor(String? studyStep) {
     if (!PlatformUtils.isAsrSupported()) return false;
     if (studyStep == StudyStep.ch2En.json ||

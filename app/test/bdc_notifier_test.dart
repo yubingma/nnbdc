@@ -43,6 +43,9 @@ class MockAsr implements Asr {
   int stopAsrCallCount = 0;
 
   @override
+  void Function()? onMicrophoneStopped;
+
+  @override
   AsrState get state => _state;
 
   @override
@@ -284,6 +287,11 @@ void main() {
     );
     await db.usersDao.saveUser(testUser, false);
 
+    // 真机（iOS/Android）的默认前提：中英文语音识别都可用。
+    // 答题方式默认档、判题口径都跟着它走，缺了它会把"说"档当成不存在。
+    PlatformUtils.asrSupportedOverride = true;
+    PlatformUtils.englishAsrSupportedOverride = true;
+
     Global.currentUserId = 'test_user_id';
     Global.updateUserCache(testUser);
     SharedPreferences.setMockInitialValues({});
@@ -378,6 +386,8 @@ void main() {
   });
 
   tearDown(() async {
+    PlatformUtils.asrSupportedOverride = null;
+    PlatformUtils.englishAsrSupportedOverride = null;
     ThrottledDbSyncService().reset();
     StudyCacheManager().clear();
     await Future.delayed(const Duration(milliseconds: 50));

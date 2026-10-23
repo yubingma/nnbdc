@@ -27,6 +27,9 @@ class MockAsr implements Asr {
   int stopAsrCallCount = 0;
 
   @override
+  void Function()? onMicrophoneStopped;
+
+  @override
   AsrState get state => _state;
 
   @override

@@ -57,6 +57,16 @@ class Asr {
   /// 当前绑定的 ASR 结果监听器
   void Function(dynamic asrResult)? _currentListener;
 
+  /// 物理麦克风被关停后的通知，由音频状态机
+  /// （`StudyAudioSessionController`）注册。
+  ///
+  /// 页面里直接调 [stopMicrophone] 是合法的（输入框聚焦、离开学习页、点底栏的随身听入口），
+  /// 但硬件一旦停掉，状态机就不能还认为自己在 record：它会在下次进说档时把
+  /// "麦克风还热着"当真，跳过 `startMicrophone()`。于是 iOS 原生回 NOT_RECORDING
+  /// （用户点什么都是"语音未就绪"），Android 连错误都没有 —— 识别器在跑、采集流没开，
+  /// 界面上"正在倾听"却一句都识别不到。所以关麦必须走这个通知，把状态机的账同步过来。
+  void Function()? onMicrophoneStopped;
+
   /// 当前 ASR 使用的语言，用于在启动时判断是否需要切换语言
   AsrLanguage? _currentLanguage;
 
@@ -667,6 +677,7 @@ class Asr {
             .invokeMethod('stopMicrophone')
             .timeout(const Duration(seconds: 3));
         debugPrint('💡 [ASR] stopMicrophone() 穿透调用完成，原生引擎已释放。');
+        onMicrophoneStopped?.call();
       } catch (e) {
         Global.logger.e('ASR: Exception during stopMicrophone ($state passthrough): $e');
       } finally {
@@ -685,6 +696,7 @@ class Asr {
           .invokeMethod('stopMicrophone')
           .timeout(const Duration(seconds: 3));
       Global.logger.i('ASR: Microphone and engine stopped successfully');
+      onMicrophoneStopped?.call();
     } catch (e) {
       Global.logger.e('ASR: Exception during stopMicrophone: $e');
     } finally {
