@@ -596,6 +596,7 @@ class BdcNotifier extends _$BdcNotifier {
         final wordUIState = WordUIState(
           hasFinishedAnswering: stateJson['hasFinishedAnswering'] ?? false,
           canLeaveCurrWord: stateJson['canLeaveCurrWord'] ?? false,
+          isScorePassed: stateJson['isScorePassed'] ?? false,
           showSentenceTranslation: stateJson['showSentenceTranslation'] ?? false,
           showSentenceWordMeaning: stateJson['showSentenceWordMeaning'] ?? false,
           selectedAnswerIndex: stateJson['selectedAnswerIndex'],
@@ -1969,6 +1970,7 @@ class BdcNotifier extends _$BdcNotifier {
         'state': {
           'hasFinishedAnswering': uiState.hasFinishedAnswering,
           'canLeaveCurrWord': uiState.canLeaveCurrWord,
+          'isScorePassed': uiState.isScorePassed,
           'showSentenceTranslation': uiState.showSentenceTranslation,
           'showSentenceWordMeaning': uiState.showSentenceWordMeaning,
           'selectedAnswerIndex': uiState.selectedAnswerIndex,
@@ -2011,6 +2013,7 @@ class BdcNotifier extends _$BdcNotifier {
           'state': {
             'hasFinishedAnswering': uiState.hasFinishedAnswering,
             'canLeaveCurrWord': uiState.canLeaveCurrWord,
+            'isScorePassed': uiState.isScorePassed,
             'showSentenceTranslation': uiState.showSentenceTranslation,
             'showSentenceWordMeaning': uiState.showSentenceWordMeaning,
             'selectedAnswerIndex': uiState.selectedAnswerIndex,
@@ -2089,6 +2092,8 @@ class BdcNotifier extends _$BdcNotifier {
         state = state.copyWith(
           hasFinishedAnswering: uiState.hasFinishedAnswering,
           canLeaveCurrWord: uiState.canLeaveCurrWord,
+          // 「写对并通过」也要还原：否则回看时输入框会重新盖住正确答案
+          isScorePassed: uiState.isScorePassed,
           showSentenceTranslation: uiState.showSentenceTranslation,
           showSentenceWordMeaning: uiState.showSentenceWordMeaning,
           selectedAnswerIndex: uiState.selectedAnswerIndex,
@@ -2120,6 +2125,7 @@ class BdcNotifier extends _$BdcNotifier {
           correctAnswerIndex: uiState.correctAnswerIndex,
           hasFinishedAnswering: false,
           canLeaveCurrWord: false,
+          isScorePassed: false,
           selectedAnswerIndex: null,
           currentScore: null,
           lastFsrsRating: uiState.lastFsrsRating,
@@ -2374,6 +2380,7 @@ class BdcNotifier extends _$BdcNotifier {
       studyStep: state.studyStep,
       hasFinishedAnswering: state.hasFinishedAnswering,
       canLeaveCurrWord: state.canLeaveCurrWord,
+      isScorePassed: state.isScorePassed,
       showSentenceTranslation: state.showSentenceTranslation,
       showSentenceWordMeaning: state.showSentenceWordMeaning,
       selectedAnswerIndex: state.selectedAnswerIndex,

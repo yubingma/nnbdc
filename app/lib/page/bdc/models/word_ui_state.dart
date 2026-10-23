@@ -8,6 +8,10 @@ class WordUIState {
   final String? studyStep;
   final bool hasFinishedAnswering;
   final bool canLeaveCurrWord;
+
+  /// 那一次呈现是否"写对并通过"。
+  /// 不存的话，回看时输入框会盖住正确答案：界面只知道"答完了"，不知道"过了"。
+  final bool isScorePassed;
   final bool showSentenceTranslation;
   final bool showSentenceWordMeaning;
   final int? selectedAnswerIndex;
@@ -40,6 +44,7 @@ class WordUIState {
     this.studyStep,
     required this.hasFinishedAnswering,
     required this.canLeaveCurrWord,
+    this.isScorePassed = false,
     required this.showSentenceTranslation,
     this.showSentenceWordMeaning = false,
     this.selectedAnswerIndex,

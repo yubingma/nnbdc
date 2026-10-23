@@ -48,14 +48,16 @@ class AnswerModes {
       studyStep == StudyStep.chSentence2En.json;
 
   /// 答题卡上有哪几档，顺序就是界面上从左到右的顺序。
+  ///
+  /// 「说」排第一：开口说才是这个 App 的核心玩法，写是备选。
   static List<AnswerMode> forStep(String? studyStep) {
     final bool speak = asrAvailableFor(studyStep);
     if (isSentenceStep(studyStep)) {
       return <AnswerMode>[if (speak) AnswerMode.speak, AnswerMode.choose];
     }
     return <AnswerMode>[
-      AnswerMode.write,
       if (speak) AnswerMode.speak,
+      AnswerMode.write,
       AnswerMode.choose,
     ];
   }

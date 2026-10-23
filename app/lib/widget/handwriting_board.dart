@@ -846,7 +846,8 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             : Colors.black.withValues(alpha: 0.06);
         final bool compact = widget.compactControls;
         final double zoneHeight = compact ? 30 : (isNarrow ? 56 : 65);
-        final double bottomMargin = compact ? 6 : (isNarrow ? 10 : 16); 
+        // 紧凑模式直接压在画布底边上：它下面紧跟着输入行，留多了中间会空出一条
+        final double bottomMargin = compact ? 0 : (isNarrow ? 10 : 16); 
         // 让操作按钮在底部操作栏内垂直居中（操作栏高度 = zoneHeight + bottomMargin + 10）
         final double zoneTop = compact
             ? height - zoneHeight - bottomMargin
@@ -960,6 +961,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   painter: _CellGuidePainter(
                     cellCount: widget.cellCount,
                     activeCell: widget.activeCellIndex,
+                    // 紧凑模式：格子的底边正好落在三颗小按钮的中线上，
+                    // 让它们"横跨"在边框上而不是缩在框里；整页模式仍按整块画布算。
+                    bottomInset:
+                        compact ? bottomMargin + zoneHeight / 2 : 0,
                     isDark: isDark,
                     accent: context.primaryColor,
                   ),
@@ -1164,21 +1169,28 @@ class _HandwritingPainter extends CustomPainter {
 class _CellGuidePainter extends CustomPainter {
   final int cellCount;
   final int activeCell;
+
+  /// 格子区域从画布底部往上收多少：操作的按钮压在这条底边上时，格子边框也不会被它们吃掉
+  final double bottomInset;
   final bool isDark;
   final Color accent;
 
   _CellGuidePainter({
     required this.cellCount,
     required this.activeCell,
+    this.bottomInset = 0,
     required this.isDark,
     required this.accent,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    // 格子区域＝画布去掉底部那条（compact 时正好收到三颗按钮的中线）
+    final double gridHeight = (size.height - bottomInset).clamp(0.0, size.height);
     // 竖屏（高>宽）为上下两格（行），横屏（宽>=高）为左右两格（列）
-    final bool vertical = size.height > size.width;
-    final double cellMajor = (vertical ? size.height : size.width) / cellCount;
+    final bool vertical = gridHeight > size.width;
+    final double cellMajor =
+        (vertical ? gridHeight : size.width) / cellCount;
 
     // 多格（中文默写）时先把格子本身画出来：只有当前格有框的话，另一格看起来像一片空白，
     // 用户会以为那里不能写（英译汉两格默认只高亮左边那格，就是这个坑）。
@@ -1188,7 +1200,7 @@ class _CellGuidePainter extends CustomPainter {
       // 整块书写区的外框（圆角与答题卡一致）+ 格间分隔线：每一格始终都看得出是个格子
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-            Rect.fromLTWH(0, 0, size.width, size.height).deflate(0.6),
+            Rect.fromLTWH(0, 0, size.width, gridHeight).deflate(0.6),
             const Radius.circular(12)),
         Paint()
           ..color = gridColor
@@ -1204,29 +1216,45 @@ class _CellGuidePainter extends CustomPainter {
           canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
         } else {
           final x = cellMajor * i;
-          canvas.drawLine(Offset(x, 0), Offset(x, size.height), line);
+          canvas.drawLine(Offset(x, 0), Offset(x, gridHeight), line);
         }
       }
     }
 
-    // 当前格：浅色填充 + 主题色描边，告诉用户"现在在这一格写"
+    // 当前格：浅色填充 + 主题色描边，告诉用户"现在在这一格写"。
+    //
+    // 贴着整块书写区外沿的那几个角必须跟着外框一起做圆角：格子本身是直角的，
+    // 直接画直角会在圆角外框（以及答题卡的圆角）旁边露出一个尖角，看着就是"既有圆角又有直角"。
     final Rect activeRect = vertical
         ? Rect.fromLTWH(0, activeCell * cellMajor, size.width, cellMajor)
-        : Rect.fromLTWH(activeCell * cellMajor, 0, cellMajor, size.height);
+        : Rect.fromLTWH(activeCell * cellMajor, 0, cellMajor, gridHeight);
+    const Radius cornerRadius = Radius.circular(12);
+    final bool roundTop = vertical ? activeCell == 0 : true;
+    final bool roundBottom = vertical ? activeCell == cellCount - 1 : true;
+    final bool roundLeft = vertical ? true : activeCell == 0;
+    final bool roundRight = vertical ? true : activeCell == cellCount - 1;
+    final RRect activeRRect = RRect.fromRectAndCorners(
+      activeRect,
+      topLeft: roundTop && roundLeft ? cornerRadius : Radius.zero,
+      topRight: roundTop && roundRight ? cornerRadius : Radius.zero,
+      bottomLeft: roundBottom && roundLeft ? cornerRadius : Radius.zero,
+      bottomRight: roundBottom && roundRight ? cornerRadius : Radius.zero,
+    );
     final highlight = Paint()
       ..color = accent.withValues(alpha: isDark ? 0.10 : 0.08);
-    canvas.drawRect(activeRect, highlight);
+    canvas.drawRRect(activeRRect, highlight);
     final activeBorder = Paint()
       ..color = accent.withValues(alpha: isDark ? 0.55 : 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
-    canvas.drawRect(activeRect.deflate(1.0), activeBorder);
+    canvas.drawRRect(activeRRect.deflate(1.0), activeBorder);
   }
 
   @override
   bool shouldRepaint(covariant _CellGuidePainter oldDelegate) =>
       oldDelegate.cellCount != cellCount ||
       oldDelegate.activeCell != activeCell ||
+      oldDelegate.bottomInset != bottomInset ||
       oldDelegate.isDark != isDark ||
       oldDelegate.accent != accent;
 }

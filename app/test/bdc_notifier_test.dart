@@ -16,6 +16,7 @@ import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/providers/answer_mode.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
+import 'package:nnbdc/page/bdc/models/word_ui_state.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
 import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
@@ -5310,6 +5311,46 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 1500));
     state = container.read(bdcNotifierProvider);
     expect(state.word?.id, isNot('word_1'), reason: '掌握毕业的单词走绿色通道自动切到下一个词');
+  });
+
+  test('BdcNotifier - 回看同环节快照时，「写对并通过」也要还原', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(keepAlive.close);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    final result = container.read(bdcNotifierProvider).currentGetWordResult!;
+
+    // 历史快照：同环节、已答对、达到通过条件
+    await notifier.handleWord(
+      result,
+      isFromBatchWordList: true,
+      uiStateOverride: WordUIState(
+        stepIndex: 0,
+        studyStep: 'En2Ch',
+        hasFinishedAnswering: true,
+        canLeaveCurrWord: true,
+        isScorePassed: true,
+        showSentenceTranslation: false,
+        answerMode: AnswerMode.write,
+        meaningText: '苹果',
+        correctAnswerIndex: 0,
+        hintTapCount: 0,
+      ),
+    );
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    final state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true);
+    // 少了这一项，回看时输入框会重新盖住正确答案
+    expect(state.isScorePassed, true,
+        reason: '回看要还原"写对并通过"，否则答案行被输入框顶掉');
+    await Future.delayed(const Duration(milliseconds: 100));
   });
 
   group('答题方式（写/说/选三档）', () {

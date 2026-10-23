@@ -170,7 +170,7 @@ void main() {
     expect(find.byKey(const Key('bdc_answer_mode_speak')), findsOneWidget);
     expect(find.byKey(const Key('bdc_answer_mode_choose')), findsOneWidget);
     // 说档：题面是"说"，写面板与写档才有的「全屏」都不出现
-    expect(find.text('请说出中文释义：'), findsOneWidget);
+    expect(find.text('说释义'), findsOneWidget);
     expect(find.byKey(const Key('bdc_typing_input')), findsNothing);
     expect(find.byKey(const Key('bdc_write_fullscreen_btn')), findsNothing);
   });
@@ -186,8 +186,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // 顶栏说的是"写"而不是"说"
-    expect(find.text('请写出中文释义：'), findsOneWidget);
-    expect(find.text('请说出中文释义：'), findsNothing);
+    expect(find.text('写释义'), findsOneWidget);
+    expect(find.text('说释义'), findsNothing);
     // 答题卡里直接就是手写板（不是整页接管），键盘不自动弹
     expect(find.byType(HandwritingBoard), findsOneWidget);
     final TextField field =
@@ -227,13 +227,87 @@ void main() {
         _stateWith(testWord, result,
             studyStep: StudyStep.ch2En.json, answerMode: AnswerMode.write));
 
-    expect(find.text('请拼写单词：'), findsOneWidget);
-    expect(find.text('请说出单词发音：'), findsNothing);
+    expect(find.text('拼单词'), findsOneWidget);
+    expect(find.text('说发音'), findsNothing);
     expect(find.byKey(const Key('bdc_typing_input')), findsOneWidget);
     expect(find.byType(HandwritingBoard), findsOneWidget);
     // 英文停笔即自动识别判题，不需要「提交」
     expect(find.byIcon(Icons.check), findsNothing);
     expect(find.byKey(const Key('bdc_write_fullscreen_btn')), findsOneWidget);
+  });
+
+  testWidgets('写档只是揭晓答案、没通过时，不补正确答案', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+                studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write)
+            .copyWith(hasFinishedAnswering: true, isScorePassed: false));
+
+    expect(find.text('n. 苹果'), findsNothing);
+    // 没通过时输入框还在，答案只在那条"揭晓"里给
+    expect(find.byKey(const Key('bdc_typing_input')), findsOneWidget);
+  });
+
+  testWidgets('写档答对并通过时，输入框原地换成正确答案', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+                studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write)
+            .copyWith(hasFinishedAnswering: true, isScorePassed: true));
+
+    // 复用输入行那一行的空间：输入框让位，答案顶上来（底下那行留给测评得分）
+    expect(find.byKey(const Key('bdc_typing_input')), findsNothing);
+    expect(find.text('n. 苹果'), findsOneWidget);
+  });
+
+  testWidgets('答案行只把写对的释义项标绿，没写到的用默认字色', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    testWord.meaningItems = [
+      MeaningItemVo('mi_1', 'n.', '苹果', null, null, []),
+      MeaningItemVo('mi_2', 'v.', '考验', null, null, []),
+    ];
+    final wrapper = WordWrapper(testWord, null);
+    // 只答对了第一个释义项
+    wrapper.asrMatchedMeaningItemParts.add(Pair(0, 0));
+
+    await _pumpPage(
+        tester,
+        const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      wordWrapper: wrapper,
+      currentGetWordResult: result,
+      studyStep: StudyStep.en2Ch.json,
+      answerMode: AnswerMode.write,
+      hasFinishedAnswering: true,
+      isScorePassed: true,
+    ));
+
+    final RichText answerText = tester.widget<RichText>(
+        find.text('n. 苹果；v. 考验', findRichText: true));
+    // Text.rich 会把自己那层包在外层 TextSpan 里，往下一层才是我们拼的片段
+    final TextSpan root =
+        (answerText.text as TextSpan).children!.first as TextSpan;
+    final children = root.children!.cast<TextSpan>();
+    TextSpan spanOf(String text) =>
+        children.firstWhere((span) => span.text == text);
+    const Color green = Color(0xFF10B981);
+    expect(spanOf('n. 苹果').style?.color, green,
+        reason: '写对的释义项要绿色');
+    expect(spanOf('v. 考验').style?.color, isNot(green),
+        reason: '没写到的释义项用默认字色，不能也跟着绿');
+  });
+
+  testWidgets('写档答对时，汉译英给的正确答案是这个词的拼写', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+                studyStep: StudyStep.ch2En.json, answerMode: AnswerMode.write)
+            .copyWith(hasFinishedAnswering: true, isScorePassed: true));
+    expect(find.text('apple'), findsWidgets);
   });
 
   testWidgets('英译汉：题目区单词旁的铅笔直接进全屏拼写练习', (tester) async {

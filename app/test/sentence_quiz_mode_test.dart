@@ -281,9 +281,9 @@ void main() {
     );
     await tester.pump();
 
-    // 顶栏提示必须为「请说出例句翻译：」，绝不能是「请说出中文释义：」
-    expect(find.text('请说出例句翻译：'), findsOneWidget);
-    expect(find.text('请说出中文释义：'), findsNothing);
+    // 顶栏提示必须说的是例句，绝不能混成单词环节的「说释义」
+    expect(find.text('说例句'), findsOneWidget);
+    expect(find.text('说释义'), findsNothing);
     // 输入框占位提示为「请按住下方按钮，说出例句翻译」
     expect(find.text('请按住下方按钮，说出例句翻译'), findsOneWidget);
     // PTT 按钮在未作答时显示为「按住说话」
