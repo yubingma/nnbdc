@@ -49,15 +49,15 @@ class AnswerModes {
 
   /// 答题卡上有哪几档，顺序就是界面上从左到右的顺序。
   ///
-  /// 「说」排第一：开口说才是这个 App 的核心玩法，写是备选。
+  /// 「写」排第一：它左边紧挨着「全屏」图标（全屏只服务写档），两者靠在一起更自然。
   static List<AnswerMode> forStep(String? studyStep) {
     final bool speak = asrAvailableFor(studyStep);
     if (isSentenceStep(studyStep)) {
       return <AnswerMode>[if (speak) AnswerMode.speak, AnswerMode.choose];
     }
     return <AnswerMode>[
-      if (speak) AnswerMode.speak,
       AnswerMode.write,
+      if (speak) AnswerMode.speak,
       AnswerMode.choose,
     ];
   }
