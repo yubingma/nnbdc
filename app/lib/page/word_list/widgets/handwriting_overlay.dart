@@ -47,12 +47,13 @@ class HandwritingOverlay extends StatefulWidget {
 class HandwritingOverlayState extends State<HandwritingOverlay> {
   final StudyAudioSessionController _sessionController = StudyAudioSessionController.instance;
 
-  /// 右侧留给页面卡片交互（每张卡片右端那颗画笔按钮）的竖条宽度。
+  /// 右侧留给页面交互的竖条宽度：卡片右端那颗画笔按钮在这里，
+  /// 手写面板打开时也是唯一还能拖动列表滚动的地方。
   ///
-  /// 画笔按钮离屏幕右缘 = 页面右内边距 8 + 卡片外边距 10 + 卡片右内边距 8 + 按钮宽 50 = 76；
-  /// 取 84 让整颗按钮都露在画布外、点得到（原来 60 时按钮左半截压在画布下，点不到）。
-  /// 这条竖条不再画分界线：那条线要么压在画笔上、要么切进释义文字，怎么摆都局促。
-  static const double _rightActionRailWidth = 84.0;
+  /// 这条竖条只决定「哪一块画布不接收落笔」，不画任何分界线：原来在竖条左沿画的那条
+  /// 1px 线离画笔图标只有 3px、正好压在图标边上，看着非常局促；而它本身没有任何交互含义
+  /// （不是滚动条，也不承担边界提示），留在那里只会让人以为画笔被一条线挤着。
+  static const double _rightActionRailWidth = 60.0;
 
   double _handwritingRightPadding = _rightActionRailWidth;
   Timer? _handwritingPaddingTimer;
@@ -105,6 +106,31 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
       bottom: 0,
       child: Stack(
         children: [
+          // 手写区的半透明蒙版：既是「手写区/右侧交互竖条」的颜色分界，也是当前状态的反馈。
+          //
+          // 落笔后画布会临时铺满整宽（右侧竖条暂时也算手写区），蒙版跟着铺满，等于告诉用户
+          // 「这一整屏现在都能写」；停笔约 0.5 秒、竖条重新让出来后，蒙版退回，右侧那条恢复
+          // 原色，等于告诉用户「这里又能拖列表滚动了」。两段状态用 180ms 的位移过渡，不做硬跳。
+          //
+          // 蒙版不模糊、不拦截触摸；笔迹画在蒙版之上，所以手写本身不会被压暗。
+          // 6%/5% 的浓度只把底下词卡与壁纸轻轻压一层，当前单词的拼写和释义依然看得清。
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            left: 0,
+            top: 0,
+            bottom: 0,
+            right: _handwritingRightPadding,
+            child: IgnorePointer(
+              child: ColoredBox(
+                key: const Key('handwriting_area_veil'),
+                color: widget.isDarkMode
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+
           // 1. 左侧手写画板区域
           Positioned(
             left: 0,
@@ -335,7 +361,6 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
                 ),
               ),
             ),
-
         ],
       ),
     );

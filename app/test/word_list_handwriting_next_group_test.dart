@@ -7,6 +7,7 @@ import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/page/word_list/widgets/handwriting_overlay.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:nnbdc/widget/handwriting_board.dart';
 import 'package:nnbdc/widget/minimal_flow_button.dart';
 import 'package:provider/provider.dart' as provider;
 
@@ -16,6 +17,7 @@ import 'package:provider/provider.dart' as provider;
 /// 现在：底部这一条是页面底栏，独占一条纵向空间——手写工具条（重写/回退/关闭/提示）
 /// 在左、「下一组」在右，词卡与手写画布都止步于它上沿，谁也不会压到词卡上。
 /// 宽屏工具条带文字，窄屏只画图标（更小），两种宽度都能并排放得下。
+/// 手写区罩了一层极淡的半透明蒙版，与右侧卡片交互竖条在颜色上分开（原来那条分界线压着画笔）。
 ///
 /// 只保留一个 testWidgets：手写模式的入场会等一次音频会话释放，而音频会话是
 /// 进程级单例，同一个测试文件里反复进出会把它的队列拖住（后续用例卡在
@@ -177,15 +179,23 @@ void main() {
       expect(size.width - buttonRect.right, wide ? 28.0 : 16.0,
           reason: '$label：「下一组」右边距不对');
 
-      // 卡片右端的画笔按钮必须整颗待在右侧竖条里，且和分界线之间留出呼吸空间
-      final lineRect = tester.getRect(find.byKey(const Key('handwriting_right_zone_line')));
-      expect(size.width - lineRect.left, 92.0,
-          reason: '$label：右侧交互竖条的宽度应为 92px（76px 画笔位 + 16px 呼吸）');
+      // 画布右侧给卡片画笔让出的竖条：画笔图标必须露在画布外（否则点不到）
+      final boardRect = tester.getRect(find.byType(HandwritingBoard));
+      expect(size.width - boardRect.right, 60.0,
+          reason: '$label：画布右侧应为画笔让出 60px 交互竖条');
       final pencil = tester.getRect(find.byIcon(Icons.edit_rounded).first);
-      expect(pencil.left - lineRect.right, greaterThanOrEqualTo(20.0),
-          reason: '$label：分界线与画笔图标贴得太近');
-      expect(pencil.center.dx - 25.0, greaterThan(lineRect.right),
-          reason: '$label：画笔按钮左半截不能压在画布下面（否则点不到）');
+      expect(pencil.center.dx, greaterThan(boardRect.right),
+          reason: '$label：画笔图标必须落在画布之外的交互竖条里');
+
+      // 手写区蒙版：右沿与画布对齐，右侧竖条留白不罩；必须够淡，词卡还要看得清
+      final veil = find.byKey(const Key('handwriting_area_veil'));
+      expect(veil, findsOneWidget, reason: '$label：手写区应有半透明蒙版');
+      expect(tester.getRect(veil).right, size.width - 60.0,
+          reason: '$label：蒙版右沿应止于右侧交互竖条左侧，两块区域要靠颜色分开');
+      final veilAlpha = tester.widget<ColoredBox>(veil).color.a;
+      expect(veilAlpha, greaterThan(0.0), reason: '$label：蒙版不能是透明的');
+      expect(veilAlpha, lessThan(0.2),
+          reason: '$label：蒙版必须够淡，手写时要看得清当前单词的卡片');
 
       _nextGroupTapped = false;
       await tester.tap(find.byKey(_nextGroupKey));
