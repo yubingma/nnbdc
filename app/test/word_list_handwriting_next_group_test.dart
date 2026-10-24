@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/result.dart';
@@ -195,36 +194,26 @@ void main() {
           reason: '「$label」按钮必须露在画布之外，否则点不到');
     }
 
-    // 统一规则：面板露着时开始书写 → 门板重新向右覆盖（书写优先）；停笔后再让出面板
+    // 一落笔：露出的面板自动收回，门板重新铺满（书写优先）
     final writeGesture = await tester.startGesture(const Offset(200, 300));
     await writeGesture.moveBy(const Offset(30, 10));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 220)); // 蒙版过渡
     expect(tester.getRect(find.byType(HandwritingBoard)).right, 1024.0,
-        reason: '面板露出时落笔，画布应铺满整宽（书写优先）');
+        reason: '开始书写后，画布应铺满整宽（书写优先）');
     expect(tester.getRect(find.byKey(const Key('handwriting_area_veil'))).right,
         1024.0,
-        reason: '面板露出时落笔，蒙版也应向右覆盖');
+        reason: '开始书写后，蒙版也应向右覆盖');
     await writeGesture.up();
-    await tester.pump(const Duration(milliseconds: 350)); // 自动识别落地
-    await tester.pump(const Duration(milliseconds: 300)); // 停笔 0.5s → 让位恢复
+    await tester.pump(const Duration(milliseconds: 350)); // 自动识别 + 面板收起动画落地
+    await tester.pump(const Duration(milliseconds: 300)); // 停笔 0.5s → 恢复到默认竖条
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250)); // 蒙版过渡
     expect(tester.getRect(find.byType(HandwritingBoard)).right,
-        closeTo(1024.0 - paneExposed, 1.0),
-        reason: '停笔后面板应重新让出来');
-
-    // 面板收起后，画布与蒙版要退回右侧 76px 交互竖条
-    final SlidableController pane =
-        Slidable.of(tester.element(find.text('掌握')))!;
-    pane.close();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 250)); // 蒙版 180ms 位移过渡
-    expect(tester.getRect(find.byType(HandwritingBoard)).right,
         closeTo(1024.0 - 76.0, 1.0),
-        reason: '面板收起后，画布要退回右侧 76px 交互竖条');
+        reason: '开始书写已把面板收回，停笔后应回到默认 76px 竖条');
+    expect(find.text('掌握'), findsNothing,
+        reason: '开始书写后，露出的左滑面板必须自动收回');
 
     for (final size in const <Size>[
       Size(1024, 768), // iPad 横屏

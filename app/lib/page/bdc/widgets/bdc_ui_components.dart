@@ -983,7 +983,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                                         ),
                                 ),
                                 SizedBox(height: isLargeFont ? 4.0 : 8.0),
-                                _buildLiveFsrsResultPanel(),
+                                // 键盘占屏时收起测评面板，把高度让给输入行（收起后键盘一收回来就恢复）
+                                if (state.isKeyboardVisible)
+                                  const SizedBox.shrink()
+                                else
+                                  _buildLiveFsrsResultPanel(),
                               ],
                             ),
                           ),
@@ -2085,52 +2089,75 @@ extension BdcPageStateUIComponents on BdcPageState {
     // 键盘弹起时把画布让出去：那会儿用户是在打字，硬留在卡片里既看不见也没处下笔
     final bool keyboardTyping = state.isKeyboardVisible;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // 0. 提示行：点过「提示」之后才出现，露出的字逐步变多，其余仍是＿
-        if (isChineseAnswer) _buildMaskedHintLine(),
-
-        // 1. 手写画布（默认的做题方式）
-        if (keyboardTyping)
-          const Spacer()
-        else
-          Expanded(child: _buildInlineHandwritingBoard(isChineseAnswer)),
-
-        // 2. 输入行：点它才弹键盘（默认手写，不抢焦点）。
-        // 与书写区之间留 8px：贴死时手指/笔尖容易把点按落到输入框里；
-        // 不再画分割线（那条横线在按钮下方若隐若现，多余）。
-        // 答对并通过后这一行**原地改成正确答案**：底下那点空间是给测评得分用的，
-        // 不能再往卡片里塞第三行；内容长了就横向拖动看全。
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
-          child: Row(
-            children: [
-              Expanded(
-                child: _answerPassed
-                    ? _buildRevealedAnswerLine()
-                    : _buildTypingField(isChineseAnswer),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 只在"键盘真的弹起"时让出画布。
+        // 不用"可用高度 < N"这类阈值：键盘一弹起高度就变，阈值会跟着自己翻转，
+        // 画布反复挂载/卸载会打断输入框的输入法连接（表现就是键盘闪一下又缩回）。
+        final bool inputOnly = keyboardTyping;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 0. 提示行（不可见时是同一个位置的空盒子）
+            _buildMaskedHintLine(visible: isChineseAnswer && !inputOnly),
+            // 1. 画布：键盘弹起时换成 Spacer —— 只换这一个槽，位置不变
+            if (inputOnly)
+              const Spacer()
+            else
+              Expanded(child: _buildInlineHandwritingBoard(isChineseAnswer)),
+            // 2. 输入行：**永远**是最后一个子项，且永远包在同一个槽里。
+            //    键盘弹起/收起的动画过程中，卡片可用高度会瞬间掉到比输入框还矮
+            //    （实测 32.9px vs 输入行 40px）；Column 给非弹性子项的主轴约束是无界的，
+            //    所以这里显式把槽的上限压到"本面板可用高度"，再把行放进可滚动容器：
+            //    空间够时按内容高度显示，空间不够时缩到可用高度并在行内滚动，绝不撑爆卡片。
+            //    槽的类型与位置都不变，输入框不会被重建、焦点不会丢（否则键盘会闪一下）。
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: constraints.maxHeight),
+              child: SingleChildScrollView(
+                child: _buildTypingInputRow(isChineseAnswer, compact: inputOnly),
               ),
-              // 打字时画布让出去了，画布上的「提交」也跟着不在：这里补一个
-              if (!_answerPassed && keyboardTyping && isChineseAnswer) ...[
-                const SizedBox(width: 8),
-                _buildPanelButton(
-                  icon: Icons.send_rounded,
-                  label: '提交',
-                  onTap: () => notifier.submitTypedMeaning(),
-                ),
-              ],
-              if (!_answerPassed && state.dictationRequiredCount > 0) ...[
-                const SizedBox(width: 8),
-                _buildMeaningProgressText(
-                    state.dictationMatchedCount, state.dictationRequiredCount, '写'),
-              ],
-              // 汉译英答对后，想再听一遍就点这颗小喇叭（英译汉题面本来就有发音按钮）
-              _buildWordReplayButton(),
-            ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 写档的输入行：点它才弹键盘（默认手写，不抢焦点）。
+  ///
+  /// 与书写区之间留 8px（[compact] 为 true 时不留：画布已经让位了）；
+  /// 答对并通过后这一行**原地改成正确答案**：底下那点空间是给测评得分用的，
+  /// 不能再往卡片里塞第三行；内容长了就横向拖动看全。
+  Widget _buildTypingInputRow(bool isChineseAnswer, {required bool compact}) {
+    // compact（键盘占屏、只剩这一行）时纵向留白收到 0：
+    // 卡片可能只剩 37px，输入框自身就要 32px，留白再占 6px 就会溢出（线上实测 0.9px）
+    return Padding(
+      padding: EdgeInsets.fromLTRB(14, compact ? 0 : 8, 14, compact ? 0 : 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: _answerPassed
+                ? _buildRevealedAnswerLine()
+                : _buildTypingField(isChineseAnswer),
           ),
-        ),
-      ],
+          // 打字时画布让出去了，画布上的「提交」也跟着不在：这里补一个
+          if (!_answerPassed && compact && isChineseAnswer) ...[
+            const SizedBox(width: 8),
+            _buildPanelButton(
+              icon: Icons.send_rounded,
+              label: '提交',
+              onTap: () => notifier.submitTypedMeaning(),
+            ),
+          ],
+          if (!_answerPassed && state.dictationRequiredCount > 0) ...[
+            const SizedBox(width: 8),
+            _buildMeaningProgressText(
+                state.dictationMatchedCount, state.dictationRequiredCount, '写'),
+          ],
+          // 汉译英答对后，想再听一遍就点这颗小喇叭（英译汉题面本来就有发音按钮）
+          _buildWordReplayButton(),
+        ],
+      ),
     );
   }
 
@@ -2138,7 +2165,8 @@ extension BdcPageStateUIComponents on BdcPageState {
   ///
   /// 只在用过提示后出现（平时不占书写空间）。中文答案的提示只能显示在这儿——
   /// 画布里没有释义可看，输入框里又只能放用户自己的作答。
-  Widget _buildMaskedHintLine() {
+  Widget _buildMaskedHintLine({bool visible = true}) {
+    if (!visible) return const SizedBox.shrink();
     final int reveal = state.wordWrapper?.hintLetterCount ?? 0;
     if (reveal <= 0) return const SizedBox.shrink();
     final items = state.word?.getMergedMeaningItems() ?? const [];

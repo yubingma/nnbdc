@@ -271,6 +271,64 @@ void main() {
     expect(find.textContaining('＿'), findsNothing);
   });
 
+  testWidgets('键盘弹起触发版式切换时，输入框不丢焦点（键盘不闪一下就没）', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+            studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write));
+
+    // 点输入框 → 键盘起来
+    await tester.tap(find.byKey(const Key('bdc_typing_input')));
+    await tester.pump();
+    expect(tester.testTextInput.isVisible, true);
+
+    // 系统回报"键盘已弹起"：版式从「画布 + 输入行」切到「只剩输入行」
+    ProviderScope.containerOf(tester.element(find.byType(BdcPage)))
+        .read(bdcNotifierProvider.notifier)
+        .updateKeyboardVisibility(true);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HandwritingBoard), findsNothing);
+    // 键盘占屏时测评面板收起，把高度让给输入行（键盘一收回来就恢复）
+    expect(find.textContaining('下次复习'), findsNothing);
+    expect(tester.testTextInput.isVisible, true,
+        reason: '输入框若被重建就会丢焦点，表现就是键盘闪一下又缩回去');
+  });
+
+  testWidgets('键盘占屏、卡片被压扁时，写面板不撑爆卡片', (tester) async {
+    // 复现线上几何：视口不算小，但键盘吃掉了大半，答题卡可用高度掉到比输入行还矮
+    tester.view.physicalSize = const Size(1200, 500);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 240);
+    addTearDown(tester.view.reset);
+
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+                studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write)
+            .copyWith(isKeyboardVisible: true));
+
+    // 输入行所在槽会缩到可用高度并在行内滚动，不再溢出
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('bdc_typing_input')), findsOneWidget);
+  });
+
+  testWidgets('键盘弹起时画布让位，只留输入行（不再撑爆卡片）', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+                studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write)
+            .copyWith(isKeyboardVisible: true));
+
+    // 画布让位（它本来也看不见），输入框还在，且没有溢出异常
+    expect(find.byType(HandwritingBoard), findsNothing);
+    expect(find.byKey(const Key('bdc_typing_input')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('写档的「提示」：点一次露一个汉字，其余仍是＿', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
     final WordWrapper hinted = WordWrapper(testWord, null)..hintLetterCount = 1;

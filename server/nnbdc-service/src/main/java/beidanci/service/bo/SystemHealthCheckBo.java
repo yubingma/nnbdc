@@ -160,7 +160,10 @@ public class SystemHealthCheckBo {
      * 这正是用户反馈「答对了却卡住、只能强行切走」的成因。
      *
      * <p>上限取「新词轨道」与「复习轨道」中较长的一条：只要进度超过了两条中更长的那个，
-     * 无论该词今天走哪条轨道都必然是越界的，不会误报。
+     * 无论该词今天走哪条轨道都必然是越界的，不会误报。单条轨道的长度按客户端的真实形态算：
+     * 测评 1 + 答对组/答错组里长的那一条（当天首答只走其中一组）+ 末尾单词列表 1；
+     * 某一作用域没有配置时按客户端默认的「答对 1 / 答错 1」。两侧相加会把两组合并成
+     * 一条根本不存在的轨道，把上限算大，反而漏掉真正的越界。
      *
      * <p><b>刻意不比较「今日评分流水条数」与「今日环节进度」的大小</b>（两个方向都不是缺陷）：
      * 答错的环节照旧写一条流水、但进度不推进（该词留在本环节循环重练），流水因此可以多于进度；
@@ -188,8 +191,8 @@ public class SystemHealthCheckBo {
             String sql = "SELECT l.user_id, u.nick_name, l.word_id, w.spell, "
                     + "       count(*) AS today_log_count, lw.today_learned_times, lw.update_time, "
                     + "       ver.client_version, "
-                    + "       GREATEST(COALESCE(nullif(new_max.max_len, 0), 0), "
-                    + "                COALESCE(nullif(rev_max.max_len, 0), 0)) + 1 AS track_len_max "
+                    + "       GREATEST(COALESCE(new_after.after_len, 1), "
+                    + "                COALESCE(rev_after.after_len, 1)) + 2 AS track_len_max "
                     + "FROM learning_log l "
                     + "JOIN learning_word lw ON lw.user_id = l.user_id AND lw.word_id = l.word_id "
                     + "LEFT JOIN \"user\" u ON u.id = l.user_id "
@@ -204,37 +207,35 @@ public class SystemHealthCheckBo {
                     + "    WHERE client_version IS NOT NULL AND client_version <> '' "
                     + "    ORDER BY user_id, create_time DESC "
                     + ") ver ON ver.user_id = l.user_id "
+                    // 一条轨道的真实形态是「测评 →（按当天首答选答对组或答错组）→ 单词列表」，
+                    // 所以一天最多走 1 + 长的那一组 + 1 个环节。原有写法把答对组与答错组相加、
+                    // 还把"测评"当成可缺省的组，算出来的上限与客户端实际轨道对不上
+                    //（客户端口径见 app/lib/util/study_consistency_checker.dart 的 resolveTrackLenMax）。
+                    // 某一作用域一行学习步骤都没有时，客户端会退回默认三组（答对 1 条 / 答错 1 条），
+                    // 这里用 COALESCE(..., 1) 保持同一个默认。
                     + "LEFT JOIN ( "
-                    + "    SELECT user_id, MAX(check_len + correct_len + wrong_len) AS max_len "
-                    + "    FROM ( "
-                    + "        SELECT user_id, "
-                    + "               MAX(CASE WHEN group_name = 'check' THEN 1 ELSE 0 END) AS check_len, "
-                    + "               SUM(CASE WHEN group_name = 'correct' THEN 1 ELSE 0 END) AS correct_len, "
-                    + "               SUM(CASE WHEN group_name = 'wrong' THEN 1 ELSE 0 END) AS wrong_len "
-                    + "        FROM user_study_step "
-                    + "        WHERE scope = 'new' AND state = 'Active' "
-                    + "        GROUP BY user_id "
-                    + "    ) t GROUP BY user_id "
-                    + ") new_max ON new_max.user_id = l.user_id "
+                    + "    SELECT user_id, GREATEST( "
+                    + "               count(*) FILTER (WHERE group_name = 'correct'), "
+                    + "               count(*) FILTER (WHERE group_name = 'wrong')) AS after_len "
+                    + "    FROM user_study_step "
+                    + "    WHERE scope = 'new' AND state = 'Active' "
+                    + "    GROUP BY user_id "
+                    + ") new_after ON new_after.user_id = l.user_id "
                     + "LEFT JOIN ( "
-                    + "    SELECT user_id, MAX(check_len + correct_len + wrong_len) AS max_len "
-                    + "    FROM ( "
-                    + "        SELECT user_id, "
-                    + "               MAX(CASE WHEN group_name = 'check' THEN 1 ELSE 0 END) AS check_len, "
-                    + "               SUM(CASE WHEN group_name = 'correct' THEN 1 ELSE 0 END) AS correct_len, "
-                    + "               SUM(CASE WHEN group_name = 'wrong' THEN 1 ELSE 0 END) AS wrong_len "
-                    + "        FROM user_study_step "
-                    + "        WHERE scope = 'review' AND state = 'Active' "
-                    + "        GROUP BY user_id "
-                    + "    ) t GROUP BY user_id "
-                    + ") rev_max ON rev_max.user_id = l.user_id "
+                    + "    SELECT user_id, GREATEST( "
+                    + "               count(*) FILTER (WHERE group_name = 'correct'), "
+                    + "               count(*) FILTER (WHERE group_name = 'wrong')) AS after_len "
+                    + "    FROM user_study_step "
+                    + "    WHERE scope = 'review' AND state = 'Active' "
+                    + "    GROUP BY user_id "
+                    + ") rev_after ON rev_after.user_id = l.user_id "
                     + "WHERE l.create_time >= ((date_trunc('day', (a.anchor AT TIME ZONE 'Asia/Shanghai') - interval '3 hours') + interval '3 hours') AT TIME ZONE 'Asia/Shanghai') "
                     + "  AND l.create_time < ((date_trunc('day', (a.anchor AT TIME ZONE 'Asia/Shanghai') - interval '3 hours') + interval '27 hours') AT TIME ZONE 'Asia/Shanghai') "
                     + "  AND l.create_time >= now() - make_interval(hours => :maxLookbackHours) "
                     + "GROUP BY l.user_id, u.nick_name, l.word_id, w.spell, lw.today_learned_times, "
-                    + "         lw.update_time, ver.client_version, new_max.max_len, rev_max.max_len "
+                    + "         lw.update_time, ver.client_version, new_after.after_len, rev_after.after_len "
                     + "HAVING lw.today_learned_times > 0 AND lw.today_learned_times > "
-                    + "       GREATEST(COALESCE(new_max.max_len, 0), COALESCE(rev_max.max_len, 0)) + 1 "
+                    + "       GREATEST(COALESCE(new_after.after_len, 1), COALESCE(rev_after.after_len, 1)) + 2 "
                     + "ORDER BY lw.today_learned_times DESC, l.user_id, l.word_id "
                     + "LIMIT :auditLimit";
 
@@ -366,22 +367,25 @@ public class SystemHealthCheckBo {
         return count == null ? 0 : count;
     }
 
-    /** 该用户当前配置下轨道长度上限（新词/复习取更长的一条，加上末尾固定的 List 浏览环节） */
+    /**
+     * 该用户当前配置下轨道长度上限：测评 1 + 答对组/答错组里长的那一条 + 末尾固定的 List 浏览环节。
+     *
+     * <p>与 {@link #checkLearningProgressConsistency()} 的取长口径、以及客户端
+     * resolveTrackLenMax 完全一致；某一作用域没有任何学习步骤时退回客户端默认的"答对 1 / 答错 1"。
+     */
     private int trackLenMaxOf(String userId) {
         String sql = "SELECT GREATEST("
-                + "  COALESCE((SELECT MAX(check_len + correct_len + wrong_len) FROM ("
-                + "      SELECT MAX(CASE WHEN group_name = 'check' THEN 1 ELSE 0 END) AS check_len,"
-                + "             SUM(CASE WHEN group_name = 'correct' THEN 1 ELSE 0 END) AS correct_len,"
-                + "             SUM(CASE WHEN group_name = 'wrong' THEN 1 ELSE 0 END) AS wrong_len"
+                + "  COALESCE((SELECT MAX(GREATEST(correct_len, wrong_len)) FROM ("
+                + "      SELECT count(*) FILTER (WHERE group_name = 'correct') AS correct_len,"
+                + "             count(*) FILTER (WHERE group_name = 'wrong') AS wrong_len"
                 + "      FROM user_study_step WHERE user_id = :userId AND scope = 'new' AND state = 'Active'"
-                + "      GROUP BY user_id) t), 0),"
-                + "  COALESCE((SELECT MAX(check_len + correct_len + wrong_len) FROM ("
-                + "      SELECT MAX(CASE WHEN group_name = 'check' THEN 1 ELSE 0 END) AS check_len,"
-                + "             SUM(CASE WHEN group_name = 'correct' THEN 1 ELSE 0 END) AS correct_len,"
-                + "             SUM(CASE WHEN group_name = 'wrong' THEN 1 ELSE 0 END) AS wrong_len"
+                + "      GROUP BY user_id) t), 1),"
+                + "  COALESCE((SELECT MAX(GREATEST(correct_len, wrong_len)) FROM ("
+                + "      SELECT count(*) FILTER (WHERE group_name = 'correct') AS correct_len,"
+                + "             count(*) FILTER (WHERE group_name = 'wrong') AS wrong_len"
                 + "      FROM user_study_step WHERE user_id = :userId AND scope = 'review' AND state = 'Active'"
-                + "      GROUP BY user_id) t), 0)"
-                + ") + 1";
+                + "      GROUP BY user_id) t), 1)"
+                + ") + 2";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         Integer maxLen = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
         return maxLen == null ? 0 : maxLen;
@@ -541,18 +545,29 @@ public class SystemHealthCheckBo {
 
     /**
      * 检查系统词典是否缺失通用词库（0库）物理托底数据
+     *
+     * <p>只统计**官方单词**：0 库是所有客户端共用的官方词库，用户自建词（`word.owner_id` 不是系统用户）
+     * 本来就只活在用户自己的词书里，不进 0 库也不该进 —— 把它们算成"缺失托底"会把私人词当成
+     * 全站数据缺口，而修复动作还真会把它们广播给所有客户端。
      */
     public SystemHealthCheckResult checkSystemDictMissingFallback() {
         List<SystemHealthIssue> issues = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         
         try {
-            String sql = "SELECT COUNT(DISTINCT word_id) FROM dict_word WHERE word_id NOT IN (SELECT word_id FROM dict_word WHERE dict_id = '0')";
-            Integer missingCount = namedParameterJdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Integer.class);
+            String sql = "SELECT COUNT(DISTINCT dw.word_id) FROM dict_word dw "
+                    + "JOIN word w ON w.id = dw.word_id "
+                    + "WHERE w.owner_id = :sysUserId "
+                    + "  AND NOT EXISTS (SELECT 1 FROM dict_word z "
+                    + "                  WHERE z.dict_id = :commonDictId AND z.word_id = dw.word_id)";
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("sysUserId", Constants.SYS_USER_SYS_ID)
+                    .addValue("commonDictId", Constants.COMMON_DICT_ID);
+            Integer missingCount = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
             if (missingCount != null && missingCount > 0) {
                 issues.add(new SystemHealthIssue(
                     "底层通用词库缺失托底数据",
-                    String.format("管理后台查出有 %d 个在用单词物理脱离了基础的0库记录，这会影响新下发的数据完整性，请立即修复。", missingCount),
+                    String.format("管理后台查出有 %d 个官方单词物理脱离了基础的0库记录，这会影响新下发的数据完整性，请立即修复。", missingCount),
                     "sys_dict_missing_fallback"
                 ));
             }
@@ -709,14 +724,18 @@ public class SystemHealthCheckBo {
 
     /**
      * 检查学习单词认知难度指标(difficulty)的合法性与完整性
+     *
+     * <p>只查**已经评过分**的词（stability &gt; 0）：还没开始学的词记忆参数本来就为空
+     * （全库 125,283 条未学记录里 125,118 条是 NULL），客户端也把"难度小于 1"当作未评分处理
+     * （见 app/lib/api/bo/study_bo.dart 的 hasInvalidFsrs），拿它当异常等于把正常的待学状态算成坏数据。
      */
     public SystemHealthCheckResult checkLearningWordDifficultyIntegrity() {
         List<SystemHealthIssue> issues = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
         try {
-            // 1. 检查 difficulty = 0 或合法范围越界 (< 1.0) 的记录
-            String sqlInvalid = "SELECT count(*) FROM learning_word WHERE difficulty = 0 OR (difficulty IS NOT NULL AND difficulty < 1.0)";
+            // 1. 已评分词的难度必须落在合法区间 [1.0, ...)
+            String sqlInvalid = "SELECT count(*) FROM learning_word WHERE stability > 0 AND (difficulty IS NULL OR difficulty < 1.0)";
             Integer invalidCount = namedParameterJdbcTemplate.queryForObject(sqlInvalid, new MapSqlParameterSource(), Integer.class);
 
             // 2. 检查历史已掌握词 (stability IN (180, 120)) 却缺失合法难度的记录
@@ -784,8 +803,17 @@ public class SystemHealthCheckBo {
     private int fixSystemDictMissingFallback(List<String> fixed) {
         int fixedCount = 0;
         try {
-            String sqlWords1 = "SELECT DISTINCT word_id FROM dict_word WHERE word_id NOT IN (SELECT word_id FROM dict_word WHERE dict_id = '0')";
-            List<String> missingPhysical = namedParameterJdbcTemplate.query(sqlWords1, new MapSqlParameterSource(), (rs, rowNum) -> rs.getString("word_id"));
+            // 与检查同一口径：只补官方单词。用户自建词不属于 0 库，补进去等于把私人词
+            // 广播成全站词条（0 库是系统词库，会下行同步给所有客户端）。
+            String sqlWords1 = "SELECT DISTINCT dw.word_id FROM dict_word dw "
+                    + "JOIN word w ON w.id = dw.word_id "
+                    + "WHERE w.owner_id = :sysUserId "
+                    + "  AND NOT EXISTS (SELECT 1 FROM dict_word z "
+                    + "                  WHERE z.dict_id = :commonDictId AND z.word_id = dw.word_id)";
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("sysUserId", Constants.SYS_USER_SYS_ID)
+                    .addValue("commonDictId", Constants.COMMON_DICT_ID);
+            List<String> missingPhysical = namedParameterJdbcTemplate.query(sqlWords1, params, (rs, rowNum) -> rs.getString("word_id"));
             
             if (!missingPhysical.isEmpty()) {
                 Dict commonDict = dictBo.findById(Constants.COMMON_DICT_ID);
@@ -1390,10 +1418,15 @@ public class SystemHealthCheckBo {
         String commonDictId = "0";
         int totalFixed = 0;
 
-        // 0. 确保所有 Word 表中的单词都在通用词典中
+        // 0. 确保官方单词都在通用词典中（用户自建词不进 0 库：0 库会下行给所有客户端，
+        //    补进去等于把私人词广播成全站词条）
         try {
-            String sqlMissing = "SELECT id FROM word WHERE id NOT IN (SELECT word_id FROM dict_word WHERE dict_id = '0')";
-            List<String> missingFromCommon = namedParameterJdbcTemplate.query(sqlMissing, new MapSqlParameterSource(), (rs, rowNum) -> rs.getString("id"));
+            String sqlMissing = "SELECT id FROM word w WHERE w.owner_id = :sysUserId "
+                    + "AND NOT EXISTS (SELECT 1 FROM dict_word z WHERE z.dict_id = :commonDictId AND z.word_id = w.id)";
+            MapSqlParameterSource missingParams = new MapSqlParameterSource()
+                    .addValue("sysUserId", Constants.SYS_USER_SYS_ID)
+                    .addValue("commonDictId", commonDictId);
+            List<String> missingFromCommon = namedParameterJdbcTemplate.query(sqlMissing, missingParams, (rs, rowNum) -> rs.getString("id"));
             if (!missingFromCommon.isEmpty()) {
                 Dict commonDict = dictBo.findById(commonDictId);
                 int maxSeq = dictWordBo.getMaxSeqNo(commonDict);
