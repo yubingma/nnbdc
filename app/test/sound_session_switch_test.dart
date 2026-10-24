@@ -467,6 +467,22 @@ void main() {
       expect(viaActivateSession, 2,
           reason: 'playback 与 playAndRecord 两条会话路径都必须走 _activateSession()，保持对称');
     });
+
+    test('所有 unawaited(player.play()) 必须附加 catchError，严禁裸调导致会话激活失败成为 Zone 未捕获异常', () async {
+      final files = [
+        'lib/util/study_audio_session_controller.dart',
+        'lib/util/game_sfx.dart',
+      ];
+      for (final filePath in files) {
+        final source = await File(filePath).readAsString();
+        final barePlayMatches = RegExp(r'unawaited\s*\(\s*player\.play\(\)\s*\)\s*;')
+            .allMatches(source)
+            .toList();
+        expect(barePlayMatches, isEmpty,
+            reason: '$filePath 中存在裸调 unawaited(player.play())：当 iOS 因来电/后台拒绝激活会话（560557684）时，'
+                '未捕获的 Future 异常会冒泡到 Zone 触发 CLIENT_CRASH 告警');
+      }
+    });
   });
 
   group('切拼写模式永久转圈（静态验证）', () {

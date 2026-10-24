@@ -91,4 +91,77 @@ void main() {
       expect(result.word, isNull);
     });
   });
+
+  group('词形变体自动还原（比较级/最高级/复数/过去式/进行时）', () {
+    setUp(() async {
+      await insertWord('dark');
+      await insertWord('large');
+      await insertWord('hot');
+      await insertWord('easy');
+      await insertWord('stop');
+      await insertWord('run');
+    });
+
+    test('比较级 -er / -ier / 双写 自动命中原词', () async {
+      // darker -> dark
+      var res = await WordBo().searchWordLocalOnly('darker');
+      expect(res.word?.spell, 'dark');
+
+      // larger -> large (去er补e)
+      res = await WordBo().searchWordLocalOnly('larger');
+      expect(res.word?.spell, 'large');
+
+      // hotter -> hot (双写辅音去重)
+      res = await WordBo().searchWordLocalOnly('hotter');
+      expect(res.word?.spell, 'hot');
+
+      // easier -> easy (-ier变y)
+      res = await WordBo().searchWordLocalOnly('easier');
+      expect(res.word?.spell, 'easy');
+    });
+
+    test('最高级 -est / -iest / 双写 自动命中原词', () async {
+      // darkest -> dark
+      var res = await WordBo().searchWordLocalOnly('darkest');
+      expect(res.word?.spell, 'dark');
+
+      // largest -> large
+      res = await WordBo().searchWordLocalOnly('largest');
+      expect(res.word?.spell, 'large');
+
+      // hottest -> hot
+      res = await WordBo().searchWordLocalOnly('hottest');
+      expect(res.word?.spell, 'hot');
+
+      // easiest -> easy
+      res = await WordBo().searchWordLocalOnly('easiest');
+      expect(res.word?.spell, 'easy');
+    });
+
+    test('动词变体（过去式双写辅音 / 进行时双写辅音）自动命中原词', () async {
+      // stopped -> stop
+      var res = await WordBo().searchWordLocalOnly('stopped');
+      expect(res.word?.spell, 'stop');
+
+      // running -> run
+      res = await WordBo().searchWordLocalOnly('running');
+      expect(res.word?.spell, 'run');
+    });
+
+    test('批量匹配 matchWordIdsBySpells 与单查口径一致', () async {
+      final matchMap = await WordBo().matchWordIdsBySpells([
+        'darker',
+        'darkest',
+        'hotter',
+        'easiest',
+        'running',
+      ]);
+      expect(matchMap['darker'], 'dark');
+      expect(matchMap['darkest'], 'dark');
+      expect(matchMap['hotter'], 'hot');
+      expect(matchMap['easiest'], 'easy');
+      expect(matchMap['running'], 'run');
+    });
+  });
 }
+

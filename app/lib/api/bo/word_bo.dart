@@ -1042,48 +1042,85 @@ class WordBo {
     }
   }
 
+  /// 生成一个拼写的词形还原候选原形（按常见变形规则依次推导，用于单词与批量查词对齐）。
+  static List<String> getSpellBaseCandidates(String spell) {
+    final bases = <String>[spell];
+
+    void addCandidate(String candidate) {
+      if (candidate.isNotEmpty && !bases.contains(candidate)) {
+        bases.add(candidate);
+      }
+    }
+
+    // 1. 名词所有格与复数
+    if (spell.endsWith("'s") && spell.length > 2) {
+      addCandidate(spell.substring(0, spell.length - 2));
+    }
+    if (spell.endsWith('ies') && spell.length > 4) {
+      addCandidate('${spell.substring(0, spell.length - 3)}y');
+    }
+    if (spell.endsWith('es') && spell.length > 3) {
+      addCandidate(spell.substring(0, spell.length - 2));
+    }
+    if (spell.endsWith('s') && spell.length > 2) {
+      addCandidate(spell.substring(0, spell.length - 1));
+    }
+
+    // 2. 动词过去式 / 过去分词
+    if (spell.endsWith('ied') && spell.length > 4) {
+      addCandidate('${spell.substring(0, spell.length - 3)}y');
+    }
+    if (spell.endsWith('ed') && spell.length > 3) {
+      final base = spell.substring(0, spell.length - 2);
+      addCandidate(base);
+      addCandidate('${base}e');
+      if (base.length >= 2 && base[base.length - 1] == base[base.length - 2]) {
+        addCandidate(base.substring(0, base.length - 1));
+      }
+    }
+
+    // 3. 动词现在分词 / 动名词
+    if (spell.endsWith('ing') && spell.length > 4) {
+      final base = spell.substring(0, spell.length - 3);
+      addCandidate(base);
+      addCandidate('${base}e');
+      if (base.length >= 2 && base[base.length - 1] == base[base.length - 2]) {
+        addCandidate(base.substring(0, base.length - 1));
+      }
+    }
+
+    // 4. 形容词/副词最高级（-iest / -est）
+    if (spell.endsWith('iest') && spell.length > 5) {
+      addCandidate('${spell.substring(0, spell.length - 4)}y');
+    }
+    if (spell.endsWith('est') && spell.length > 4) {
+      final base = spell.substring(0, spell.length - 3);
+      addCandidate(base);
+      addCandidate('${base}e');
+      if (base.length >= 2 && base[base.length - 1] == base[base.length - 2]) {
+        addCandidate(base.substring(0, base.length - 1));
+      }
+    }
+
+    // 5. 形容词/副词比较级（-ier / -er）
+    if (spell.endsWith('ier') && spell.length > 4) {
+      addCandidate('${spell.substring(0, spell.length - 3)}y');
+    }
+    if (spell.endsWith('er') && spell.length > 3) {
+      final base = spell.substring(0, spell.length - 2);
+      addCandidate(base);
+      addCandidate('${base}e');
+      if (base.length >= 2 && base[base.length - 1] == base[base.length - 2]) {
+        addCandidate(base.substring(0, base.length - 1));
+      }
+    }
+
+    return bases;
+  }
+
   Future<SearchWordResult?> _searchLocallyWithVariants(String purifiedSpell, MyDatabase db, [String? dictId]) async {
-    var result = await _searchLocalOnly(purifiedSpell, db, dictId);
-    if (result != null) return result;
-    if (purifiedSpell.endsWith('s')) {
-      var base = purifiedSpell.substring(0, purifiedSpell.length - 1);
-      result = await _searchLocalOnly(base, db, dictId);
-      if (result != null) return result;
-    }
-    if (purifiedSpell.endsWith('es')) {
-      var base = purifiedSpell.substring(0, purifiedSpell.length - 2);
-      result = await _searchLocalOnly(base, db, dictId);
-      if (result != null) return result;
-    }
-    if (purifiedSpell.endsWith("'s")) {
-      var base = purifiedSpell.substring(0, purifiedSpell.length - 2);
-      result = await _searchLocalOnly(base, db, dictId);
-      if (result != null) return result;
-    }
-    if (purifiedSpell.endsWith('ies')) {
-      var base = "${purifiedSpell.substring(0, purifiedSpell.length - 3)}y";
-      result = await _searchLocalOnly(base, db, dictId);
-      if (result != null) return result;
-    }
-    if (purifiedSpell.endsWith('ied')) {
-      var base = "${purifiedSpell.substring(0, purifiedSpell.length - 3)}y";
-      result = await _searchLocalOnly(base, db, dictId);
-      if (result != null) return result;
-    }
-    if (purifiedSpell.endsWith('ed')) {
-      var base = purifiedSpell.substring(0, purifiedSpell.length - 2);
-      result = await _searchLocalOnly(base, db, dictId);
-      if (result != null) return result;
-      var basePlusE = "${base}e";
-      result = await _searchLocalOnly(basePlusE, db, dictId);
-      if (result != null) return result;
-    }
-    if (purifiedSpell.endsWith('ing')) {
-      var base = purifiedSpell.substring(0, purifiedSpell.length - 3);
-      result = await _searchLocalOnly(base, db, dictId);
-      if (result != null) return result;
-      var basePlusE = "${base}e";
-      result = await _searchLocalOnly(basePlusE, db, dictId);
+    for (final base in getSpellBaseCandidates(purifiedSpell)) {
+      final result = await _searchLocalOnly(base, db, dictId);
       if (result != null) return result;
     }
     // 字面拼写全部落空后，再忽略分隔符找一次：highpowered / high powered → high-powered
@@ -2422,20 +2459,7 @@ class WordBo {
 
   /// 生成一个拼写的候选匹配形式，顺序与 [searchWordLocalOnly] 的分支顺序一致。
   static List<String> _spellMatchVariants(String spell) {
-    final bases = <String>[spell];
-    if (spell.endsWith('s') && spell.length > 2) {
-      bases.add(spell.substring(0, spell.length - 1));
-    }
-    if (spell.endsWith('es') && spell.length > 3) {
-      bases.add(spell.substring(0, spell.length - 2));
-    }
-    if (spell.endsWith("'s") && spell.length > 3) {
-      bases.add(spell.substring(0, spell.length - 2));
-    }
-    if (spell.endsWith('ies') && spell.length > 4) {
-      bases.add('${spell.substring(0, spell.length - 3)}y');
-    }
-
+    final bases = getSpellBaseCandidates(spell);
     final variants = <String>[];
     for (final base in bases) {
       final lower = base.toLowerCase();

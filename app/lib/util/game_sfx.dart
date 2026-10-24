@@ -164,9 +164,15 @@ class GameSfx {
   /// 不 await：[just_audio] 的 play() 会一直挂到这一声放完，await 它没有意义。
   /// 三步之间的耗时只有几毫秒，而 `minGapMs` 至少 900ms，所以不会互相踩。
   Future<void> _retrigger(ja.AudioPlayer player, double speed, double volume) async {
-    await player.setSpeed(speed);
-    await player.setVolume(volume);
-    await player.seek(Duration.zero);
-    unawaited(player.play());
+    try {
+      await player.setSpeed(speed);
+      await player.setVolume(volume);
+      await player.seek(Duration.zero);
+      unawaited(player.play().catchError((e) {
+        debugPrint('🔊 [GameSfx] 播放音效失败: $e');
+      }));
+    } catch (e) {
+      debugPrint('🔊 [GameSfx] retrigger 失败: $e');
+    }
   }
 }

@@ -1434,7 +1434,9 @@ class StudyAudioSessionController {
         _playerLoadedAsset[player] = assetPath;
       }
       await player.setVolume(volume);
-      unawaited(player.play());
+      unawaited(player.play().catchError((e) {
+        Global.logger.w('playAssetSoundCut 播放异常: $soundFileName, $e');
+      }));
       
       final token = Object();
       _activeCutToken[player] = token;
