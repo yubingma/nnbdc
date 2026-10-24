@@ -441,6 +441,11 @@ void main() {
 
   testWidgets('写档的「提示」：点一次露一个汉字，其余仍是＿', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
+    // 两个释义项：验证提示行也按子项渲染（每个子项后面都跟常用度圆点）
+    testWord.meaningItems = [
+      MeaningItemVo('mi_1', 'n.', '苹果', null, null, []),
+      MeaningItemVo('mi_2', 'v.', '考验', null, null, []),
+    ];
     final WordWrapper hinted = WordWrapper(testWord, null)..hintLetterCount = 1;
     await _pumpPage(
         tester,
@@ -449,6 +454,10 @@ void main() {
             .copyWith(wordWrapper: hinted, hintTapCount: 1));
 
     expect(find.text('n. 苹＿'), findsOneWidget);
+    // 提示按"整条答案"逐字揭示：只点过一次，第二个释义项还全是＿
+    expect(find.text('v. ＿＿'), findsOneWidget);
+    // 释义之间用常用度圆点分隔（与正确答案行同一口径），不再用空格/分号
+    expect(find.text('；'), findsNothing);
     // 紧凑操作栏里有「提示」（只带图标）
     expect(find.byIcon(Icons.lightbulb_outline), findsOneWidget);
   });

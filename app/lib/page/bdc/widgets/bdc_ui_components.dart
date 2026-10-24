@@ -2170,32 +2170,27 @@ extension BdcPageStateUIComponents on BdcPageState {
     final int reveal = state.wordWrapper?.hintLetterCount ?? 0;
     if (reveal <= 0) return const SizedBox.shrink();
     final items = state.word?.getMergedMeaningItems() ?? const [];
-    final StringBuffer buffer = StringBuffer();
+    final Color dotColor = context.textSecondary;
+    final List<Widget> pieces = <Widget>[];
     int shown = 0;
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      if (i > 0) buffer.write('  ');
       final String ciXing = (item.ciXing ?? '').trim();
-      if (ciXing.isNotEmpty) buffer.write('$ciXing ');
       final parts = MeaningRenderUtil.resolveParts(item);
-      for (int p = 0; p < parts.length; p++) {
-        if (p > 0) buffer.write(' ');
-        for (final String ch in parts[p].text.split('')) {
+      for (int j = 0; j < parts.length; j++) {
+        final StringBuffer buffer = StringBuffer();
+        if (j == 0 && ciXing.isNotEmpty) buffer.write('$ciXing ');
+        for (final String ch in parts[j].text.split('')) {
           if (!RegExp(r'[\u4e00-\u9fa5]').hasMatch(ch)) {
             buffer.write(ch);
             continue;
           }
+          // 点一次「提示」多露一个字，其余仍是＿
           buffer.write(shown < reveal ? ch : '＿');
           shown++;
         }
-      }
-    }
-    if (buffer.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 2, 14, 0),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Text(
+        if (buffer.isEmpty) continue;
+        pieces.add(Text(
           buffer.toString(),
           maxLines: 1,
           softWrap: false,
@@ -2205,7 +2200,21 @@ extension BdcPageStateUIComponents on BdcPageState {
             letterSpacing: 1,
             color: context.textSecondary,
           ),
-        ),
+        ));
+        // 每个释义子项后面跟一个常用度圆点（与正确答案行、释义列表同一口径）
+        pieces.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: MeaningRenderUtil.buildDotWidget(
+              percent: parts[j].popularityPercent, color: dotColor),
+        ));
+      }
+    }
+    if (pieces.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 2, 14, 0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(mainAxisSize: MainAxisSize.min, children: pieces),
       ),
     );
   }
