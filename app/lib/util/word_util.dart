@@ -49,7 +49,9 @@ class SpellingTextEditingController extends TextEditingController {
     for (int i = 0; i < input.length; i++) {
       final ch = input[i];
       Color charColor = baseColor;
-      // 仅对英文字母做逐字符相似度标色；非字母（如中文默写）保持基色，避免整句被误标红
+      // 仅对英文字母做逐字符相似度标色（对=基色、错=红）；
+      // 非字母（中文释义等）跟着输入框自己的字色走 —— 绿色在这个 App 里只代表"判对了"，
+      // 手写回显的中文不能沿途就染成绿的，否则像已经答对。
       if (RegExp(r'[a-zA-Z]').hasMatch(ch)) {
         if (i < target.length) {
           // 比较单个字符，忽略大小写
@@ -60,6 +62,8 @@ class SpellingTextEditingController extends TextEditingController {
           // 超出目标长度的部分显示红色
           charColor = Colors.red;
         }
+      } else {
+        charColor = style?.color ?? baseColor;
       }
 
       children.add(TextSpan(

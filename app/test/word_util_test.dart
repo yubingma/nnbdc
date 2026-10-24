@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -282,6 +283,36 @@ void main() {
       expect(result.matchedCount, 1);
       // 答对一半（向上取整）需 2 个：只写对 1 个时还差 1 个
       expect(((result.totalCount + 1) >> 1) - result.matchedCount, 1);
+    });
+  });
+
+  group('输入框逐字标色：绿色只代表判对', () {
+    TextSpan spanOf(TextSpan root, int index) =>
+        (root.children![index] as TextSpan);
+
+    test('中文释义回显用输入框自己的字色，不会被染成绿色', () {
+      const Color brandGreen = Color(0xFF18BA7C);
+      const Color normalText = Color(0xFF1D1D1F);
+      final TextSpan span = SpellingTextEditingController.buildSpellingTextSpan(
+        '苹果',
+        'apple',
+        brandGreen,
+        const TextStyle(color: normalText),
+      );
+      expect(spanOf(span, 0).style?.color, normalText);
+      expect(spanOf(span, 1).style?.color, normalText);
+    });
+
+    test('英文拼写仍然逐字反馈：对的位置用基色、错的位置标红', () {
+      const Color brandGreen = Color(0xFF18BA7C);
+      final TextSpan span = SpellingTextEditingController.buildSpellingTextSpan(
+        'apxle',
+        'apple',
+        brandGreen,
+        const TextStyle(color: Color(0xFF1D1D1F)),
+      );
+      expect(spanOf(span, 0).style?.color, brandGreen);
+      expect(spanOf(span, 2).style?.color, Colors.red);
     });
   });
 }
