@@ -5353,6 +5353,95 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 100));
   });
 
+  group('写档的评分时间阈值更宽', () {
+    Future<(ProviderContainer, BdcNotifier)> boot() async {
+      final mockAsr = MockAsr();
+      final container = ProviderContainer(
+        overrides: [asrProvider.overrideWithValue(mockAsr)],
+      );
+      final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+      addTearDown(keepAlive.close);
+      addTearDown(container.dispose);
+      final notifier = container.read(bdcNotifierProvider.notifier);
+      await notifier.loadData(FakeBuildContext());
+      notifier.updateAutoJumpEn2Ch(false);
+      return (container, notifier);
+    }
+
+    test('手写 20 秒仍算「良好」（说档这时已经算吃力）', () async {
+      await Prefs.write(
+          BdcNotifier.answerModePrefKeyWord, AnswerMode.write.name);
+      final (container, notifier) = await boot();
+      expect(container.read(bdcNotifierProvider).isChineseDictation, isTrue);
+
+      final DateTime start = AppClock.now();
+      AppClock.setClock(FakeClock(start.add(const Duration(seconds: 20))));
+      addTearDown(AppClock.reset);
+      await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
+
+      final state = container.read(bdcNotifierProvider);
+      expect(state.hasFinishedAnswering, isTrue);
+      expect(state.lastFsrsRating, FsrsRating.good,
+          reason: '手写 20 秒应按"写的节奏"算良好，不能像说档那样算吃力');
+      await Future.delayed(const Duration(milliseconds: 100));
+    });
+
+    test('通过线是「答对所有释义」时，要写的项更多，时间预算也跟着涨', () async {
+      await Prefs.write(
+          BdcNotifier.answerModePrefKeyWord, AnswerMode.write.name);
+      final DateTime start = AppClock.now();
+      AppClock.setClock(FakeClock(start));
+      addTearDown(AppClock.reset);
+      final (container, notifier) = await boot();
+      // 两个释义子项 + 答对所有 → 轻松上限 = 12 + 6*2 = 24 秒
+      container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+        MeaningItemVo.from('n.', '苹果;梨子'),
+      ];
+      notifier.updateAsrPassRuleCache('ALL');
+
+      AppClock.setClock(FakeClock(start.add(const Duration(seconds: 20))));
+      await notifier.checkAsrResult(asrInput: '苹果梨子', isVoice: false);
+
+      final state = container.read(bdcNotifierProvider);
+      expect(state.hasFinishedAnswering, isTrue);
+      expect(state.lastFsrsRating, FsrsRating.easy,
+          reason: '两个释义写 20 秒仍属轻松（单释义的上限是 18 秒，这里是 24 秒）');
+      await Future.delayed(const Duration(milliseconds: 100));
+    });
+
+    test('时间预算按"要写多少"给：释义项越多越宽，汉译英按字母数算', () {
+      // 一个释义项：12 + 6 = 18 秒内算轻松
+      expect(BdcNotifier.typedRatingThresholds(requiredParts: 1),
+          (easy: 18, hard: 34));
+      // 答对所有释义（两个子项）：12 + 12 = 24 秒
+      expect(BdcNotifier.typedRatingThresholds(requiredParts: 2),
+          (easy: 24, hard: 40));
+      // 汉译英按字母数：apple(5) 17 秒、businesswoman(13) 25 秒
+      expect(
+          BdcNotifier.typedRatingThresholds(
+              isSpelling: true, spellLength: 5),
+          (easy: 17, hard: 33));
+      expect(
+          BdcNotifier.typedRatingThresholds(
+              isSpelling: true, spellLength: 13),
+          (easy: 25, hard: 41));
+    });
+
+    test('手写 35 秒算「吃力」', () async {
+      await Prefs.write(
+          BdcNotifier.answerModePrefKeyWord, AnswerMode.write.name);
+      final (container, notifier) = await boot();
+
+      final DateTime start = AppClock.now();
+      AppClock.setClock(FakeClock(start.add(const Duration(seconds: 35))));
+      addTearDown(AppClock.reset);
+      await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
+
+      expect(container.read(bdcNotifierProvider).lastFsrsRating, FsrsRating.hard);
+      await Future.delayed(const Duration(milliseconds: 100));
+    });
+  });
+
   group('写档：写对了就自动过，不用点提交', () {
     Future<ProviderContainer> boot({required MockAsr mockAsr}) async {
       StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);

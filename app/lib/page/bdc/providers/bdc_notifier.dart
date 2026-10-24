@@ -3342,15 +3342,53 @@ class BdcNotifier extends _$BdcNotifier {
     return best;
   }
 
+  /// 写档的评分时间预算（秒）：写字比说话慢，而且"要写几项""单词多长"差别很大。
+  ///
+  /// - 起步 12 秒：看词、听发音、准备落笔（与题目难度无关的固定开销）；
+  /// - 英译汉：每个必写的释义子项 6 秒（答对所有/答对一半时必写项更多，预算跟着涨）；
+  /// - 汉译英：每个字母 1 秒（手写或打字）；
+  /// - 轻松上限＝预算，吃力门槛＝预算 + 16 秒。
+  @visibleForTesting
+  static ({int easy, int hard}) typedRatingThresholds({
+    bool isSpelling = false,
+    int requiredParts = 1,
+    int spellLength = 0,
+  }) {
+    final int content = isSpelling ? spellLength : 6 * requiredParts;
+    final int easy = 12 + content;
+    return (easy: easy, hard: easy + 16);
+  }
+
   ({FsrsRating rating, String reason}) _calculateRating(String method, {int? customResponseTime}) {
     if (state.wordStartTime == null) return (rating: FsrsRating.good, reason: "$method，初始评分: ${FsrsRating.good.label}");
     final responseTime = customResponseTime ?? AppClock.now().difference(state.wordStartTime!).inSeconds;
     
-    // 判断是否为例句环节，如果是，适当延长打分响应时间阈值（Easy 24s，Hard 40s）
+    // 响应时间阈值按"答题方式"分别定：说一句话两三秒就完了，手写一两个汉字要慢得多，
+    // 用同一把尺子会把正常写完的人判成"吃力"。选择题的耗时主要花在看选项上，介于两者之间。
     final bool isSentenceStep = state.studyStep == StudyStep.enSentence2Ch.json || 
                                 state.studyStep == StudyStep.chSentence2En.json;
-    final int easyThreshold = isSentenceStep ? 24 : 8;
-    final int hardThreshold = isSentenceStep ? 40 : 18;
+    final int easyThreshold;
+    final int hardThreshold;
+    if (isSentenceStep) {
+      // 例句环节：整句更长（轻松 24s，吃力 40s）
+      easyThreshold = 24;
+      hardThreshold = 40;
+    } else if (state.answerMode == AnswerMode.write) {
+      final bool isSpelling = state.studyStep == StudyStep.ch2En.json;
+      final WordVo? word = state.word;
+      final thresholds = typedRatingThresholds(
+        isSpelling: isSpelling,
+        requiredParts:
+            isSpelling || word == null ? 1 : _requiredMatchCount(countMeaningParts(word)),
+        spellLength: word?.spell.length ?? 0,
+      );
+      easyThreshold = thresholds.easy;
+      hardThreshold = thresholds.hard;
+    } else {
+      // 说档、选档（轻松 8s，吃力 18s）
+      easyThreshold = 8;
+      hardThreshold = 18;
+    }
 
     FsrsRating rating;
     if (responseTime < easyThreshold) {
