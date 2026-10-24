@@ -48,6 +48,19 @@ class FeatureChallengeRepository {
       explanation: '背单词时直接开口说出答案，无需手动点按。不方便开口时，把答题方式切到「写」即可。',
     ),
     FeatureChallenge(
+      id: 'tip_ch2en_replay_sound',
+      category: '学习操作',
+      title: '答对后还想再听一遍',
+      question: '汉译英环节说对单词后，会自动播一遍标准发音；想主动再听一遍该点哪里？',
+      options: [
+        '点答案旁边那颗小喇叭，想听几遍点几遍',
+        '退出学习页重新进来一次',
+        '长按中文释义',
+      ],
+      correctIndex: 0,
+      explanation: '汉译英题面只有中文释义，答题前不会给出发音（那等于直接报答案）。答对、答案揭晓后，说档的拼写下方、写档的正确答案行末尾会多出一颗小喇叭：点一次播一次标准发音，只播单词本身、不连带例句，方便跟着纠正自己的发音。',
+    ),
+    FeatureChallenge(
       id: 'tip_answer_mode_write',
       category: '学习操作',
       title: '安静场所怎么背单词',

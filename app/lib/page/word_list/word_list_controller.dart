@@ -379,10 +379,13 @@ class WordListController extends ChangeNotifier {
     final isGoingUp = !clearCurrent && baseIndex != null && fromIndex < baseIndex!;
     final isGoingDown = !clearCurrent && baseIndex != null && fromIndex >= baseIndex!;
 
+    // 「已翻到末尾」只看同一份数据的分页追加。clearCurrent 表示整个视图重载（进页、
+    // 切数据源、切排序/筛选），此时 totalWordCount 还是上一份数据的，不能拿它拦：
+    // 历史错词 0 词时切到今日错词，fromIndex 恒为 0，会被 0 >= 0 直接拦死成空列表。
     if (isQuerying ||
         doNotQueryPlease ||
         fromIndex < 0 ||
-        (totalWordCount >= 0 && fromIndex >= totalWordCount) ||
+        (!clearCurrent && totalWordCount >= 0 && fromIndex >= totalWordCount) ||
         (isGoingUp && baseIndex! <= 0) ||
         (isGoingDown && totalWordCount >= 0 && baseIndex! + words.length >= totalWordCount && words.isNotEmpty) ||
         (!force && !clearCurrent && lastQueryTime != null &&

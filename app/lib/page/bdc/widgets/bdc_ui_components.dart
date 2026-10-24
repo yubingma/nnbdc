@@ -2034,7 +2034,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                         );
                       } else {
                         return Center(
-                          child: _buildCenteredSpellingHint(isDarkMode),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildCenteredSpellingHint(isDarkMode),
+                              // 汉译英答对后，想再听一遍就点这颗小喇叭
+                              _buildWordReplayButton(),
+                            ],
+                          ),
                         );
                       }
                     }(),
@@ -2114,6 +2121,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 _buildMeaningProgressText(
                     state.dictationMatchedCount, state.dictationRequiredCount, '写'),
               ],
+              // 汉译英答对后，想再听一遍就点这颗小喇叭（英译汉题面本来就有发音按钮）
+              _buildWordReplayButton(),
             ],
           ),
         ),
@@ -4084,6 +4093,35 @@ extension BdcPageStateUIComponents on BdcPageState {
           },
         ),
       ],
+    );
+  }
+
+  /// 汉译英答案揭晓后的「再听一遍」：一颗小喇叭，点一次重播一次单词发音。
+  ///
+  /// 只在答案揭晓后出现 —— 汉译英题面只有中文释义，答题前给发音等于把答案念出来。
+  /// 复用 [buildWordSoundButton]：播放时有波纹动画、连点只播最新一次，
+  /// 发音取不到时还会跟着显示备用发音的小徽标。
+  Widget _buildWordReplayButton() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final word = ref.watch(bdcNotifierProvider.select((s) => s.word));
+        final studyStep =
+            ref.watch(bdcNotifierProvider.select((s) => s.studyStep));
+        final finished = ref
+            .watch(bdcNotifierProvider.select((s) => s.hasFinishedAnswering));
+        if (word == null || !finished || studyStep != StudyStep.ch2En.json) {
+          return const SizedBox.shrink();
+        }
+        // 播放状态变化只重建这颗小喇叭，不重建整张答题卡
+        ref.watch(
+            bdcNotifierProvider.select((s) => s.playingStates['word'] ?? false));
+        return Padding(
+          key: const Key('bdc_replay_word_sound'),
+          padding: const EdgeInsets.only(top: 4),
+          child: buildWordSoundButton(
+              word, _audioPlayer, ref.read(bdcNotifierProvider)),
+        );
+      },
     );
   }
 

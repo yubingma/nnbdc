@@ -13,9 +13,9 @@ import 'package:provider/provider.dart' as provider;
 /// 阶段复习（本组小结）里打开手写后，底部「重写/回退/关闭/提示」那张操作卡
 /// 曾经铺满整页宽度，把页面底部的「下一组」遮住大半、并且吃掉它的点击。
 ///
-/// 现在：操作卡缩成一小块。宽屏（iPad 横屏/竖屏、手机横屏）时画布铺到屏幕最底、
-/// 底栏叠在上面，卡片原地落在「下一组」左边的空白里，不再多占一行书写区；
-/// 窄屏「下一组」占满整行，卡片落在它上方。
+/// 现在：底部这一条是页面底栏，独占一条纵向空间——手写工具条（重写/回退/关闭/提示）
+/// 在左、「下一组」在右，词卡与手写画布都止步于它上沿，谁也不会压到词卡上。
+/// 宽屏工具条带文字，窄屏只画图标（更小），两种宽度都能并排放得下。
 ///
 /// 只保留一个 testWidgets：手写模式的入场会等一次音频会话释放，而音频会话是
 /// 进程级单例，同一个测试文件里反复进出会把它的队列拖住（后续用例卡在
@@ -119,7 +119,7 @@ Future<void> _openHandwriting(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('手写面板打开时「下一组」不被操作栏遮挡，且横竖屏、小屏手机都能点', (tester) async {
+  testWidgets('手写工具条与「下一组」共用底部独立一条：不压词卡/画布，各尺寸都能点', (tester) async {
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
@@ -147,30 +147,26 @@ void main() {
       final cardRect = tester.getRect(find.byKey(_handwritingCardKey));
 
       expect(overlayRect.width, size.width, reason: '$label：手写覆盖层应铺满宽度');
-      // 手写操作卡收成一小块，不再是一条整宽的毛玻璃带
-      expect(cardRect.width, lessThan(size.width * 0.75),
-          reason: '$label：操作卡应缩成一小块，不能铺满整行');
-      // 卡与「下一组」在哪个方向上都不得重叠
+      // 底部这一条是内容区之外的独立空间：画布/词卡止步于它的上沿
+      expect(overlayRect.bottom, lessThan(size.height),
+          reason: '$label：画布不能再铺到屏幕最底，底部要留出工具条和按钮的独立空间');
+      expect(overlayRect.bottom, lessThanOrEqualTo(cardRect.top),
+          reason: '$label：手写工具条必须整块落在画布之外（不能再压在书写区/词卡上）');
+      expect(overlayRect.bottom, lessThanOrEqualTo(buttonRect.top),
+          reason: '$label：「下一组」也必须整块落在画布之外');
+      // 工具条与「下一组」在同一行，左右分开
       expect(cardRect.overlaps(buttonRect), isFalse,
-          reason: '$label：「下一组」被手写操作卡盖住了');
-
-      if (wide) {
-        // 宽屏：画布铺到屏幕最底（底栏叠在上面），操作卡贴底落在「下一组」左边
-        expect(overlayRect.bottom, size.height,
-            reason: '$label：宽屏画布要铺到屏幕最底，操作卡不得另占一行书写区');
-        expect(size.height - cardRect.bottom, 24.0,
-            reason: '$label：操作卡与「下一组」同一行（离屏幕底 24px）');
-        expect(cardRect.left, 16.0, reason: '$label：操作卡贴左下角');
-        expect(cardRect.right, lessThan(buttonRect.left),
-            reason: '$label：操作卡必须整块在「下一组」左侧');
-      } else {
-        // 窄屏：「下一组」占满整行、居中，操作卡只能落在它上方
-        expect(cardRect.bottom, lessThanOrEqualTo(buttonRect.top),
-            reason: '$label：窄屏操作卡应落在「下一组」上方');
-      }
-
-      expect(buttonRect.bottom, lessThanOrEqualTo(size.height),
-          reason: '$label：「下一组」不能被挤出屏幕底部');
+          reason: '$label：「下一组」被手写工具条盖住了');
+      expect(cardRect.right, lessThanOrEqualTo(buttonRect.left),
+          reason: '$label：工具条必须在「下一组」左侧');
+      expect(cardRect.width, lessThan(size.width * 0.75),
+          reason: '$label：工具条应缩成一小块，不能铺满整行');
+      expect(size.height - cardRect.bottom, 24.0,
+          reason: '$label：工具条与「下一组」同一条底线（离屏幕底 24px）');
+      expect(cardRect.left, 16.0, reason: '$label：工具条贴左缘 16px');
+      // 宽屏按钮贴右 28px；窄屏工具条只画图标，按钮也收在右边
+      expect(size.width - buttonRect.right, wide ? 28.0 : 16.0,
+          reason: '$label：「下一组」右边距不对');
 
       _nextGroupTapped = false;
       await tester.tap(find.byKey(_nextGroupKey));

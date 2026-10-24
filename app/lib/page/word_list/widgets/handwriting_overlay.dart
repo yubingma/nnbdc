@@ -13,9 +13,6 @@ import '../../word_detail.dart';
 class HandwritingOverlay extends StatefulWidget {
   final bool isDarkMode;
 
-  /// 页面底栏有主动作（如「下一组」）且宽度够并排放置：
-  /// 手写操作卡落在左下角、与那颗按钮同一行，书写区一直铺到屏幕最底。
-  final bool besidePageAction;
   final WordWrapper? activeWord;
   final int bookmarkedIndex;
   final List<WordWrapper> words;
@@ -23,7 +20,6 @@ class HandwritingOverlay extends StatefulWidget {
   final ValueNotifier<bool> rightZoneVisible;
   final GlobalKey<HandwritingBoardState> handwritingBoardKey;
   
-  final Function(WordWrapper word) giveALittleHint;
   final Function(WordWrapper word) clearHint;
   final Function() onCancel;
   final Function(int currIndex) onWordAnswered;
@@ -32,14 +28,12 @@ class HandwritingOverlay extends StatefulWidget {
   const HandwritingOverlay({
     super.key,
     required this.isDarkMode,
-    required this.besidePageAction,
     required this.activeWord,
     required this.bookmarkedIndex,
     required this.words,
     required this.studyMode,
     required this.rightZoneVisible,
     required this.handwritingBoardKey,
-    required this.giveALittleHint,
     required this.clearHint,
     required this.onCancel,
     required this.onWordAnswered,
@@ -117,17 +111,13 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
                 showHeader: false,
                 showCloseButton: false, 
                 useBoxDecoration: false,
-                showCanvasButtons: true, 
+                // 操作卡不在画布上：词表页把它放进页面底栏，与「下一组」并排，
+                // 底部因此有一整条自己的纵向空间，不会压在词卡上。
+                showCanvasButtons: false,
                 compactControls: false,
-                besidePageAction: widget.besidePageAction,
                 enableNavigationGestures: false,
                 smartRightZoneWidth: 0, 
                 rightZoneVisibleNotifier: widget.rightZoneVisible, 
-                onHint: () {
-                  if (activeWord != null) {
-                    widget.giveALittleHint(activeWord);
-                  }
-                },
                 onUndo: () => _clearHandwritingHints(activeWord),
                 onRewrite: () => _clearHandwritingHints(activeWord),
                 onStartWriting: () {

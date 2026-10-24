@@ -106,4 +106,48 @@ void main() {
     expect(uiPosition, greaterThanOrEqualTo(0));
     expect(controller.words[uiPosition].word.spell, 'word_42');
   });
+
+  test('空词表切到另一份词表：整体重载不被上一份词表的词数拦死', () async {
+    // 线上现象：历史错词为 0 词时点「今日」切到今日错词，页面永远停在「词单暂无单词」。
+    // 根因是 doQuery 的整体重载也拿上一份词表的 totalWordCount 判断"已翻到末尾"：
+    // 上一份是 0 词时，fromIndex(0) >= totalWordCount(0) 直接返回，新词表一次都没查。
+    final todayWords = List.generate(
+      19,
+      (i) => WordWrapper(WordVo.c2('word_$i')..id = 'id_$i', null),
+    );
+    final historyProvider = FakeWordsProvider([]);
+    final args = WordListPageArgs(
+      '历史错词',
+      historyProvider,
+      true,
+      false,
+      false,
+      '掌握度',
+      FakeProgressProvider(),
+      FakeBookMarkProvider(),
+      null,
+    );
+    final controller = WordListController(
+      args: args,
+      itemScrollController: ItemScrollController(),
+      itemPositionsListener: ItemPositionsListener.create(),
+      sessionController: StudyAudioSessionController(),
+    );
+    addTearDown(controller.dispose);
+
+    // 先按历史错词加载：0 词，总数落到 0
+    await controller.loadData(checkAndShowGuide: () {}, restoreAsrIfNeeded: (_) {});
+    expect(controller.totalWordCount, 0);
+    expect(controller.words, isEmpty);
+
+    // 点「今日」：页面原地替换数据源为今日错词（今日错词有书签），再整体重载
+    args.appBarTitle = '今日错词';
+    args.wordsProvider = FakeWordsProvider(todayWords);
+    args.bookMarkProvider = FakeBookMarkProvider(BookMarkVo(0, 'word_0'));
+
+    await controller.loadData(checkAndShowGuide: () {}, restoreAsrIfNeeded: (_) {});
+
+    expect(controller.totalWordCount, 19);
+    expect(controller.words.length, 19);
+  });
 }

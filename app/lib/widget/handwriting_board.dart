@@ -6,6 +6,183 @@ import 'package:flutter/services.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import '../theme/app_theme.dart';
 
+/// 手写工具卡上的一颗按钮（重写/回退/提交/关闭/提示）。
+class HandwritingToolAction {
+  const HandwritingToolAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.busy = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  /// 识别中：显示转圈并屏蔽点击（提交后到判题落地之间有最长 5 秒的识别等待）
+  final bool busy;
+}
+
+/// 手写工具卡：重写/回退/(提交)/关闭/提示 共用一张毛玻璃小卡。
+///
+/// 它是手写操作栏的唯一实现：板内默认把它画在画布底部；词表页把它放进页面底栏、
+/// 与「下一组」并排，底部因此有一整条自己的纵向空间，既不压住词卡也不压住那颗按钮。
+class HandwritingToolBar extends StatelessWidget {
+  const HandwritingToolBar({
+    super.key,
+    required this.actions,
+    this.compact = false,
+  });
+
+  final List<HandwritingToolAction> actions;
+
+  /// 窄屏：只画图标，按钮做得更小（一排带文字的按钮在手机宽度上会和「下一组」挤在一起）
+  final bool compact;
+
+  static const double _pillWidth = 46;
+  static const double _pillHeight = 38;
+  static const double _gap = 6;
+  static const double _padH = 6;
+  static const double _padV = 5;
+
+  static const double _compactPillWidth = 36;
+  static const double _compactPillHeight = 32;
+  static const double _compactGap = 5;
+  static const double _compactPad = 5;
+
+  /// 卡片描边宽度：它也算在卡片尺寸里（边框 + 内边距一起吃掉了内容区）
+  static const double _borderWidth = 0.8;
+
+  /// 卡片尺寸。画布按它把「笔从卡上落笔不算书写」的那块区域让出来。
+  static Size measure(int count, {bool compact = false}) {
+    final double padH = compact ? _compactPad : _padH;
+    final double padV = compact ? _compactPad : _padV;
+    final double pillWidth = compact ? _compactPillWidth : _pillWidth;
+    final double pillHeight = compact ? _compactPillHeight : _pillHeight;
+    final double gap = compact ? _compactGap : _gap;
+    return Size(
+      count * pillWidth + (count - 1) * gap + (padH + _borderWidth) * 2,
+      pillHeight + (padV + _borderWidth) * 2,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Size size = measure(actions.length, compact: compact);
+    final double pillWidth = compact ? _compactPillWidth : _pillWidth;
+    final double pillHeight = compact ? _compactPillHeight : _pillHeight;
+    final double gap = compact ? _compactGap : _gap;
+    final Color foreground = context.textSecondary;
+    final BorderRadius radius = BorderRadius.circular(size.height / 2);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.32 : 0.10),
+            blurRadius: 18,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: size.width,
+            height: size.height,
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? _compactPad : _padH,
+              vertical: compact ? _compactPad : _padV,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xB31C2127) : const Color(0xBFFFFFFF),
+              borderRadius: radius,
+              border: Border.all(
+                color: isDark ? const Color(0x33FFFFFF) : const Color(0x1F000000),
+                width: _borderWidth,
+              ),
+            ),
+            child: Row(
+              children: [
+                for (int i = 0; i < actions.length; i++) ...[
+                  if (i > 0) SizedBox(width: gap),
+                  _buildPill(
+                    action: actions[i],
+                    width: pillWidth,
+                    height: pillHeight,
+                    foreground: foreground,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPill({
+    required HandwritingToolAction action,
+    required double width,
+    required double height,
+    required Color foreground,
+  }) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: action.busy
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                action.onTap();
+              },
+        child: compact
+            ? Center(
+                child: action.busy
+                    ? SizedBox(
+                        height: 14,
+                        width: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: foreground),
+                      )
+                    : Icon(action.icon, color: foreground, size: 16),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 17,
+                    width: 17,
+                    child: action.busy
+                        ? CircularProgressIndicator(
+                            strokeWidth: 2, color: foreground)
+                        : Icon(action.icon, color: foreground, size: 17),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    action.label,
+                    style: TextStyle(
+                      color: foreground,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                      height: 1.1,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
 class HandwritingBoard extends StatefulWidget {
   final Function(String) onRecognized;
   final VoidCallback onCancel;
@@ -28,13 +205,6 @@ class HandwritingBoard extends StatefulWidget {
   /// 免得三颗胶囊把卡片里本就有限的书写面积吃掉一大块。
   final bool compactControls;
 
-  /// 操作栏是否与页面底栏的主动作（例如阶段复习的「下一组」）并排。
-  ///
-  /// true：页面底栏叠在画布之上（`Scaffold.extendBody`），画布一直铺到屏幕最底，
-  /// 操作卡缩成一小块落在左下角，与那颗按钮同一行，不再占掉上方的书写区；
-  /// false：页面没有底栏动作，或窄屏放不下并排，操作卡居中浮在画布底部。
-  final bool besidePageAction;
-
   final bool showHeader;
   final bool useBoxDecoration;
   final bool showCanvasButtons;
@@ -52,7 +222,6 @@ class HandwritingBoard extends StatefulWidget {
     this.showCloseButton = true,
     this.showCloseControl = true,
     this.compactControls = false,
-    this.besidePageAction = false,
     this.showHeader = true,
     this.useBoxDecoration = true,
     this.showCanvasButtons = true,
@@ -414,6 +583,14 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     _recognitionVersion++;
   }
 
+  /// 页面底栏的手写工具条用：与板内「重写 / 回退」走同一条逻辑
+  /// （清空笔迹 / 删掉最后一笔，再通知上层的 onRewrite / onUndo）。
+  ///
+  /// 词表页把工具条放进页面底栏（和「下一组」并排），板内不再画它，
+  /// 但两条入口必须落到同一段代码上，否则「重写」清什么、「回退」删哪一笔会各说各话。
+  void rewrite() => _canvasKey.currentState?.rewrite();
+  void undo() => _canvasKey.currentState?.undo();
+
   /// 键盘手动编辑输入框时调用：取消停笔识别定时器，并清掉手写板的答案前缀、已识别序列与当前格预览，
   /// 避免手写预览回填覆盖用户用键盘删改后的输入框。
   /// 中文默写下画布笔迹一并擦除：键盘接管输入框后，残留的旧笔迹会在下次「提交」时
@@ -576,7 +753,6 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   showButtons: widget.showCanvasButtons,
                   showCloseControl: widget.showCloseControl,
                   compactControls: widget.compactControls,
-                  besidePageAction: widget.besidePageAction,
                   onCancel: widget.onCancel,
                   enableNavigationGestures: widget.enableNavigationGestures,
                   smartRightZoneWidth: widget.smartRightZoneWidth,
@@ -618,8 +794,6 @@ class _HandwritingCanvas extends StatefulWidget {
   /// 操作栏紧凑模式：只画图标，不画文字、毛玻璃底衬与阴影
   final bool compactControls;
 
-  /// 操作卡与页面底栏主动作并排（见 [HandwritingBoard.besidePageAction]）
-  final bool besidePageAction;
   final VoidCallback? onCancel;
   final bool enableNavigationGestures;
   final double smartRightZoneWidth;
@@ -648,7 +822,6 @@ class _HandwritingCanvas extends StatefulWidget {
     required this.showButtons,
     this.showCloseControl = true,
     this.compactControls = false,
-    this.besidePageAction = false,
     this.onCancel,
     this.enableNavigationGestures = true,
     this.smartRightZoneWidth = 0.0,
@@ -709,136 +882,61 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   ///
   /// [flat] 为 true 时按钮不再自带毛玻璃与描边，只是浮在小卡上的一颗「图标 + 小字」：
   /// 底衬由外面那张唯一的操作卡提供，四颗胶囊不再各自撑一层模糊与阴影。
-  Widget _buildCanvasControlButton({
-    required double left,
-    required double top,
-    required double width,
-    required double height,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required bool isDark,
+  /// 答题卡内嵌的写面板：贴着画布底边的一颗小图标胶囊（无文字、无底衬）。
+  Widget _buildCompactControlButton({
+    required Rect rect,
+    required HandwritingToolAction action,
     required Color foreground,
     required Color background,
     required Color border,
-    bool busy = false,
-    bool compact = false,
-    bool flat = false,
   }) {
-    final Widget body = flat
-        ? SizedBox(
-            width: width,
-            height: height,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: 17,
-                  width: 17,
-                  child: busy
-                      ? CircularProgressIndicator(
-                          strokeWidth: 2, color: foreground)
-                      : Icon(icon, color: foreground, size: 17),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: foreground,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.2,
-                    height: 1.1,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-              ],
-            ),
-          )
-        : ClipRRect(
-            borderRadius: BorderRadius.circular(height / 2),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-              child: Container(
-                width: width,
-                height: height,
-                decoration: BoxDecoration(
-                  color: background,
-                  borderRadius: BorderRadius.circular(height / 2),
-                  border: Border.all(color: border, width: 0.8),
-                  boxShadow: compact
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: Colors.black
-                                .withValues(alpha: isDark ? 0.28 : 0.08),
-                            blurRadius: 14,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                ),
-                child: compact
-                    ? Center(
-                        child: busy
-                            ? SizedBox(
-                                height: 14,
-                                width: 14,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: foreground),
-                              )
-                            : Icon(icon, color: foreground, size: 16),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: busy
-                                ? CircularProgressIndicator(
-                                    strokeWidth: 2, color: foreground)
-                                : Icon(icon, color: foreground, size: 20),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            label,
-                            style: TextStyle(
-                              color: foreground,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.2,
-                              decoration: TextDecoration.none,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
-          );
-
     return Positioned(
-      left: left,
-      top: top,
+      left: rect.left,
+      top: rect.top,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: busy
+        onTap: action.busy
             ? null
             : () {
                 HapticFeedback.lightImpact();
-                onTap();
+                action.onTap();
               },
-        child: body,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(rect.height / 2),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+            child: Container(
+              width: rect.width,
+              height: rect.height,
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: BorderRadius.circular(rect.height / 2),
+                border: Border.all(color: border, width: 0.8),
+              ),
+              child: Center(
+                child: action.busy
+                    ? SizedBox(
+                        height: 14,
+                        width: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: foreground),
+                      )
+                    : Icon(action.icon, color: foreground, size: 16),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  void _handleRewrite() {
+  void rewrite() {
     _autoRecognizeTimer?.cancel();
     _controller.clear();
     widget.onRewrite();
   }
 
-  void _handleUndo() {
+  void undo() {
     _autoRecognizeTimer?.cancel();
     if (widget.manualSubmit && widget.cellCount > 1) {
       // 键盘输入法弹起时：上层直接删输入框最后一个字符（返回 true），不再走手写板回退
@@ -896,46 +994,46 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
 
         // 底部操作按钮（自左向右）。中文默写（手动提交）额外增加「提交」按钮，
         // 识别/判题进行中它显示识别中并屏蔽点击（一次点击只判一次，用户也看得见"提交已受理"）。
-        final List<({IconData icon, String label, VoidCallback onTap, bool busy})> controls = [
-          (icon: Icons.delete_sweep_outlined, label: '重写', onTap: _handleRewrite, busy: false),
-          (icon: Icons.undo_outlined, label: '回退', onTap: _handleUndo, busy: false),
+        final List<HandwritingToolAction> controls = [
+          HandwritingToolAction(
+              icon: Icons.delete_sweep_outlined, label: '重写', onTap: rewrite),
+          HandwritingToolAction(icon: Icons.undo_outlined, label: '回退', onTap: undo),
           if (widget.manualSubmit)
-            (icon: Icons.check, label: '提交', onTap: _handleSubmit, busy: widget.isRecognizing),
+            HandwritingToolAction(
+                icon: Icons.check,
+                label: '提交',
+                onTap: _handleSubmit,
+                busy: widget.isRecognizing),
           if (widget.showCloseControl)
-            (icon: Icons.close, label: '关闭', onTap: () => widget.onCancel?.call(), busy: false),
+            HandwritingToolAction(
+                icon: Icons.close,
+                label: '关闭',
+                onTap: () => widget.onCancel?.call()),
           if (hasHint)
-            (icon: Icons.lightbulb_outline, label: '提示', onTap: () => widget.onHint?.call(), busy: false),
+            HandwritingToolAction(
+                icon: Icons.lightbulb_outline,
+                label: '提示',
+                onTap: () => widget.onHint?.call()),
         ];
 
         // 操作卡尺寸固定成「图标 + 小字」的一小块，不再按可用宽度把胶囊撑到 110×65：
         // 那样既白占一块书写区，四颗各自带模糊与阴影的肥胶囊也很难看。
         final int controlCount = controls.length;
-        final double pillWidth = compact ? 40 : 46;
-        final double pillHeight = compact ? 30 : 38;
-        final double controlGap = compact ? 8 : 6;
-        final double cardPadH = compact ? 0 : 6;
-        final double cardPadV = compact ? 0 : 5;
-        final double cardWidth =
-            pillWidth * controlCount + controlGap * (controlCount - 1) + cardPadH * 2;
-        final double cardHeight = pillHeight + cardPadV * 2;
-        // 与页面底栏的主动作（「下一组」）并排时，卡片贴着屏幕底落在左下角：
-        // 那颗按钮占住右下角，卡片只借用它左边的空白，不再额外占掉一行书写区。
-        // 页面没有那颗按钮（或窄屏并排放不下）时，卡片居中浮在画布底部。
-        final double cardBottom = compact ? 0 : (widget.besidePageAction ? 24 : 10);
-        final double cardLeft = compact || !widget.besidePageAction
-            ? (width - cardWidth) / 2
-            : 16;
-        final double cardTop = height - cardBottom - cardHeight;
-        final List<Rect> controlZones = List.generate(controlCount, (i) {
-          return Rect.fromLTWH(
-              cardLeft + cardPadH + i * (pillWidth + controlGap),
-              cardTop + cardPadV,
-              pillWidth,
-              pillHeight);
-        });
-        // 整张卡（含内边距）都不算书写区：笔落在卡上不能在画布留下痕迹
-        final Rect controlCardRect =
-            Rect.fromLTWH(cardLeft, cardTop, cardWidth, cardHeight);
+        final Size controlsSize = compact
+            ? Size(40.0 * controlCount + 8.0 * (controlCount - 1), 30)
+            : HandwritingToolBar.measure(controlCount);
+        final double controlsLeft = (width - controlsSize.width) / 2;
+        final double controlsTop =
+            height - (compact ? 0 : 10) - controlsSize.height;
+        // 整块操作区都不算书写区：笔落在卡上不能在画布留下痕迹
+        final Rect controlCardRect = Rect.fromLTWH(
+            controlsLeft, controlsTop, controlsSize.width, controlsSize.height);
+        final List<Rect> compactZones = compact
+            ? List.generate(controlCount, (i) {
+                return Rect.fromLTWH(
+                    controlsLeft + i * 48.0, controlsTop, 40, 30);
+              })
+            : const <Rect>[];
 
         return Listener(
           behavior: _currentSmartZoneWidth > 0 ? HitTestBehavior.translucent : HitTestBehavior.opaque,
@@ -1019,7 +1117,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     activeCell: widget.activeCellIndex,
                     // 紧凑模式：格子的底边正好落在三颗小按钮的中线上，
                     // 让它们"横跨"在边框上而不是缩在框里；整页模式仍按整块画布算。
-                    bottomInset: compact ? pillHeight / 2 : 0,
+                    bottomInset: compact ? 15.0 : 0,
                     isDark: isDark,
                     accent: context.primaryColor,
                   ),
@@ -1033,68 +1131,26 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               ),
               
               if (widget.showButtons) ...[
-                // 整页手写板：一块贴底的小卡（重写/回退/关闭/提示）。
-                // 与页面底栏的「下一组」并排时贴屏幕底、落左下角；否则居中浮在画布底部。
-                // 紧凑模式（答题卡内嵌）没有底衬，只有几颗小图标。
-                if (!compact)
+                if (compact)
+                  // 答题卡内嵌：贴着画布底边的一排小图标，不占毛玻璃底衬
+                  for (int i = 0; i < controls.length; i++)
+                    _buildCompactControlButton(
+                      rect: compactZones[i],
+                      action: controls[i],
+                      foreground: controlFg,
+                      background: controlBg,
+                      border: controlBorder,
+                    )
+                else
+                  // 整页手写板：一张贴底的小卡（重写/回退/关闭/提示）。
+                  // 词表页会把同一个小卡放进页面底栏与「下一组」并排，那里不会画到画布上。
                   Positioned(
-                    key: const Key('handwriting_control_card'),
-                    left: cardLeft,
-                    top: cardTop,
-                    width: cardWidth,
-                    height: cardHeight,
-                    child: IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(cardHeight / 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black
-                                  .withValues(alpha: isDark ? 0.32 : 0.10),
-                              blurRadius: 18,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(cardHeight / 2),
-                          child: BackdropFilter(
-                            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xB31C2127)
-                                    : const Color(0xBFFFFFFF),
-                                borderRadius: BorderRadius.circular(cardHeight / 2),
-                                border: Border.all(
-                                  color: isDark
-                                      ? const Color(0x33FFFFFF)
-                                      : const Color(0x1F000000),
-                                  width: 0.8,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                    left: controlsLeft,
+                    top: controlsTop,
+                    child: HandwritingToolBar(
+                      actions: controls,
+                      compact: false,
                     ),
-                  ),
-                for (int i = 0; i < controls.length; i++)
-                  _buildCanvasControlButton(
-                    left: controlZones[i].left,
-                    top: controlZones[i].top,
-                    width: pillWidth,
-                    height: pillHeight,
-                    icon: controls[i].icon,
-                    label: controls[i].label,
-                    onTap: controls[i].onTap,
-                    busy: controls[i].busy,
-                    compact: compact,
-                    flat: !compact,
-                    isDark: isDark,
-                    foreground: controlFg,
-                    background: controlBg,
-                    border: controlBorder,
                   ),
               ],
             ],
