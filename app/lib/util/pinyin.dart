@@ -455,11 +455,17 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
       // 中文手写默写：判题算法与语音"说中文"同一套（滑动候选 + 拼音模糊匹配），
       // 区别是要求用户把释义写全——只写一部分（"商人"当"女商人"、"看察"当"查看"）不算对，
       // 否则默写会退化成"写对两个字就给过"。
+      //
+      // 但**中间多写了一两个字**要放过（"苹哦果"= 苹果）：手写多一笔多一个字很常见，
+      // 判错逼用户去删才是真麻烦。所以窗口长度从"恰好写完"放宽到"最多多 2 个字"，
+      // 由 [_coversUnit] 在窗口内用"允许跳字"的对齐判断是否把这几个字都写出来了。
       final int M = unit.length;
-      for (var start = 0; start + M <= asrText.length; start++) {
-        if (_coversUnit(asrText.substring(start, start + M), unit,
-            targetPinyinsCache: targetPinyinsCache)) {
-          return true;
+      for (var len = M; len <= M + maxSkippedCharsForMatch; len++) {
+        for (var start = 0; start + len <= asrText.length; start++) {
+          if (_coversUnit(asrText.substring(start, start + len), unit,
+              targetPinyinsCache: targetPinyinsCache)) {
+            return true;
+          }
         }
       }
       continue;
@@ -507,31 +513,65 @@ List<String> _asrCandidates(String asrText, int unitLength) {
   return subCandidates;
 }
 
-/// 判断等长的用户输入片段是否已"完整写出"释义。
+/// 判断用户输入片段是否已"完整写出"释义，允许中间夹最多 [maxSkippedCharsForMatch] 个多余的字。
 ///
-/// 逐字取拼音相似度，要求输入的每个字都能对应上释义的对应字，
-/// 从而拒绝只写一部分的截断答案（"商人" ≠ "女商人"、"看察" ≠ "查看"），
-/// 同时容忍手写识别的个别同音/形近字误识（"女商仁" = "女商人"）。
+/// 逐字取拼音相似度并做"允许跳字"的对齐：
+/// - 释义的每个字都必须对上（拒绝只写一部分的截断答案："商人" ≠ "女商人"、"看察" ≠ "查看"）；
+/// - 输入的每个字要么对上释义的某个字，要么算作一个"多写的字"，总数不超过上限
+///   （"苹哦果" = 苹果、"女商人的" 里的"的"也算一个）；
+/// - 同时容忍手写识别的个别同音/形近字误识（"女商仁" = "女商人"）。
 bool _coversUnit(String input, String unit,
     {Map<String, List<List<PinyinParser>>>? targetPinyinsCache}) {
-  if (input.length != unit.length) return false;
+  final int m = unit.length;
+  final int n = input.length;
+  if (n < m || n > m + maxSkippedCharsForMatch) return false;
   final userPinyins = _pinyinsOf(input, targetPinyinsCache);
   final targetPinyins = _pinyinsOf(unit, targetPinyinsCache);
-  final double threshold = unit.length <= 2 ? 0.92 : 0.90;
-  double sum = 0.0;
-  for (var i = 0; i < unit.length; i++) {
-    double maxSim = 0.0;
-    for (final pUser in userPinyins[i]) {
-      for (final pTarget in targetPinyins[i]) {
-        final sim = similarityOf2ParsedPinyin(pUser, pTarget);
-        if (sim > maxSim) maxSim = sim;
+  final double threshold = m <= 2 ? 0.92 : 0.90;
+
+  // best[i][j][s]：已对上释义的前 i 个字、用掉输入的前 j 个字、其中多写了 s 个字时，
+  // 相似度之和的最大值。-1 表示到不了这个状态。
+  final List<List<List<double>>> best = List.generate(
+      m + 1,
+      (_) => List.generate(
+          n + 1, (_) => List<double>.filled(maxSkippedCharsForMatch + 1, -1)));
+  // 可以从输入的任意位置开始对第一个字
+  for (var j = 0; j <= n; j++) {
+    best[0][j][0] = 0;
+  }
+
+  for (var i = 0; i < m; i++) {
+    for (var j = 0; j < n; j++) {
+      for (var s = 0; s <= maxSkippedCharsForMatch; s++) {
+        final double reached = best[i][j][s];
+        if (reached < 0) continue;
+        double maxSim = 0.0;
+        for (final pUser in userPinyins[j]) {
+          for (final pTarget in targetPinyins[i]) {
+            final sim = similarityOf2ParsedPinyin(pUser, pTarget);
+            if (sim > maxSim) maxSim = sim;
+          }
+        }
+        // 释义的某个字完全对不上，说明用户没写出这个字，不算写全
+        if (maxSim >= 0.6) {
+          final double sum = reached + maxSim;
+          if (sum > best[i + 1][j + 1][s]) best[i + 1][j + 1][s] = sum;
+        }
+        // 这个字算"多写的"，跳过去
+        if (s < maxSkippedCharsForMatch && reached > best[i][j + 1][s + 1]) {
+          best[i][j + 1][s + 1] = reached;
+        }
       }
     }
-    // 释义的某个字完全对不上，说明用户没写出这个字，不算写全
-    if (maxSim < 0.6) return false;
-    sum += maxSim;
   }
-  return sum / unit.length >= threshold;
+
+  for (var j = 1; j <= n; j++) {
+    for (var s = 0; s <= maxSkippedCharsForMatch; s++) {
+      final double sum = best[m][j][s];
+      if (sum >= 0 && sum / m >= threshold) return true;
+    }
+  }
+  return false;
 }
 
 /// 取一个汉字串每个字的候选拼音（带缓存）

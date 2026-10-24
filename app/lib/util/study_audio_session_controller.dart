@@ -1053,14 +1053,21 @@ class StudyAudioSessionController {
 
       try {
         _logicallyFinishedPlayers.remove(player);
-        final isReallyPlaying = player.playing &&
-            player.processingState != ja.ProcessingState.completed &&
-            player.processingState != ja.ProcessingState.idle;
-        if (isReallyPlaying) {
+        // 换新音源前必须把这个播放器物理复位。completed 态绝不能被"没在播"糊弄过去：
+        // 上一个词早就播完、播放器停在 completed，紧接着 setAudioSource（iOS 底层是
+        // replaceCurrentItem）会在换源瞬间产生一次瞬态爆音，用户听到的就是"这个词开头破了一下"。
+        // 这条复位在 688dc7da「音频重构」把 sound.dart 迁到本控制器时随 needHardStop 一起丢了，
+        // 见 app/.hermes/plans/ios_audio_optimization_plan.md 的 Task 1。
+        final bool isCompleted = player.processingState == ja.ProcessingState.completed;
+        if (player.playing || isCompleted) {
           try {
             await player.setVolume(0.0).timeout(const Duration(milliseconds: 30));
           } catch (_) {}
           await player.stop().timeout(_nativeAudioCommandTimeout);
+          if (isCompleted) {
+            // completed → idle 之后给原生音频管线 30ms 稳定窗口，让 stop 的余音排空，再换源。
+            await Future.delayed(const Duration(milliseconds: 30));
+          }
           try {
             await player.setVolume(1.0).timeout(const Duration(milliseconds: 30));
           } catch (_) {}

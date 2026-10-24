@@ -3816,9 +3816,9 @@ void main() {
     expect(st.showHandwritingBoard, true, reason: '只写对一个释义不应退出默写界面');
     expect(st.hasFinishedAnswering, false);
 
-    // 第二个释义用户写的是意思相近的"平安果"：本地严格匹配必然对不上 → 立即交大模型裁判。
+    // 第二个释义用户写的是意思相近的"鸭梨"（梨子的近义说法）：本地严格匹配对不上 → 交大模型裁判。
     // 注意此时本地已命中过 1 个释义，裁判结果绝不能被"历史上命中过"误当成"已被本地理解"丢弃。
-    await notifier.checkAsrResult(asrInput: '平安果', isVoice: false);
+    await notifier.checkAsrResult(asrInput: '鸭梨', isVoice: false);
     await Future<void>.delayed(const Duration(milliseconds: 300));
 
     st = container.read(bdcNotifierProvider);

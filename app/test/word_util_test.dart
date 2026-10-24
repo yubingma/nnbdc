@@ -125,6 +125,24 @@ void main() {
       expect(result.newMatchCount, 0);
     });
 
+    test('accepts one extra character written in the middle (女商人的人? 中间夹字)', () {
+      // 手写中间多写一个字不该判错，否则用户还得回去删
+      var result = matchInputChineseWithMeaningItems(wrapper, '女商哦人', strict: true);
+      expect(result.newMatchCount, 1);
+    });
+
+    test('accepts two extra characters written in the middle', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '女商哦呀人', strict: true);
+      expect(result.newMatchCount, 1);
+    });
+
+    test('rejects when three extra characters are written in the middle', () {
+      // 容错有上限：多写三个字以上说明写的不是这个词
+      var result = matchInputChineseWithMeaningItems(wrapper, '女商哦呀哈人', strict: true);
+      expect(result.newMatchCount, 0);
+      expect(wrapper.asrMatchedMeaningItemParts.isEmpty, true);
+    });
+
     test('accepts full-length answer with a homophone misread (女商仁 for 女商人)', () {
       // 手写识别可能把个别字误识成同音/形近字，应容忍这类小出入
       var result = matchInputChineseWithMeaningItems(wrapper, '女商仁', strict: true);
