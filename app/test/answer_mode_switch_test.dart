@@ -458,8 +458,13 @@ void main() {
     expect(find.text('v. ＿＿'), findsOneWidget);
     // 释义之间用常用度圆点分隔（与正确答案行同一口径），不再用空格/分号
     expect(find.text('；'), findsNothing);
-    // 紧凑操作栏里有「提示」（只带图标）
+    // 紧凑操作栏里有「提示」（只带图标），且排在「提交」左边
     expect(find.byIcon(Icons.lightbulb_outline), findsOneWidget);
+    expect(
+      tester.getCenter(find.byIcon(Icons.lightbulb_outline)).dx,
+      lessThan(tester.getCenter(find.byIcon(Icons.check)).dx),
+      reason: '「提示」在左、「提交」在右',
+    );
 
     // 点画布上的「重写」：提示行也要跟着清空（重新作答）
     await tester.tap(find.byIcon(Icons.delete_sweep_outlined));

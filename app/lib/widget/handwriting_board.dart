@@ -997,6 +997,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
           HandwritingToolAction(
               icon: Icons.delete_sweep_outlined, label: '重写', onTap: rewrite),
           HandwritingToolAction(icon: Icons.undo_outlined, label: '回退', onTap: undo),
+          // 「提示」排在「提交」左边：它是作答过程中随时会用的小工具，
+          // 而「提交」是收尾动作，放最右边不挡路。
+          if (hasHint)
+            HandwritingToolAction(
+                icon: Icons.lightbulb_outline,
+                label: '提示',
+                onTap: () => widget.onHint?.call()),
           if (widget.manualSubmit)
             HandwritingToolAction(
                 icon: Icons.check,
@@ -1008,11 +1015,6 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 icon: Icons.close,
                 label: '关闭',
                 onTap: () => widget.onCancel?.call()),
-          if (hasHint)
-            HandwritingToolAction(
-                icon: Icons.lightbulb_outline,
-                label: '提示',
-                onTap: () => widget.onHint?.call()),
         ];
 
         // 操作卡尺寸固定成「图标 + 小字」的一小块，不再按可用宽度把胶囊撑到 110×65：
