@@ -952,7 +952,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               }
             }
 
-            if (controlCardRect.contains(p)) {
+            if (widget.showButtons && controlCardRect.contains(p)) {
               _ignoredPointers.add(event.pointer);
               return;
             }

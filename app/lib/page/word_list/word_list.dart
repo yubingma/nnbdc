@@ -3916,7 +3916,7 @@ class WordListPageState extends State<WordListPage>
               : Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (args.injectedBtn != null) _buildInjectedActionBar(),
+                    if (args.injectedBtn != null) _buildInjectedActionBar(wideActionBar),
                     if (selectionMode) _buildSelectionBar(themeConfig, isDarkMode),
                   ],
                 ),

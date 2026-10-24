@@ -10,12 +10,12 @@ import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/widget/minimal_flow_button.dart';
 import 'package:provider/provider.dart' as provider;
 
-/// 阶段复习（本组小结）里打开手写后，底部「重写/回退/关闭/提示」那条操作栏
+/// 阶段复习（本组小结）里打开手写后，底部「重写/回退/关闭/提示」那张操作卡
 /// 曾经铺满整页宽度，把页面底部的「下一组」遮住大半、并且吃掉它的点击。
 ///
-/// 现在的分工：手写覆盖层只铺满内容区（body），「下一组」留在 Scaffold 的底栏里。
-/// 这个用例在 iPad 横屏、iPad 竖屏、常规手机、小屏手机上逐一量：
-/// 按钮必须整个落在手写覆盖层之外，并且手写面板开着时照样点得动。
+/// 现在：操作卡缩成一小块。宽屏（iPad 横屏/竖屏、手机横屏）时画布铺到屏幕最底、
+/// 底栏叠在上面，卡片原地落在「下一组」左边的空白里，不再多占一行书写区；
+/// 窄屏「下一组」占满整行，卡片落在它上方。
 ///
 /// 只保留一个 testWidgets：手写模式的入场会等一次音频会话释放，而音频会话是
 /// 进程级单例，同一个测试文件里反复进出会把它的队列拖住（后续用例卡在
@@ -52,6 +52,7 @@ class _NoProgressProvider implements WordProgressProvider {
 }
 
 const Key _nextGroupKey = Key('injected_flow_btn');
+const Key _handwritingCardKey = Key('handwriting_control_card');
 
 var _nextGroupTapped = false;
 
@@ -139,26 +140,43 @@ void main() {
       tester.view.physicalSize = size;
       await tester.pump();
 
+      final String label = '${size.width.toInt()}×${size.height.toInt()}';
+      final bool wide = size.width >= 560;
       final overlayRect = tester.getRect(find.byType(HandwritingOverlay));
       final buttonRect = tester.getRect(find.byKey(_nextGroupKey));
-      expect(overlayRect.width, size.width,
-          reason: '${size.width.toInt()}×${size.height.toInt()}：手写覆盖层应铺满内容区宽度');
-      expect(buttonRect.top, greaterThanOrEqualTo(overlayRect.bottom),
-          reason: '${size.width.toInt()}×${size.height.toInt()}：'
-              '「下一组」必须整个落在手写覆盖层之外（操作栏不得压到它上面）');
-      expect(tester.getRect(find.text('重写')).bottom,
-          lessThanOrEqualTo(overlayRect.bottom),
-          reason: '${size.width.toInt()}×${size.height.toInt()}：'
-              '手写操作栏的「重写」必须留在手写覆盖层内');
+      final cardRect = tester.getRect(find.byKey(_handwritingCardKey));
+
+      expect(overlayRect.width, size.width, reason: '$label：手写覆盖层应铺满宽度');
+      // 手写操作卡收成一小块，不再是一条整宽的毛玻璃带
+      expect(cardRect.width, lessThan(size.width * 0.75),
+          reason: '$label：操作卡应缩成一小块，不能铺满整行');
+      // 卡与「下一组」在哪个方向上都不得重叠
+      expect(cardRect.overlaps(buttonRect), isFalse,
+          reason: '$label：「下一组」被手写操作卡盖住了');
+
+      if (wide) {
+        // 宽屏：画布铺到屏幕最底（底栏叠在上面），操作卡贴底落在「下一组」左边
+        expect(overlayRect.bottom, size.height,
+            reason: '$label：宽屏画布要铺到屏幕最底，操作卡不得另占一行书写区');
+        expect(size.height - cardRect.bottom, 24.0,
+            reason: '$label：操作卡与「下一组」同一行（离屏幕底 24px）');
+        expect(cardRect.left, 16.0, reason: '$label：操作卡贴左下角');
+        expect(cardRect.right, lessThan(buttonRect.left),
+            reason: '$label：操作卡必须整块在「下一组」左侧');
+      } else {
+        // 窄屏：「下一组」占满整行、居中，操作卡只能落在它上方
+        expect(cardRect.bottom, lessThanOrEqualTo(buttonRect.top),
+            reason: '$label：窄屏操作卡应落在「下一组」上方');
+      }
+
       expect(buttonRect.bottom, lessThanOrEqualTo(size.height),
-          reason: '「下一组」不能被挤出屏幕底部');
+          reason: '$label：「下一组」不能被挤出屏幕底部');
 
       _nextGroupTapped = false;
       await tester.tap(find.byKey(_nextGroupKey));
       await tester.pump(const Duration(milliseconds: 20));
       expect(_nextGroupTapped, isTrue,
-          reason: '${size.width.toInt()}×${size.height.toInt()}：'
-              '手写面板打开时「下一组」仍然要能点');
+          reason: '$label：手写面板打开时「下一组」仍然要能点');
     }
 
     // 页面 dispose 里用 Timer.run 释放单词资源，收尾推进一帧把它跑掉，避免残留 timer 判失败
