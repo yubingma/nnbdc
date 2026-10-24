@@ -667,6 +667,8 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         },
       );
 
+      if (!mounted) return;
+
       // 检查完成后，统一更新所有项的状态
       setState(() {
         // 获取所有检查项的 category
@@ -703,9 +705,11 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         _isRunning = false;
       });
     } catch (e, stackTrace) {
-      setState(() {
-        _isRunning = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isRunning = false;
+        });
+      }
 
       // 记录详细的错误信息到检查结果中
       final errorResult = IntegrityCheckResult();
@@ -717,9 +721,11 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         logMessage: '健康检查: $e',
       );
 
-      setState(() {
-        _checkResult = errorResult;
-      });
+      if (mounted) {
+        setState(() {
+          _checkResult = errorResult;
+        });
+      }
 
       ErrorHandler.handleError(e, stackTrace,
           logPrefix: '健康检查', userMessage: '诊断过程中出现错误', showToast: true);
@@ -858,6 +864,12 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     );
   }
 
+  @visibleForTesting
+  Future<void> runAutoFixForTesting(IntegrityCheckResult checkResult) async {
+    _checkResult = checkResult;
+    return _runAutoFix();
+  }
+
   Future<void> _runAutoFix() async {
     if (_checkResult == null) return;
 
@@ -912,24 +924,26 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       final checker = DataIntegrityChecker();
       final fixResult = await checker.autoFix(_checkResult!, currentUser.id, maxWordsPerDict: null);
 
+      if (!mounted) return;
+
       setState(() {
         _isRunning = false;
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(fixResult.hasFixed
-                ? '已修复 ${fixResult.fixed.length} 个问题'
-                : '没有需要修复的问题'),
-            backgroundColor: fixResult.hasFixed ? Colors.green : Colors.blue,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(fixResult.hasFixed
+              ? '已修复 ${fixResult.fixed.length} 个问题'
+              : '没有需要修复的问题'),
+          backgroundColor: fixResult.hasFixed ? Colors.green : Colors.blue,
+        ),
+      );
     } catch (e, stackTrace) {
-      setState(() {
-        _isRunning = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isRunning = false;
+        });
+      }
 
       ErrorHandler.handleError(e, stackTrace,
           logPrefix: '自动修复', userMessage: '修复过程中出现错误', showToast: true);
