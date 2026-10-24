@@ -5353,6 +5353,88 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 100));
   });
 
+  group('写档：写对了就自动过，不用点提交', () {
+    Future<ProviderContainer> boot({required MockAsr mockAsr}) async {
+      StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+      await Prefs.write(
+          BdcNotifier.answerModePrefKeyWord, AnswerMode.write.name);
+      final container = ProviderContainer(
+        overrides: [asrProvider.overrideWithValue(mockAsr)],
+      );
+      final notifier = container.read(bdcNotifierProvider.notifier);
+      await notifier.loadData(FakeBuildContext());
+      notifier.updateAutoJumpEn2Ch(false);
+      return container;
+    }
+
+    Future<void> waitPassed(ProviderContainer container) async {
+      for (var i = 0;
+          i < 60 && !container.read(bdcNotifierProvider).hasFinishedAnswering;
+          i++) {
+        await Future.delayed(const Duration(milliseconds: 30));
+      }
+    }
+
+    test('键盘写下正确释义，停手后自动判过', () async {
+      final mockAsr = MockAsr();
+      final container = await boot(mockAsr: mockAsr);
+      addTearDown(container.dispose);
+      final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+      addTearDown(keepAlive.close);
+      final notifier = container.read(bdcNotifierProvider.notifier);
+
+      expect(container.read(bdcNotifierProvider).isChineseDictation, true);
+      notifier.meaningController.text = '苹果';
+      await waitPassed(container);
+
+      final state = container.read(bdcNotifierProvider);
+      expect(state.hasFinishedAnswering, true,
+          reason: '写对了不该还要用户点一次「提交」');
+      expect(state.isScorePassed, true);
+      await Future.delayed(const Duration(milliseconds: 100));
+    });
+
+    test('手写回显写到通过线，也会自动判过', () async {
+      final mockAsr = MockAsr();
+      final container = await boot(mockAsr: mockAsr);
+      addTearDown(container.dispose);
+      final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+      addTearDown(keepAlive.close);
+      final notifier = container.read(bdcNotifierProvider.notifier);
+
+      // 与画布停笔回显同一条路径
+      notifier.updateMeaningTextWithoutCheck('苹果');
+      notifier.scheduleTypedPassCheck(fromHandwriting: true);
+      await waitPassed(container);
+
+      expect(container.read(bdcNotifierProvider).hasFinishedAnswering, true);
+      await Future.delayed(const Duration(milliseconds: 100));
+    });
+
+    test('只写半截、或拼音还没上屏时，不自动判也不弹错', () async {
+      final mockAsr = MockAsr();
+      final container = await boot(mockAsr: mockAsr);
+      addTearDown(container.dispose);
+      final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+      addTearDown(keepAlive.close);
+      final notifier = container.read(bdcNotifierProvider.notifier);
+
+      notifier.meaningController.text = '苹';
+      await Future.delayed(const Duration(milliseconds: 150));
+      var state = container.read(bdcNotifierProvider);
+      expect(state.hasFinishedAnswering, false, reason: '半截字不能判过');
+      expect(notifier.hasPendingWordAiReferee, false,
+          reason: '自动通道绝不把半截答案送去大模型裁判');
+
+      notifier.meaningController.text = 'pingguo';
+      await Future.delayed(const Duration(milliseconds: 150));
+      state = container.read(bdcNotifierProvider);
+      expect(state.hasFinishedAnswering, false, reason: '拼音中间态不是答案');
+      expect(notifier.hasPendingWordAiReferee, false);
+      await Future.delayed(const Duration(milliseconds: 100));
+    });
+  });
+
   group('答题方式（写/说/选三档）', () {
     test('每环节有哪几档、默认落哪档，只有一份判据', () {
       PlatformUtils.asrSupportedOverride = true;

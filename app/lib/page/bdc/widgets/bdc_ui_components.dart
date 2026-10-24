@@ -155,6 +155,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       onRecognizedPreview: (text) {
                         if (isStaleBoardResult()) return;
                         notifier.updateMeaningTextWithoutCheck(text);
+                        notifier.scheduleTypedPassCheck(fromHandwriting: true);
                       },
                       // 点「提交」：键盘在用或画布没有笔迹 → 直接判输入框文本；否则交回手写板识别判题。
                       onSubmit: () {
@@ -2175,6 +2176,9 @@ extension BdcPageStateUIComponents on BdcPageState {
       onRecognizedPreview: (text) {
         if (isStaleBoardResult()) return;
         notifier.updateMeaningTextWithoutCheck(text);
+        // 停笔后若已经写对并通过线，就自动过（不必再点「提交」）；
+        // 没写对则静默，判错仍由用户点「提交」触发
+        notifier.scheduleTypedPassCheck(fromHandwriting: true);
       },
       onReadCurrentText: () => notifier.meaningController.text,
       // 键盘在用就直接交输入框里的文本；否则交回画布识别

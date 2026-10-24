@@ -119,6 +119,16 @@ class BdcNotifier extends _$BdcNotifier {
   Timer? _learningTimer;
   Timer? _persistTimer;
   Timer? _checkAsrDebounceTimer;
+
+  /// 中文答案"写对了就自动过"的停顿去抖（见 [scheduleTypedPassCheck]）
+  Timer? _typedPassDebounceTimer;
+
+  /// 写档停笔/停手多久算"写完了"。只用来判**过**：宁可晚 0.7 秒，
+  /// 也不要在两个字之间抢跑（写成"苹果树"被判成"苹果"是对的，"苹"被当成"苹果"不是）。
+  @visibleForTesting
+  static Duration typedPassIdleDelay = PlatformUtils.isUnitTest
+      ? const Duration(milliseconds: 20)
+      : const Duration(milliseconds: 700);
   Timer? _wordPassDebounceTimer;
   Timer? _wordAiRefereeDebounceTimer;
   /// 「这一轮什么都没听清」的停顿计时器：与裁判去抖分开，语义不同
@@ -195,6 +205,8 @@ class BdcNotifier extends _$BdcNotifier {
     _showWordDetailTimer = null;
     _checkAsrDebounceTimer?.cancel();
     _checkAsrDebounceTimer = null;
+    _typedPassDebounceTimer?.cancel();
+    _typedPassDebounceTimer = null;
     _wordPassDebounceTimer?.cancel();
     _wordPassDebounceTimer = null;
     _wordAiRefereeDebounceTimer?.cancel();
@@ -251,9 +263,13 @@ class BdcNotifier extends _$BdcNotifier {
         _checkAsrDebounceTimer?.cancel();
         return;
       }
-      // 中文默写：键盘输入在按"完成/回车"（onSubmitted）或点击「提交」时才判题，
-      // 避免输入法拼音候选/中间态触发提前"不正确"提示。
-      if (state.isChineseDictation) return;
+      // 中文答案（默写/打字）：不自动"判错"——输入法拼音候选、写到一半都不该弹提示。
+      // 但要能自动"判过"：写对了就不该逼用户再点一次「提交」。
+      if (state.isChineseDictation) {
+        _checkAsrDebounceTimer?.cancel();
+        scheduleTypedPassCheck();
+        return;
+      }
       _checkAsrDebounceTimer?.cancel();
       _checkAsrDebounceTimer = Timer(const Duration(milliseconds: 150), () {
         checkAsrResult();
@@ -1240,6 +1256,49 @@ class BdcNotifier extends _$BdcNotifier {
     }
     state = state.copyWith(answerMode: mode, isPttPressed: _isPttPressed);
     _handleTabChangeForAsr();
+  }
+
+  /// 停笔/停止输入后安排一次"写对了就自动过"的检查（写档的中文答案专用）。
+  ///
+  /// 只自动判**过**：严格匹配已经达到通过线就立即受理，用户不必再点「提交」。
+  /// 达不到就什么都不做——不弹"答案不正确"、不请大模型裁判：
+  /// 写到一半、或者写的是近义说法，只有用户自己知道"我写完了"，
+  /// 那一步仍由「提交」显式触发（带大模型兜底与明确的判错提示）。
+  void scheduleTypedPassCheck({bool fromHandwriting = false}) {
+    if (_isDisposed) return;
+    final String? wordIdAtSchedule = state.word?.id;
+    _typedPassDebounceTimer?.cancel();
+    _typedPassDebounceTimer = Timer(typedPassIdleDelay, () {
+      _typedPassDebounceTimer = null;
+      if (_isDisposed || state.word?.id != wordIdAtSchedule) return;
+      unawaited(_autoPassTypedAnswer(fromHandwriting: fromHandwriting));
+    });
+  }
+
+  Future<void> _autoPassTypedAnswer({required bool fromHandwriting}) async {
+    if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+    // 只服务中文释义；英文拼写本来就在输入/停笔后自动判
+    if (!state.isChineseDictation) return;
+    if (_isGuideShowing || state.isGettingNextWord) return;
+    final WordVo? word = state.word;
+    final WordWrapper? wrapper = state.wordWrapper;
+    if (word == null || wrapper == null) return;
+    final String text = meaningController.text.trim();
+    if (text.isEmpty) return;
+    // 输入法还没上屏（还带着拉丁字母）时不算答案
+    if (RegExp(r'[a-zA-Z]').hasMatch(text)) return;
+
+    // 先用克隆做一次纯匹配：只有"已经写够、能过"才进真正的判题链路，
+    // 半截答案绝不送去大模型裁判
+    final int matched = matchInputChineseWithMeaningItems(
+      wrapper.clone(),
+      [text],
+      strict: true,
+    ).matchedCount;
+    if (matched < _requiredMatchCount(countMeaningParts(word))) return;
+
+    // 写对了：走与「提交」同一条受理链路（评语按实际输入方式给）
+    await checkAsrResult(asrInput: text, typedAnswer: !fromHandwriting);
   }
 
   /// 打字面板的「提交」：把输入框里的中文释义当作一次显式作答。
