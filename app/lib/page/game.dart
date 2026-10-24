@@ -24,10 +24,10 @@ class GamePage extends StatefulWidget {
   const GamePage({super.key});
 
   @override
-  State<StatefulWidget> createState() => _GamePageState();
+  State<StatefulWidget> createState() => GamePageState();
 }
 
-class _GamePageState extends State<GamePage> {
+class GamePageState extends State<GamePage> {
   GetGameHallDataResult? gameHallDataResult;
   final Map<String, bool> _expandedGroups = {};
   String? errorMessage;
@@ -54,6 +54,13 @@ class _GamePageState extends State<GamePage> {
     loadData();
     _loadUserTrainingDicts();
   }
+
+  /// 进入乐园时重读书桌词书。
+  ///
+  /// 本页与词表页在启动时一起构建：登录后的首次同步可能晚于本页 [initState]，
+  /// 若只在这里读一次，"同步前书桌为空"的那一瞬就会被永久缓存下来，
+  /// 表现为书桌上明明有词书、自选特训却提示书桌为空。
+  Future<void> refreshTrainingDicts() => _loadUserTrainingDicts();
 
   Future<void> _loadUserTrainingDicts() async {
     final user = Global.getLoggedInUser();

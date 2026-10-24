@@ -38,6 +38,9 @@ class IndexPage extends StatefulWidget {
 }
 
 class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
+  /// 乐园页常驻在 IndexedStack 里，切回该 Tab 时要按最新书桌重读特训词书。
+  final GlobalKey<GamePageState> _gamePageKey = GlobalKey<GamePageState>();
+
   NavTabKey _currentTab = NavTabKey.study;
   NavTabKey? _lastProcessedTabFromExtra;
 
@@ -130,6 +133,10 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       if (tabState != null && tabState.isDirty) {
         tabState.refreshData();
       }
+    } else if (tab == NavTabKey.game) {
+      // 书桌词书可能在词表页被增删，或由登录后的首次同步补齐；
+      // 进入乐园时总是重读一次，避免特训词书停留在启动时的空快照。
+      _gamePageKey.currentState?.refreshTrainingDicts();
     }
   }
 
@@ -196,7 +203,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       case NavTabKey.search:
         return const SearchPage();
       case NavTabKey.game:
-        return const GamePage();
+        return GamePage(key: _gamePageKey);
       case NavTabKey.me:
         return const MePage();
     }
