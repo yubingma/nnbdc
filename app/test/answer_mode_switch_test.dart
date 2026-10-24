@@ -262,7 +262,7 @@ void main() {
     expect(find.text('n. 苹果'), findsOneWidget);
   });
 
-  testWidgets('答案行只把写对的释义项标绿，没写到的用默认字色', (tester) async {
+  testWidgets('答案行只把写对的释义项标绿，项之间用常用度圆点分隔', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
     testWord.meaningItems = [
       MeaningItemVo('mi_1', 'n.', '苹果', null, null, []),
@@ -285,19 +285,14 @@ void main() {
       isScorePassed: true,
     ));
 
-    final RichText answerText = tester.widget<RichText>(
-        find.text('n. 苹果；v. 考验', findRichText: true));
-    // Text.rich 会把自己那层包在外层 TextSpan 里，往下一层才是我们拼的片段
-    final TextSpan root =
-        (answerText.text as TextSpan).children!.first as TextSpan;
-    final children = root.children!.cast<TextSpan>();
-    TextSpan spanOf(String text) =>
-        children.firstWhere((span) => span.text == text);
     const Color green = Color(0xFF10B981);
-    expect(spanOf('n. 苹果').style?.color, green,
-        reason: '写对的释义项要绿色');
-    expect(spanOf('v. 考验').style?.color, isNot(green),
+    final Text first = tester.widget<Text>(find.text('n. 苹果'));
+    final Text second = tester.widget<Text>(find.text('v. 考验'));
+    expect(first.style?.color, green, reason: '写对的释义项要绿色');
+    expect(second.style?.color, isNot(green),
         reason: '没写到的释义项用默认字色，不能也跟着绿');
+    // 分隔符改成了常用度圆点：不再出现分号
+    expect(find.text('；'), findsNothing);
   });
 
   testWidgets('写档答对时，汉译英给的正确答案是这个词的拼写', (tester) async {

@@ -2215,25 +2215,35 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   /// 写档答对后的正确答案：占输入行这一行的位置，只占一行，内容过长时横向拖动查看。
   ///
-  /// 颜色按"这一项是不是你写对的"分开：写对的释义项绿色，没写到的用默认字色，
-  /// 这样一眼能看出自己漏了哪个意思（整行全绿会让人以为全都答到了）。
+  /// 颜色按"这一项是不是你写对的"分开：写对的释义子项绿色，没写到的用默认字色，
+  /// 这样一眼能看出自己漏了哪个意思。子项之间用**释义常用度的小圆点**分隔
+  /// （与释义列表、单词详情同一口径），不用分号——分号只是文字，圆点还带着常用度。
   Widget _buildRevealedAnswerLine() {
     const Color passed = Color(0xFF10B981);
     final Color normal = context.textPrimary;
-    final List<InlineSpan> spans = <InlineSpan>[];
-    bool first = true;
+    final Color dotColor = context.textSecondary;
 
-    void addPiece(String text, {required bool matched}) {
+    final List<Widget> pieces = <Widget>[];
+    void addPiece(String text, {required bool matched, int? dotPercent}) {
       final String piece = text.replaceAll(RegExp(r'[；;，,、]+$'), '').trim();
       if (piece.isEmpty) return;
-      if (!first) {
-        spans.add(TextSpan(text: '；', style: TextStyle(color: normal)));
-      }
-      first = false;
-      spans.add(TextSpan(
-        text: piece,
-        style: TextStyle(color: matched ? passed : normal),
+      pieces.add(Text(
+        piece,
+        style: TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.1,
+          color: matched ? passed : normal,
+        ),
       ));
+      // 每个释义子项后面跟一个常用度圆点（末项也带，与单词详情页一致）
+      if (dotPercent != null) {
+        pieces.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: MeaningRenderUtil.buildDotWidget(
+              percent: dotPercent, color: dotColor),
+        ));
+      }
     }
 
     if (state.studyStep == StudyStep.en2Ch.json) {
@@ -2248,13 +2258,14 @@ extension BdcPageStateUIComponents on BdcPageState {
           addPiece(
             j == 0 && ciXing.isNotEmpty ? '$ciXing $body' : body,
             matched: matched.contains(Pair(i, j)),
+            dotPercent: parts[j].popularityPercent,
           );
         }
       }
     } else {
       addPiece(state.word?.spell ?? '', matched: true);
     }
-    if (spans.isEmpty) return const SizedBox.shrink();
+    if (pieces.isEmpty) return const SizedBox.shrink();
 
     return Row(
       children: [
@@ -2263,16 +2274,9 @@ extension BdcPageStateUIComponents on BdcPageState {
         Expanded(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: Text.rich(
-              TextSpan(children: spans),
-              maxLines: 1,
-              softWrap: false,
-              style: const TextStyle(
-                // 比输入框更小一点：同一行要尽量多露几个字
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-                letterSpacing: -0.1,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: pieces,
             ),
           ),
         ),
