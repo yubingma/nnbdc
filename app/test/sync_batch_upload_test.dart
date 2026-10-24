@@ -257,5 +257,56 @@ void main() {
       expect(result.success, isFalse);
       expect(result.code, '0001');
     });
+
+    test('模拟版本号冲突自愈循环：第1轮版本不匹配抛出后，在同锁内重试第2轮可成功自愈', () async {
+      var roundCalls = 0;
+      Future<void> simulateSyncRound() async {
+        roundCalls++;
+        if (roundCalls == 1) {
+          throw DbVersionNotMatchException('期望版本[134]，当前版本[135]');
+        }
+      }
+
+      var retried = false;
+      for (var attempt = 0; attempt < 2; attempt++) {
+        try {
+          await simulateSyncRound();
+          break;
+        } on DbVersionNotMatchException {
+          if (attempt == 0) {
+            retried = true;
+            continue;
+          }
+          rethrow;
+        }
+      }
+
+      expect(roundCalls, 2);
+      expect(retried, isTrue);
+    });
+
+    test('模拟持续版本冲突：第2轮仍冲突时向上抛出 DbVersionNotMatchException', () async {
+      var roundCalls = 0;
+      Future<void> simulateSyncRound() async {
+        roundCalls++;
+        throw DbVersionNotMatchException('持续版本不匹配');
+      }
+
+      await expectLater(
+        () async {
+          for (var attempt = 0; attempt < 2; attempt++) {
+            try {
+              await simulateSyncRound();
+              break;
+            } on DbVersionNotMatchException {
+              if (attempt == 0) continue;
+              rethrow;
+            }
+          }
+        }(),
+        throwsA(isA<DbVersionNotMatchException>()),
+      );
+      expect(roundCalls, 2);
+    });
   });
 }

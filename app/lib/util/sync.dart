@@ -808,8 +808,12 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     }
   } catch (e, stackTrace) {
     stopwatch.stop();
-    Global.logger.e("❌ 执行用户数据库同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
-    await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'doSyncUserDb', showToast: false);
+    if (e is DbVersionNotMatchException) {
+      Global.logger.w("⚠️ 服务端数据库版本不匹配（乐观锁冲突）: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms");
+    } else {
+      Global.logger.e("❌ 执行用户数据库同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
+      await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'doSyncUserDb', showToast: false);
+    }
     rethrow;
   }
 }
@@ -1142,130 +1146,140 @@ Future<List<String>> findMissingUserTables([String? userId]) async {
   return missing;
 }
 
+// 执行单轮用户数据库同步（核对版本、拉取远程增量、合并并上传本地变更）
+Future<void> _performSyncUserDbRound(String userId) async {
+  // 先核对本地版本、核心数据与本机待上传日志；这一步还没开始下载云端日志。
+  syncProgress.value = const SyncProgress(phase: 'PREPARING USER DATA');
+
+  final stopwatch = Stopwatch()..start();
+  // 获取本地数据库版本
+  UserDbVersion? userDbVersion = await MyDatabase.instance.userDbVersionsDao.getUserDbVersionByUserId(userId);
+  int localDbVersion = userDbVersion?.version ?? Global.localDbVersionForNewlyInstalled;
+
+  // 同步开始前验证核心数据完整性。
+  // 注意：如果是首次同步 (localDbVersion == 0)，由于本地尚无任何数据，校验必定失败，因此跳过。
+  // 此时应当直接进行同步，等同步完成后会再次调用 _validateCoreData 进行验证。
+  if (localDbVersion > 0) {
+    await _validateCoreData(userId);
+  }
+
+  // 同步前自检：清理历史遗留的超长书签名 (bookMarkName) 坏数据及对应日志，
+  // 避免其超出服务端 book_mark_name 的 varchar(255) 上限而阻塞整个同步事务
+  await repairInvalidBookMarkNames(userId);
+
+  // 获取服务端数据库版本
+  var remoteDbVersion = -1;
+  var remoteDbVersionResult = await Api.client.getUserDbVersion(userId);
+  if (remoteDbVersionResult.success) {
+    remoteDbVersion = remoteDbVersionResult.data!;
+  } else {
+    Global.logger.e("❌ 获取服务端数据库版本失败: ${remoteDbVersionResult.msg}");
+    // 不再弹出错误提示
+    throw Exception(remoteDbVersionResult.msg ?? '获取服务端数据库版本失败');
+  }
+
+  // 获取本地数据库变更日志
+  List<UserDbLog> localLogs = await MyDatabase.instance.userDbLogsDao.getUserDbLogs(userId);
+
+  Global.logger.i("✅ 获取本地变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}");
+
+  // 本地为空、且服务端能整表补发的用户表：升级后把此前因不认识而整表跳过的数据补回来。
+  // 全量同步（本地版本号为 0）本来就带所有表，不需要点名补拉。
+  final missingTables = localDbVersion > 0 ? await findMissingUserTables(userId) : <String>[];
+  if (missingTables.isNotEmpty) {
+    Global.logger.w("⚠️ 用户数据本地缺少这些表: $missingTables，向服务端按需补拉");
+  }
+
+  // 与后端同步用户数据库
+  if (localDbVersion != remoteDbVersion || localLogs.isNotEmpty || missingTables.isNotEmpty) {
+    // 本地核对完毕，从这里开始才真正向云端请求日志。
+    syncProgress.value = const SyncProgress(phase: 'FETCHING USER DATA');
+    var result1 = await Api.client.getDbLogsFromVersion(localDbVersion, userId, missingTables.join(','));
+    if (result1.success) {
+      List<UserDbLogDto> remoteLogs = result1.data!;
+      Global.logger.i("✅ 获取远程变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
+      // 日志已到本机，接下来是内存里的去重、冲突合并与排序，还没开始写数据库。
+      syncProgress.value = const SyncProgress(phase: 'MERGING USER DATA');
+
+      // 记录上下行数量
+      addUploadCount(localLogs.length);
+      addDownloadCount(remoteLogs.length);
+
+      Map<String, dynamic> uDetails = {};
+      for (var log in localLogs) {
+        uDetails.putIfAbsent(log.tblName, () => <String, dynamic>{});
+        uDetails[log.tblName][log.operate] = (uDetails[log.tblName][log.operate] as int? ?? 0) + 1;
+      }
+      addUploadDetails(uDetails);
+      
+      Map<String, dynamic> dDetails = {};
+      for (var log in remoteLogs) {
+        final tblName = Util.remoteTableNameToLocal(log.tblName);
+        // 不认识的后端表：跳过统计即可，绝不能让它中断整次同步
+        if (tblName == null || tblName == 'IGNORED') continue;
+        dDetails.putIfAbsent(tblName, () => <String, dynamic>{});
+        dDetails[tblName][log.operate] = (dDetails[tblName][log.operate] as int? ?? 0) + 1;
+      }
+      addDownloadDetails(dDetails);
+
+      await doSyncUserDb(localLogs, remoteLogs, remoteDbVersion, userId);
+      
+      // 记录本次已探测补拉过的表，避免后续常规同步对空表无休止重复索要
+      if (missingTables.isNotEmpty) {
+        final probed = (Prefs.getStringList('probed_missing_user_tables_$userId') ?? <String>[]).toSet();
+        probed.addAll(missingTables);
+        await Prefs.write('probed_missing_user_tables_$userId', probed.toList());
+      }
+
+      // 动态推导并纠正打卡天数统计，防止多端数据冲突
+      try {
+        await UserBo().updateAndSyncUserDakaStats(userId);
+      } catch (e) {
+        Global.logger.e("纠正打卡天数统计失败: $e");
+      }
+
+      stopwatch.stop();
+      Global.logger.i("✅ 用户数据库同步完成 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
+    } else {
+      Global.logger.e("❌ 获取远程变更日志失败: ${result1.msg}");
+      // 不再弹出错误提示
+      throw Exception(result1.msg ?? '获取远程变更日志失败');
+    }
+  } else {
+    stopwatch.stop();
+    Global.logger.i("✅ 用户数据库已是最新状态 - 耗时: ${stopwatch.elapsedMilliseconds}ms");
+  }
+}
+
 // 同步指定用户的用户数据库
 //
-// [retried] 仅供本函数自用：服务端版本号不匹配时重跑一次，避免无限递归。
-Future<void> syncUserDb(String userId, {bool retried = false}) async {
+// 服务端版本号因并发被推进（乐观锁冲突）时，自动重新读取服务端版本号与增量日志重试一次。
+Future<void> syncUserDb(String userId) async {
   if (_isSyncUserDbRunning) {
     Global.logger.w("⚠️ [CONCURRENCY SHIELD] 拦截到并发的 syncUserDb 请求，用户: $userId 的同步已在运行中");
     return;
   }
   _isSyncUserDbRunning = true;
 
-  // 先核对本地版本、核心数据与本机待上传日志；这一步还没开始下载云端日志。
-  syncProgress.value = const SyncProgress(phase: 'PREPARING USER DATA');
-
   final stopwatch = Stopwatch()..start();
   try {
-    // 获取本地数据库版本
-    UserDbVersion? userDbVersion = await MyDatabase.instance.userDbVersionsDao.getUserDbVersionByUserId(userId);
-    int localDbVersion = userDbVersion?.version ?? Global.localDbVersionForNewlyInstalled;
-
-    // 同步开始前验证核心数据完整性。
-    // 注意：如果是首次同步 (localDbVersion == 0)，由于本地尚无任何数据，校验必定失败，因此跳过。
-    // 此时应当直接进行同步，等同步完成后会再次调用 _validateCoreData 进行验证。
-    if (localDbVersion > 0) {
-      await _validateCoreData(userId);
-    }
-
-    // 同步前自检：清理历史遗留的超长书签名 (bookMarkName) 坏数据及对应日志，
-    // 避免其超出服务端 book_mark_name 的 varchar(255) 上限而阻塞整个同步事务
-    await repairInvalidBookMarkNames(userId);
-
-    // 获取服务端数据库版本
-    var remoteDbVersion = -1;
-    var remoteDbVersionResult = await Api.client.getUserDbVersion(userId);
-    if (remoteDbVersionResult.success) {
-      remoteDbVersion = remoteDbVersionResult.data!;
-    } else {
-      Global.logger.e("❌ 获取服务端数据库版本失败: ${remoteDbVersionResult.msg}");
-      // 不再弹出错误提示
-      throw Exception(remoteDbVersionResult.msg ?? '获取服务端数据库版本失败');
-    }
-
-    // 获取本地数据库变更日志
-    List<UserDbLog> localLogs = await MyDatabase.instance.userDbLogsDao.getUserDbLogs(userId);
-
-    Global.logger.i("✅ 获取本地变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}");
-
-    // 本地为空、且服务端能整表补发的用户表：升级后把此前因不认识而整表跳过的数据补回来。
-    // 全量同步（本地版本号为 0）本来就带所有表，不需要点名补拉。
-    final missingTables = localDbVersion > 0 ? await findMissingUserTables(userId) : <String>[];
-    if (missingTables.isNotEmpty) {
-      Global.logger.w("⚠️ 用户数据本地缺少这些表: $missingTables，向服务端按需补拉");
-    }
-
-    // 与后端同步用户数据库
-    if (localDbVersion != remoteDbVersion || localLogs.isNotEmpty || missingTables.isNotEmpty) {
-      // 本地核对完毕，从这里开始才真正向云端请求日志。
-      syncProgress.value = const SyncProgress(phase: 'FETCHING USER DATA');
-      var result1 = await Api.client.getDbLogsFromVersion(localDbVersion, userId, missingTables.join(','));
-      if (result1.success) {
-        List<UserDbLogDto> remoteLogs = result1.data!;
-        Global.logger.i("✅ 获取远程变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
-        // 日志已到本机，接下来是内存里的去重、冲突合并与排序，还没开始写数据库。
-        syncProgress.value = const SyncProgress(phase: 'MERGING USER DATA');
-
-        // 记录上下行数量
-        addUploadCount(localLogs.length);
-        addDownloadCount(remoteLogs.length);
-
-        Map<String, dynamic> uDetails = {};
-        for (var log in localLogs) {
-          uDetails.putIfAbsent(log.tblName, () => <String, dynamic>{});
-          uDetails[log.tblName][log.operate] = (uDetails[log.tblName][log.operate] as int? ?? 0) + 1;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        await _performSyncUserDbRound(userId);
+        return;
+      } on DbVersionNotMatchException catch (e) {
+        // 服务端同步版本号已向前推进：重新读取本地版本号与增量日志再同步一次。
+        // 这是并发同步下的自愈路径，不是故障，所以不上报、不告警；重跑一次仍不匹配才按真失败处理。
+        if (attempt == 0) {
+          Global.logger.w("⚠️ 服务端同步版本号已变化，重新获取版本号与增量日志后重试一次: $e");
+          continue;
         }
-        addUploadDetails(uDetails);
-        
-        Map<String, dynamic> dDetails = {};
-        for (var log in remoteLogs) {
-          final tblName = Util.remoteTableNameToLocal(log.tblName);
-          // 不认识的后端表：跳过统计即可，绝不能让它中断整次同步
-          if (tblName == null || tblName == 'IGNORED') continue;
-          dDetails.putIfAbsent(tblName, () => <String, dynamic>{});
-          dDetails[tblName][log.operate] = (dDetails[tblName][log.operate] as int? ?? 0) + 1;
-        }
-        addDownloadDetails(dDetails);
-
-        await doSyncUserDb(localLogs, remoteLogs, remoteDbVersion, userId);
-        
-        // 记录本次已探测补拉过的表，避免后续常规同步对空表无休止重复索要
-        if (missingTables.isNotEmpty) {
-          final probed = (Prefs.getStringList('probed_missing_user_tables_$userId') ?? <String>[]).toSet();
-          probed.addAll(missingTables);
-          await Prefs.write('probed_missing_user_tables_$userId', probed.toList());
-        }
-
-        // 动态推导并纠正打卡天数统计，防止多端数据冲突
-        try {
-          await UserBo().updateAndSyncUserDakaStats(userId);
-        } catch (e) {
-          Global.logger.e("纠正打卡天数统计失败: $e");
-        }
-
-        stopwatch.stop();
-        Global.logger.i("✅ 用户数据库同步完成 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
-      } else {
-        Global.logger.e("❌ 获取远程变更日志失败: ${result1.msg}");
-        // 不再弹出错误提示
-        throw Exception(result1.msg ?? '获取远程变更日志失败');
+        rethrow;
       }
-    } else {
-      stopwatch.stop();
-      Global.logger.i("✅ 用户数据库已是最新状态 - 耗时: ${stopwatch.elapsedMilliseconds}ms");
     }
   } catch (e, stackTrace) {
     stopwatch.stop();
-    // 服务端同步版本号已向前推进：重新读取本地版本号与增量日志再同步一次。
-    // 这是并发同步下的自愈路径，不是失败，所以不上报、不告警；重跑一次仍不匹配才按真失败处理。
-    if (e is DbVersionNotMatchException && !retried) {
-      Global.logger.w("⚠️ 服务端同步版本号已变化，重新获取版本号与增量日志后重试一次: $e");
-      await syncUserDb(userId, retried: true);
-      return;
-    }
     Global.logger.e("❌ 同步用户数据库失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
-    // 不再调用 ErrorHandler 显示错误提示，只抛出异常让上层处理
-    // await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncUserDb', showToast: true);
     rethrow;
   } finally {
     _isSyncUserDbRunning = false;

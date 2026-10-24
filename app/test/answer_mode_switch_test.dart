@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/enum.dart';
+import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/bdc/bdc.dart';
 import 'package:nnbdc/page/bdc/providers/answer_mode.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
 import 'package:nnbdc/state.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
@@ -73,6 +76,10 @@ class MockBdcNotifier extends BdcNotifier {
 
   @override
   Future<void> loadData(BuildContext? context, {bool isAutoTest = false}) async {}
+
+  /// 测试里模拟"换到下一个词"（真实流程由 handleWord 完成）
+  BdcState get currentState => state;
+  void pushState(BdcState next) => state = next;
 }
 
 (WordVo, GetWordResult) _createTestData() {
@@ -108,6 +115,40 @@ class MockBdcNotifier extends BdcNotifier {
     false,
   );
   return (testWord, mockGetWordResult);
+}
+
+/// 造一个已登录用户：StudyConfig 从它身上读（`preferKeyboardInSpelling` 决定输入框要不要抢焦点）
+User _fakeUser({String? studyConfig}) {
+  final DateTime now = AppClock.now();
+  return User(
+    id: 'test_user_id',
+    userName: 'mock_user',
+    password: '',
+    nickName: 'Tester',
+    email: '',
+    gameScore: 0,
+    dakaScore: 0,
+    learnedDays: 0,
+    learningFinished: false,
+    inviteAwardTaken: false,
+    isSuperAdmin: false,
+    isAdmin: false,
+    isInputor: false,
+    cowDung: 0,
+    throwDiceChance: 0,
+    wordsPerDay: 5,
+    dakaDayCount: 0,
+    masteredWordsCount: 0,
+    maxContinuousDakaDayCount: 0,
+    continuousDakaDayCount: 0,
+    todayStudyStarted: true,
+    totalLearningSeconds: 0,
+    todayLearningSeconds: 0,
+    lastLearningDate: AppClock.today(),
+    createTime: now,
+    updateTime: now,
+    studyConfig: studyConfig,
+  );
 }
 
 BdcState _stateWith(
@@ -294,6 +335,75 @@ void main() {
     expect(find.textContaining('下次复习'), findsNothing);
     expect(tester.testTextInput.isVisible, true,
         reason: '输入框若被重建就会丢焦点，表现就是键盘闪一下又缩回去');
+  });
+
+  testWidgets('上次用键盘答的：答对换到下一词后，键盘还能弹出来', (tester) async {
+    Global.updateUserCache(
+        _fakeUser(studyConfig: '{"preferKeyboardInSpelling":true}'));
+    addTearDown(Global.clearUserCache);
+
+    final (WordVo wordA, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(wordA, result,
+            studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write));
+    final MockBdcNotifier notifier = ProviderScope.containerOf(
+            tester.element(find.byType(BdcPage)))
+        .read(bdcNotifierProvider.notifier) as MockBdcNotifier;
+    expect(tester.testTextInput.isVisible, true, reason: '上次是键盘，进来就该弹');
+
+    // 答对：这一行原地换成正确答案，输入框被卸载
+    notifier.pushState(notifier.currentState
+        .copyWith(hasFinishedAnswering: true, isScorePassed: true));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('bdc_typing_input')), findsNothing);
+
+    // 进入下一词
+    final WordVo wordB = WordVo.c2('banana')..id = 'w_banana';
+    wordB.meaningItems = [MeaningItemVo('mi_2', 'n.', '香蕉', null, null, [])];
+    notifier.pushState(notifier.currentState.copyWith(
+      word: wordB,
+      wordWrapper: WordWrapper(wordB, null),
+      hasFinishedAnswering: false,
+      isScorePassed: false,
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.testTextInput.isVisible, true,
+        reason: '上一词是用键盘答的，下一词要能接着打');
+  });
+
+  testWidgets('上次用手写的：答对换到下一词后，键盘不会自己弹', (tester) async {
+    Global.updateUserCache(
+        _fakeUser(studyConfig: '{"preferKeyboardInSpelling":false}'));
+    addTearDown(Global.clearUserCache);
+
+    final (WordVo wordA, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(wordA, result,
+            studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write));
+    final MockBdcNotifier notifier = ProviderScope.containerOf(
+            tester.element(find.byType(BdcPage)))
+        .read(bdcNotifierProvider.notifier) as MockBdcNotifier;
+    expect(tester.testTextInput.isVisible, false);
+
+    notifier.pushState(notifier.currentState
+        .copyWith(hasFinishedAnswering: true, isScorePassed: true));
+    await tester.pumpAndSettle();
+
+    final WordVo wordB = WordVo.c2('banana')..id = 'w_banana';
+    wordB.meaningItems = [MeaningItemVo('mi_2', 'n.', '香蕉', null, null, [])];
+    notifier.pushState(notifier.currentState.copyWith(
+      word: wordB,
+      wordWrapper: WordWrapper(wordB, null),
+      hasFinishedAnswering: false,
+      isScorePassed: false,
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.testTextInput.isVisible, false,
+        reason: '手写模式下不该抢焦点弹键盘');
   });
 
   testWidgets('键盘占屏、卡片被压扁时，写面板不撑爆卡片', (tester) async {

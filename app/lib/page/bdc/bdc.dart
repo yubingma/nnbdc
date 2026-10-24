@@ -179,13 +179,13 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       }
     });
     
-    // 监听答题完成状态，自动收起键盘/手写板，从而退出沉浸式拼写模式。
-    // 写档的输入框例外：键盘要留在原地，下一词直接接着打。
+    // 答完就主动收掉输入框焦点。
+    //
+    // 写档答对后，这一行会原地换成正确答案（输入框被卸载），但 `_meaningFocusNode` 是我们自己持有的，
+    // 它仍然是"已聚焦"状态；下一词的输入框带着这个已聚焦的节点挂载时，不会再走一次
+    // "获得焦点 → 建立输入法连接"，于是键盘弹不出来（线上反馈：用键盘答完，下一词没键盘）。
     ref.listenManual(bdcNotifierProvider.select((s) => s.hasFinishedAnswering), (previous, next) {
-      if (next == true &&
-          ref.read(bdcNotifierProvider).answerMode != AnswerMode.write) {
-        _meaningFocusNode.unfocus();
-      }
+      if (next == true) _meaningFocusNode.unfocus();
     });
 
     // 监听手写板开启状态，当手写板主动关闭时，也务必收起键盘并退出沉浸式模式
