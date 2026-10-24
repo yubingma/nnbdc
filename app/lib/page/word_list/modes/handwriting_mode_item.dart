@@ -144,8 +144,11 @@ class HandwritingModeItem extends StatelessWidget {
       onTap: () => actions.onHandwritingPressed(word, index),
       child: Container(
         width: 50,
+        padding: const EdgeInsets.only(right: 2),
         color: Colors.transparent,
-        alignment: Alignment.center,
+        // 画笔靠右放：手写画布/蒙版的右沿在它左边，居中的话图标会跟着往左退，
+        // 和蒙版边界的间距几乎没有变化（看着还是贴着门板）；靠右才把加宽的竖条真正变成留白。
+        alignment: Alignment.centerRight,
         child: Icon(
           Icons.edit_rounded,
           size: 20,

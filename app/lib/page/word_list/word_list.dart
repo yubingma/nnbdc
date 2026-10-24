@@ -401,6 +401,15 @@ class WordListPageState extends State<WordListPage>
   final ValueNotifier<int> activeWordIndexNotifier = ValueNotifier<int>(-1);
   final ValueNotifier<bool> _rightZoneVisible = ValueNotifier<bool>(true);
 
+  /// 各行左滑露出的操作面板（token → 需要让出的宽度）。手写面板打开时按最大值收窄画布。
+  final Map<Object, double> _openSlidePanes = <Object, double>{};
+
+  /// 手写画布/蒙版需要让出的右侧宽度（0 = 没有打开的面板）。
+  ///
+  /// 用 ValueNotifier 而不是 setState：这里每变一次就整页重建会把列表项（连同左滑面板）
+  /// 一起重建，面板状态和控制器对不上；只让手写覆盖层自己听这个值就够了。
+  final ValueNotifier<double> _slideActionsExposed = ValueNotifier<double>(0.0);
+
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
   String get asrPassRule => Prefs.read<String>('wordListAsrPassRule') ?? 'ONE';
 
@@ -1097,6 +1106,7 @@ class WordListPageState extends State<WordListPage>
     _glowController.dispose();
     controller.dispose();
     asrController.dispose();
+    _slideActionsExposed.dispose();
 
     // 释放所有 WordWrapper 中的资源，移至下一个 Event Loop 执行，避免阻塞 Pop 动画和主页面
     final wordsToDispose = List<WordWrapper>.from(words);
@@ -1385,6 +1395,20 @@ class WordListPageState extends State<WordListPage>
   WordWrapper? _activeWordForHandwriting() {
     final int index = getBookMarkUiPosition();
     return (index >= 0 && index < words.length) ? words[index] : null;
+  }
+
+  /// 左滑面板弹开 / 收起时由 [_SlideProbe] 上报：记下每一行需要让出的宽度，取最大值。
+  @override
+  void onSlideActionsExposed(Object token, double exposedWidth) {
+    if (!mounted) return;
+    if (exposedWidth <= 0) {
+      if (_openSlidePanes.remove(token) == null) return;
+    } else {
+      _openSlidePanes[token] = exposedWidth;
+    }
+    final double next = _openSlidePanes.values.fold(0.0, max);
+    if ((next - _slideActionsExposed.value).abs() < 0.5) return;
+    _slideActionsExposed.value = next;
   }
 
   /// 关闭手写覆盖层（底栏工具条的「关闭」与页面自己的退出路径共用）。
@@ -3943,6 +3967,7 @@ class WordListPageState extends State<WordListPage>
                   HandwritingOverlay(
                     isDarkMode: isDarkMode,
                     activeWord: _activeWordForHandwriting(),
+                    slideActionsExposed: _slideActionsExposed,
                     bookmarkedIndex: getBookMarkUiPosition(),
                     words: words,
                     studyMode: studyMode,

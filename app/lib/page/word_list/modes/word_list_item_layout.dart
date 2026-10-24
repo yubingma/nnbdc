@@ -214,13 +214,11 @@ class WordListItemLayout extends StatelessWidget {
 
     if (slidableActions.isEmpty || selectionMode) return itemContent;
 
-    return Slidable(
-      key: ValueKey('slidable_${word.word.id}'),
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        extentRatio: (0.25 * slidableActions.length).clamp(0.0, 0.75),
-        children: slidableActions,
-      ),
+    return _SlideProbe(
+      slidableKey: ValueKey('slidable_${word.word.id}'),
+      extentRatio: (0.25 * slidableActions.length).clamp(0.0, 0.75),
+      actions: slidableActions,
+      onExposedChanged: actions.onSlideActionsExposed,
       child: itemContent,
     );
   }
@@ -385,3 +383,88 @@ class WordListItemLayout extends StatelessWidget {
   }
 }
 
+/// 左滑面板的探针：面板弹开/收起时把「需要让出的宽度」报给页面。
+///
+/// 手写面板盖在列表上，不瘦身的话露出的「掌握 / 详情」大半压在画布下面点不到。
+/// 这里只做状态上报，不参与列表布局；宽度的参照是屏幕右缘（页面右侧内边距也算在内）。
+class _SlideProbe extends StatefulWidget {
+  const _SlideProbe({
+    required this.slidableKey,
+    required this.extentRatio,
+    required this.actions,
+    required this.onExposedChanged,
+    required this.child,
+  });
+
+  final Key slidableKey;
+  final double extentRatio;
+  final List<Widget> actions;
+  final void Function(Object token, double exposedWidth) onExposedChanged;
+  final Widget child;
+
+  @override
+  State<_SlideProbe> createState() => _SlideProbeState();
+}
+
+class _SlideProbeState extends State<_SlideProbe>
+    with SingleTickerProviderStateMixin {
+  late final SlidableController _controller;
+  bool _reportedOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = SlidableController(this);
+    _controller.animation.addListener(_syncExposure);
+  }
+
+  /// 只在「完全弹开 / 完全收起」两种状态切换时上报，拖动过程中不上报：
+  /// 每帧上报会让整个词表页面重建，而且拖拽中手指还按着，也没法点按钮。
+  void _syncExposure() {
+    // controller.animation 的值是「卡片被推走的距离 / 行宽」：面板全开时等于 extentRatio，而不是 1。
+    final double ratio = _controller.animation.value;
+    final bool open = ratio >= widget.extentRatio - 0.001;
+    final bool closed = ratio <= 0.001;
+    if (open == _reportedOpen || (!open && !closed)) return;
+    _reportedOpen = open;
+    if (!open) {
+      widget.onExposedChanged(this, 0);
+      return;
+    }
+    final RenderBox? box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      _reportedOpen = false;
+      return;
+    }
+    final double screenWidth = MediaQuery.sizeOf(context).width;
+    final Offset topLeft = box.localToGlobal(Offset.zero);
+    final double boxRight = topLeft.dx + box.size.width;
+    final double paneWidth = widget.extentRatio * box.size.width;
+    widget.onExposedChanged(
+        this, (screenWidth - (boxRight - paneWidth)).clamp(0.0, screenWidth));
+  }
+
+  @override
+  void dispose() {
+    _controller.animation.removeListener(_syncExposure);
+    _controller.dispose();
+    if (_reportedOpen) {
+      widget.onExposedChanged(this, 0);
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Slidable(
+      key: widget.slidableKey,
+      controller: _controller,
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        extentRatio: widget.extentRatio,
+        children: widget.actions,
+      ),
+      child: widget.child,
+    );
+  }
+}

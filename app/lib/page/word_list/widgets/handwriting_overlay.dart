@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
@@ -12,6 +13,11 @@ import '../../word_detail.dart';
 
 class HandwritingOverlay extends StatefulWidget {
   final bool isDarkMode;
+
+  /// 左滑露出的操作面板需要让出的右侧宽度（0 = 没有打开的面板）。
+  /// 面板整块必须落在画布与蒙版之外，否则「掌握 / 详情」这些按钮点不到。
+  /// 用 listenable 而不是普通字段：页面不必为此整页重建，只让覆盖层自己刷新。
+  final ValueListenable<double> slideActionsExposed;
 
   final WordWrapper? activeWord;
   final int bookmarkedIndex;
@@ -28,6 +34,7 @@ class HandwritingOverlay extends StatefulWidget {
   const HandwritingOverlay({
     super.key,
     required this.isDarkMode,
+    required this.slideActionsExposed,
     required this.activeWord,
     required this.bookmarkedIndex,
     required this.words,
@@ -48,19 +55,42 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
   final StudyAudioSessionController _sessionController = StudyAudioSessionController.instance;
 
   /// 右侧留给页面交互的竖条宽度：卡片右端那颗画笔按钮在这里，
-  /// 手写面板打开时也是唯一还能拖动列表滚动的地方。
+  /// 手写面板打开时也是唯一还能左右拖动列表（左滑出操作面板）的地方。
   ///
-  /// 这条竖条只决定「哪一块画布不接收落笔」，不画任何分界线：原来在竖条左沿画的那条
-  /// 1px 线离画笔图标只有 3px、正好压在图标边上，看着非常局促；而它本身没有任何交互含义
-  /// （不是滚动条，也不承担边界提示），留在那里只会让人以为画笔被一条线挤着。
-  static const double _rightActionRailWidth = 60.0;
+  /// 76 ≈ 画笔按钮左缘（页面右内边距 8 + 卡片外边距 10 + 卡片右内边距 8 + 按钮宽 50 = 76），
+  /// 整颗画笔图标都落在可触摸的竖条里；比原来 60 宽 16px，左右滑动更好起手。
+  /// 这条竖条只决定「哪一块画布不接收落笔」，不画分界线（原来那条 1px 线离画笔只有 3px，
+  /// 压着图标显得局促，已去掉；改由手写区的半透明蒙版做颜色区分）。
+  static const double _rightActionRailWidth = 76.0;
 
   double _handwritingRightPadding = _rightActionRailWidth;
   Timer? _handwritingPaddingTimer;
   WordVo? _detectedSimilarWord;
 
   @override
+  void initState() {
+    super.initState();
+    widget.slideActionsExposed.addListener(_onSlideExposedChanged);
+  }
+
+  @override
+  void didUpdateWidget(HandwritingOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.slideActionsExposed != widget.slideActionsExposed) {
+      oldWidget.slideActionsExposed.removeListener(_onSlideExposedChanged);
+      widget.slideActionsExposed.addListener(_onSlideExposedChanged);
+    }
+  }
+
+  /// 左滑面板让位宽度变了：只重建手写覆盖层自己，不惊动下面的词表（否则列表项连同
+  /// 左滑面板一起重建，面板状态和控制器会对不上）。
+  void _onSlideExposedChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    widget.slideActionsExposed.removeListener(_onSlideExposedChanged);
     _handwritingPaddingTimer?.cancel();
     super.dispose();
   }
@@ -98,6 +128,14 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
     });
 
     final activeWord = widget.activeWord;
+    // 右侧让位宽度统一按「书写状态 + 默认竖条 + 左滑面板露出宽」一起算：
+    // · 正在书写：画布铺满整宽（书写优先），左滑面板也暂时被门板盖住；
+    // · 停笔后：让出「默认 76px 交互竖条」与「左滑面板露出宽度」中较大的那一块，
+    //   面板打开时按钮整颗可见可点，面板收起后自动回到默认竖条。
+    final double idleRail = widget.slideActionsExposed.value > _rightActionRailWidth
+        ? widget.slideActionsExposed.value
+        : _rightActionRailWidth;
+    final double rightInset = _handwritingRightPadding == 0 ? 0.0 : idleRail;
 
     return Positioned(
       top: 0,
@@ -120,7 +158,7 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
             left: 0,
             top: 0,
             bottom: 0,
-            right: _handwritingRightPadding,
+            right: rightInset,
             child: IgnorePointer(
               child: ColoredBox(
                 key: const Key('handwriting_area_veil'),
@@ -134,7 +172,7 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
           // 1. 左侧手写画板区域
           Positioned(
             left: 0,
-            right: _handwritingRightPadding,
+            right: rightInset,
             top: 0,
             bottom: 0,
             child: Container(

@@ -262,6 +262,29 @@ void main() {
     expect(find.text('n. 苹果'), findsOneWidget);
   });
 
+  testWidgets('没用过提示时，写档不显示提示行', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+            studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write));
+    expect(find.textContaining('＿'), findsNothing);
+  });
+
+  testWidgets('写档的「提示」：点一次露一个汉字，其余仍是＿', (tester) async {
+    final (WordVo testWord, GetWordResult result) = _createTestData();
+    final WordWrapper hinted = WordWrapper(testWord, null)..hintLetterCount = 1;
+    await _pumpPage(
+        tester,
+        _stateWith(testWord, result,
+                studyStep: StudyStep.en2Ch.json, answerMode: AnswerMode.write)
+            .copyWith(wordWrapper: hinted, hintTapCount: 1));
+
+    expect(find.text('n. 苹＿'), findsOneWidget);
+    // 紧凑操作栏里有「提示」（只带图标）
+    expect(find.byIcon(Icons.lightbulb_outline), findsOneWidget);
+  });
+
   testWidgets('答案行只把写对的释义项标绿，项之间用常用度圆点分隔', (tester) async {
     final (WordVo testWord, GetWordResult result) = _createTestData();
     testWord.meaningItems = [

@@ -1022,8 +1022,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             ? Size(40.0 * controlCount + 8.0 * (controlCount - 1), 30)
             : HandwritingToolBar.measure(controlCount);
         final double controlsLeft = (width - controlsSize.width) / 2;
+        // 紧凑模式（答题卡内）：贴在书写区底边**以内**、留 6px，让格子边框落在它和输入框之间；
+        // 之前是压在边框上（横跨），与下方输入框太近，点按容易落进输入框
         final double controlsTop =
-            height - (compact ? 0 : 10) - controlsSize.height;
+            height - (compact ? 6 : 10) - controlsSize.height;
         // 整块操作区都不算书写区：笔落在卡上不能在画布留下痕迹
         final Rect controlCardRect = Rect.fromLTWH(
             controlsLeft, controlsTop, controlsSize.width, controlsSize.height);
@@ -1114,9 +1116,9 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   painter: _CellGuidePainter(
                     cellCount: widget.cellCount,
                     activeCell: widget.activeCellIndex,
-                    // 紧凑模式：格子的底边正好落在三颗小按钮的中线上，
-                    // 让它们"横跨"在边框上而不是缩在框里；整页模式仍按整块画布算。
-                    bottomInset: compact ? 15.0 : 0,
+                    // 格子边框始终按整块书写区画：按钮现在缩在边框以内，
+                    // 那条底边正好把它和下方输入框隔开
+                    bottomInset: 0,
                     isDark: isDark,
                     accent: context.primaryColor,
                   ),

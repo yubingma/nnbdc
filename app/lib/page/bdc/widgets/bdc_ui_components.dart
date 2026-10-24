@@ -124,15 +124,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                       // 新一笔起点换格即识别上一格，显著提升单字识别率
                       cellCount: state.isChineseDictation ? 2 : 1,
                       onStartWriting: () {
-                        // 一旦用户开始手写，立即收起键盘
-                        if (_meaningFocusNode.hasFocus) {
-                          _meaningFocusNode.unfocus();
-                          // 同时记录偏好：既然开始了手写，下次默认就不弹出键盘了
-                          final config = StudyConfig.fromCurrentUser();
-                          if (config.preferKeyboardInSpelling) {
-                            config.preferKeyboardInSpelling = false;
-                            config.saveToCurrentUser();
-                          }
+                        // 一旦用户开始手写，立即收起键盘，并把"上次用的是手写"记下来。
+                        // 记录**不能**只在"键盘正开着"时做：用户上次用键盘、这次直接上手写笔时
+                        // 键盘根本没开，偏好还停在"打字"，回到今日计划再进来就会莫名其妙自动聚焦弹键盘。
+                        if (_meaningFocusNode.hasFocus) _meaningFocusNode.unfocus();
+                        final config = StudyConfig.fromCurrentUser();
+                        if (config.preferKeyboardInSpelling) {
+                          config.preferKeyboardInSpelling = false;
+                          config.saveToCurrentUser();
                         }
                       },
                       onRecognized: (text) async {
@@ -151,6 +150,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                         await notifier.checkAsrResult(
                             asrInput: text, isVoice: false);
                       },
+                      // 「提示」：点一次露一个字（与答题卡内那块板同一口径）
+                      onHint: () => notifier.giveALittleHint(),
                       // 分格模式提前回显：每识别完一格就把"已识别前缀"同步到输入框供用户反馈，不判题
                       onRecognizedPreview: (text) {
                         if (isStaleBoardResult()) return;
@@ -2087,6 +2088,9 @@ extension BdcPageStateUIComponents on BdcPageState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // 0. 提示行：点过「提示」之后才出现，露出的字逐步变多，其余仍是＿
+        if (isChineseAnswer) _buildMaskedHintLine(),
+
         // 1. 手写画布（默认的做题方式）
         if (keyboardTyping)
           const Spacer()
@@ -2094,12 +2098,12 @@ extension BdcPageStateUIComponents on BdcPageState {
           Expanded(child: _buildInlineHandwritingBoard(isChineseAnswer)),
 
         // 2. 输入行：点它才弹键盘（默认手写，不抢焦点）。
-        // 不再画分割线（画布贴着的这条横线在按钮下方若隐若现，多余），
-        // 上边距也不留：三颗操作按钮就压在画布底边上。
+        // 与书写区之间留 8px：贴死时手指/笔尖容易把点按落到输入框里；
+        // 不再画分割线（那条横线在按钮下方若隐若现，多余）。
         // 答对并通过后这一行**原地改成正确答案**：底下那点空间是给测评得分用的，
         // 不能再往卡片里塞第三行；内容长了就横向拖动看全。
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
           child: Row(
             children: [
               Expanded(
@@ -2127,6 +2131,54 @@ extension BdcPageStateUIComponents on BdcPageState {
           ),
         ),
       ],
+    );
+  }
+
+  /// 写档的提示行：整条答案逐字揭示，点一次「提示」多露一个汉字，其余仍是＿。
+  ///
+  /// 只在用过提示后出现（平时不占书写空间）。中文答案的提示只能显示在这儿——
+  /// 画布里没有释义可看，输入框里又只能放用户自己的作答。
+  Widget _buildMaskedHintLine() {
+    final int reveal = state.wordWrapper?.hintLetterCount ?? 0;
+    if (reveal <= 0) return const SizedBox.shrink();
+    final items = state.word?.getMergedMeaningItems() ?? const [];
+    final StringBuffer buffer = StringBuffer();
+    int shown = 0;
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      if (i > 0) buffer.write('  ');
+      final String ciXing = (item.ciXing ?? '').trim();
+      if (ciXing.isNotEmpty) buffer.write('$ciXing ');
+      final parts = MeaningRenderUtil.resolveParts(item);
+      for (int p = 0; p < parts.length; p++) {
+        if (p > 0) buffer.write(' ');
+        for (final String ch in parts[p].text.split('')) {
+          if (!RegExp(r'[\u4e00-\u9fa5]').hasMatch(ch)) {
+            buffer.write(ch);
+            continue;
+          }
+          buffer.write(shown < reveal ? ch : '＿');
+          shown++;
+        }
+      }
+    }
+    if (buffer.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 2, 14, 0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Text(
+          buffer.toString(),
+          maxLines: 1,
+          softWrap: false,
+          style: TextStyle(
+            fontSize: 13,
+            height: 1.2,
+            letterSpacing: 1,
+            color: context.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 
@@ -2160,14 +2212,14 @@ extension BdcPageStateUIComponents on BdcPageState {
       isJudging: state.isAiEvaluating,
       cellCount: isChineseAnswer ? 2 : 1,
       onStartWriting: () {
-        // 一旦落笔就收起键盘，并把"上次用的是手写"记下来，下一词不弹键盘
-        if (_meaningFocusNode.hasFocus) {
-          _meaningFocusNode.unfocus();
-          final config = StudyConfig.fromCurrentUser();
-          if (config.preferKeyboardInSpelling) {
-            config.preferKeyboardInSpelling = false;
-            config.saveToCurrentUser();
-          }
+        // 一旦落笔就收起键盘，并把"上次用的是手写"记下来，下一词/再进页面都不弹键盘。
+        // 不能只在"键盘正开着"时记：上次用键盘、这次直接上手写笔时键盘没开，
+        // 偏好会一直停在"打字"，回今日计划再进来就自动聚焦了。
+        if (_meaningFocusNode.hasFocus) _meaningFocusNode.unfocus();
+        final config = StudyConfig.fromCurrentUser();
+        if (config.preferKeyboardInSpelling) {
+          config.preferKeyboardInSpelling = false;
+          config.saveToCurrentUser();
         }
       },
       onRecognized: (text) async {
@@ -2208,8 +2260,9 @@ extension BdcPageStateUIComponents on BdcPageState {
       },
       // 关闭按钮已隐藏，不会走到这里；接口要求必须给
       onCancel: () {},
-      // 英译汉的"提示"要落在释义里，画布内没有释义可看，交给「说」档；中英才在画布上给首字母
-      onHint: isChineseAnswer ? null : () => notifier.giveALittleHint(),
+      // 点一次「提示」露一个字：中英露字母（直接填进输入框），
+      // 英译汉露汉字（显示在书写区上方的提示行里，见 _buildMaskedHintLine）
+      onHint: () => notifier.giveALittleHint(),
       onRecognizeFailed: () {
         ToastUtil.error('手写识别失败，请重写');
         unawaited(reportClientFailure(

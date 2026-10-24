@@ -123,12 +123,24 @@ class BdcNotifier extends _$BdcNotifier {
   /// 中文答案"写对了就自动过"的停顿去抖（见 [scheduleTypedPassCheck]）
   Timer? _typedPassDebounceTimer;
 
-  /// 写档停笔/停手多久算"写完了"。只用来判**过**：宁可晚 0.7 秒，
-  /// 也不要在两个字之间抢跑（写成"苹果树"被判成"苹果"是对的，"苹"被当成"苹果"不是）。
+  /// 写档"停手多久算写完了"的去抖。
+  ///
+  /// 它只用来**合并**陆续到来的回显，不是安全阀：判题本身有严格匹配与通过线兜着，
+  /// 少写一个字、少写一个释义都不可能判过（写成"苹果树"命中"苹果"是对的，
+  /// "苹"被当成"苹果"不是）。
+  ///
+  /// 手写给 300ms：画布的停笔识别本身已经等了 500ms（见 HandwritingBoard 的格内停顿），
+  /// 这里再叠太长的等待纯属延迟。
+  /// 键盘给 400ms：输入法上屏/候选的抖动比手写更碎，多留一点合并余地。
   @visibleForTesting
-  static Duration typedPassIdleDelay = PlatformUtils.isUnitTest
+  static Duration typedPassHandwritingIdleDelay = PlatformUtils.isUnitTest
       ? const Duration(milliseconds: 20)
-      : const Duration(milliseconds: 700);
+      : const Duration(milliseconds: 300);
+
+  @visibleForTesting
+  static Duration typedPassKeyboardIdleDelay = PlatformUtils.isUnitTest
+      ? const Duration(milliseconds: 20)
+      : const Duration(milliseconds: 400);
   Timer? _wordPassDebounceTimer;
   Timer? _wordAiRefereeDebounceTimer;
   /// 「这一轮什么都没听清」的停顿计时器：与裁判去抖分开，语义不同
@@ -1268,7 +1280,10 @@ class BdcNotifier extends _$BdcNotifier {
     if (_isDisposed) return;
     final String? wordIdAtSchedule = state.word?.id;
     _typedPassDebounceTimer?.cancel();
-    _typedPassDebounceTimer = Timer(typedPassIdleDelay, () {
+    _typedPassDebounceTimer = Timer(
+        fromHandwriting
+            ? typedPassHandwritingIdleDelay
+            : typedPassKeyboardIdleDelay, () {
       _typedPassDebounceTimer = null;
       if (_isDisposed || state.word?.id != wordIdAtSchedule) return;
       unawaited(_autoPassTypedAnswer(fromHandwriting: fromHandwriting));

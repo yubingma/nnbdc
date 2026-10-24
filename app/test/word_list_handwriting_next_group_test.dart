@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/result.dart';
@@ -154,8 +155,8 @@ void main() {
     // 蒙版本身就是状态提示：
     // 落笔 → 铺满全宽（右侧竖条暂时也算手写区）；停笔约 0.5s → 退回，右侧恢复为可拖动/可点画笔。
     final veil = find.byKey(const Key('handwriting_area_veil'));
-    expect(tester.getRect(veil).right, 1024.0 - 60.0,
-        reason: '静止状态：右侧 60px 不应罩蒙版，提示这里可以拖动/点画笔');
+    expect(tester.getRect(veil).right, 1024.0 - 76.0,
+        reason: '静止状态：右侧 76px 不应罩蒙版，提示这里可以拖动/点画笔');
 
     final gesture = await tester.startGesture(const Offset(320, 320));
     await gesture.moveBy(const Offset(40, 12));
@@ -167,10 +168,63 @@ void main() {
     await gesture.up();
     await tester.pump(const Duration(milliseconds: 350)); // 停笔后的自动识别落地
     await tester.pump(const Duration(milliseconds: 300)); // 停笔 0.5s → 竖条恢复
-    await tester.pump(); // 目标值改回 60，过渡开始
+    await tester.pump(); // 目标值改回 76，过渡开始
     await tester.pump(const Duration(milliseconds: 220)); // 180ms 位移过渡
-    expect(tester.getRect(veil).right, 1024.0 - 60.0,
+    expect(tester.getRect(veil).right, 1024.0 - 76.0,
         reason: '停笔一段时间后：蒙版应退回，重新提示右侧可以拖动/点画笔');
+
+    // 左滑露出「掌握 / 详情」：手写面板必须把整块面板让出来，否则按钮压在画布下点不到。
+    // 该词表两颗粒按钮 → 面板宽度 = 0.5 × 卡片行宽；右侧页面内边距 8px 也算在让位里。
+    final double paneExposed = 0.5 * (1024 - 14) + 8;
+    final slideGesture = await tester.startGesture(const Offset(994, 100));
+    await slideGesture.moveBy(const Offset(-400, 0));
+    await slideGesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250)); // 蒙版 180ms 位移过渡
+    expect(tester.getRect(find.byType(HandwritingBoard)).right,
+        closeTo(1024.0 - paneExposed, 1.0),
+        reason: '左滑面板打开后，画布要让出整块面板');
+    expect(tester.getRect(find.byKey(const Key('handwriting_area_veil'))).right,
+        closeTo(1024.0 - paneExposed, 1.0),
+        reason: '左滑面板打开后，蒙版也要让出整块面板，按钮才是「露出来」的');
+    for (final label in ['掌握', '详情']) {
+      expect(tester.getRect(find.text(label)).left,
+          greaterThanOrEqualTo(1024.0 - paneExposed - 0.5),
+          reason: '「$label」按钮必须露在画布之外，否则点不到');
+    }
+
+    // 统一规则：面板露着时开始书写 → 门板重新向右覆盖（书写优先）；停笔后再让出面板
+    final writeGesture = await tester.startGesture(const Offset(200, 300));
+    await writeGesture.moveBy(const Offset(30, 10));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 220)); // 蒙版过渡
+    expect(tester.getRect(find.byType(HandwritingBoard)).right, 1024.0,
+        reason: '面板露出时落笔，画布应铺满整宽（书写优先）');
+    expect(tester.getRect(find.byKey(const Key('handwriting_area_veil'))).right,
+        1024.0,
+        reason: '面板露出时落笔，蒙版也应向右覆盖');
+    await writeGesture.up();
+    await tester.pump(const Duration(milliseconds: 350)); // 自动识别落地
+    await tester.pump(const Duration(milliseconds: 300)); // 停笔 0.5s → 让位恢复
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250)); // 蒙版过渡
+    expect(tester.getRect(find.byType(HandwritingBoard)).right,
+        closeTo(1024.0 - paneExposed, 1.0),
+        reason: '停笔后面板应重新让出来');
+
+    // 面板收起后，画布与蒙版要退回右侧 76px 交互竖条
+    final SlidableController pane =
+        Slidable.of(tester.element(find.text('掌握')))!;
+    pane.close();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250)); // 蒙版 180ms 位移过渡
+    expect(tester.getRect(find.byType(HandwritingBoard)).right,
+        closeTo(1024.0 - 76.0, 1.0),
+        reason: '面板收起后，画布要退回右侧 76px 交互竖条');
 
     for (final size in const <Size>[
       Size(1024, 768), // iPad 横屏
@@ -212,16 +266,18 @@ void main() {
 
       // 画布右侧给卡片画笔让出的竖条：画笔图标必须露在画布外（否则点不到）
       final boardRect = tester.getRect(find.byType(HandwritingBoard));
-      expect(size.width - boardRect.right, 60.0,
-          reason: '$label：画布右侧应为画笔让出 60px 交互竖条');
+      expect(size.width - boardRect.right, 76.0,
+          reason: '$label：画布右侧应为画笔让出 76px 交互竖条');
       final pencil = tester.getRect(find.byIcon(Icons.edit_rounded).first);
       expect(pencil.center.dx, greaterThan(boardRect.right),
           reason: '$label：画笔图标必须落在画布之外的交互竖条里');
+      expect(pencil.left - boardRect.right, greaterThanOrEqualTo(20.0),
+          reason: '$label：画笔图标与蒙版右沿之间要留出足够的呼吸空间（不能贴着蒙版）');
 
       // 手写区蒙版：右沿与画布对齐，右侧竖条留白不罩；必须够淡，词卡还要看得清
       final veil = find.byKey(const Key('handwriting_area_veil'));
       expect(veil, findsOneWidget, reason: '$label：手写区应有半透明蒙版');
-      expect(tester.getRect(veil).right, size.width - 60.0,
+      expect(tester.getRect(veil).right, size.width - 76.0,
           reason: '$label：蒙版右沿应止于右侧交互竖条左侧，两块区域要靠颜色分开');
       final veilAlpha = tester.widget<ColoredBox>(veil).color.a;
       expect(veilAlpha, greaterThan(0.0), reason: '$label：蒙版不能是透明的');
