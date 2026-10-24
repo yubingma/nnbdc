@@ -3342,21 +3342,35 @@ class BdcNotifier extends _$BdcNotifier {
     return best;
   }
 
-  /// 写档的评分时间预算（秒）：写字比说话慢，而且"要写几项""单词多长"差别很大。
+  /// 写档的评分时间预算（秒）：写字比说话慢，而且"要写几个字""单词多长"差别很大。
   ///
   /// - 起步 12 秒：看词、听发音、准备落笔（与题目难度无关的固定开销）；
-  /// - 英译汉：每个必写的释义子项 6 秒（答对所有/答对一半时必写项更多，预算跟着涨）；
+  /// - 英译汉：每个必写的释义子项 3 秒（换行、落笔的固定动作）+ **每个汉字 3 秒**
+  ///   （笔画多的字更慢，按字数算是最稳的代理：同一个字，写得快和写得清楚也就差一两秒）；
   /// - 汉译英：每个字母 1 秒（手写或打字）；
   /// - 轻松上限＝预算，吃力门槛＝预算 + 16 秒。
   @visibleForTesting
   static ({int easy, int hard}) typedRatingThresholds({
     bool isSpelling = false,
     int requiredParts = 1,
+    int requiredChars = 0,
     int spellLength = 0,
   }) {
-    final int content = isSpelling ? spellLength : 6 * requiredParts;
+    final int content =
+        isSpelling ? spellLength : 3 * requiredParts + 3 * requiredChars;
     final int easy = 12 + content;
     return (easy: easy, hard: easy + 16);
+  }
+
+  /// 释义里一共有多少个汉字（估算手写耗时用）
+  static int meaningCharCount(WordVo word) {
+    int count = 0;
+    for (final item in word.getMergedMeaningItems()) {
+      for (final part in splitMeaning2Parts(item.meaning ?? '')) {
+        count += part.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '').length;
+      }
+    }
+    return count;
   }
 
   ({FsrsRating rating, String reason}) _calculateRating(String method, {int? customResponseTime}) {
@@ -3376,10 +3390,16 @@ class BdcNotifier extends _$BdcNotifier {
     } else if (state.answerMode == AnswerMode.write) {
       final bool isSpelling = state.studyStep == StudyStep.ch2En.json;
       final WordVo? word = state.word;
+      final int totalParts = word == null ? 1 : countMeaningParts(word);
+      final int requiredParts = _requiredMatchCount(totalParts);
+      // 必写的字数是"平均每个子项的字数 × 必写项数"：通过线越高、释义越长，预算越大
+      final int requiredChars = isSpelling || word == null || totalParts <= 0
+          ? 0
+          : (meaningCharCount(word) * requiredParts + totalParts - 1) ~/ totalParts;
       final thresholds = typedRatingThresholds(
         isSpelling: isSpelling,
-        requiredParts:
-            isSpelling || word == null ? 1 : _requiredMatchCount(countMeaningParts(word)),
+        requiredParts: isSpelling ? 1 : requiredParts,
+        requiredChars: requiredChars,
         spellLength: word?.spell.length ?? 0,
       );
       easyThreshold = thresholds.easy;

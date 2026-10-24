@@ -5368,21 +5368,21 @@ void main() {
       return (container, notifier);
     }
 
-    test('手写 20 秒仍算「良好」（说档这时已经算吃力）', () async {
+    test('手写 25 秒仍算「良好」（说档 18 秒就已经算吃力）', () async {
       await Prefs.write(
           BdcNotifier.answerModePrefKeyWord, AnswerMode.write.name);
       final (container, notifier) = await boot();
       expect(container.read(bdcNotifierProvider).isChineseDictation, isTrue);
 
       final DateTime start = AppClock.now();
-      AppClock.setClock(FakeClock(start.add(const Duration(seconds: 20))));
+      AppClock.setClock(FakeClock(start.add(const Duration(seconds: 25))));
       addTearDown(AppClock.reset);
       await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
 
       final state = container.read(bdcNotifierProvider);
       expect(state.hasFinishedAnswering, isTrue);
       expect(state.lastFsrsRating, FsrsRating.good,
-          reason: '手写 20 秒应按"写的节奏"算良好，不能像说档那样算吃力');
+          reason: '手写 25 秒应按"写的节奏"算良好，不能像说档那样算吃力');
       await Future.delayed(const Duration(milliseconds: 100));
     });
 
@@ -5409,13 +5409,22 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
     });
 
-    test('时间预算按"要写多少"给：释义项越多越宽，汉译英按字母数算', () {
-      // 一个释义项：12 + 6 = 18 秒内算轻松
-      expect(BdcNotifier.typedRatingThresholds(requiredParts: 1),
-          (easy: 18, hard: 34));
-      // 答对所有释义（两个子项）：12 + 12 = 24 秒
-      expect(BdcNotifier.typedRatingThresholds(requiredParts: 2),
-          (easy: 24, hard: 40));
+    test('时间预算按"要写多少字"给：项越多、字越多越宽，汉译英按字母数算', () {
+      // 一个两字释义项：起步 12 + 项 3 + 字 2*3 = 21 秒内算轻松
+      expect(
+          BdcNotifier.typedRatingThresholds(
+              requiredParts: 1, requiredChars: 2),
+          (easy: 21, hard: 37));
+      // 答对所有（两项、共 4 个字）：12 + 6 + 12 = 30 秒
+      expect(
+          BdcNotifier.typedRatingThresholds(
+              requiredParts: 2, requiredChars: 4),
+          (easy: 30, hard: 46));
+      // 同一个字数但笔画多写不完时，按字算的预算也跟着长（4 个字）
+      expect(
+          BdcNotifier.typedRatingThresholds(
+              requiredParts: 1, requiredChars: 4),
+          (easy: 27, hard: 43));
       // 汉译英按字母数：apple(5) 17 秒、businesswoman(13) 25 秒
       expect(
           BdcNotifier.typedRatingThresholds(
@@ -5427,13 +5436,13 @@ void main() {
           (easy: 25, hard: 41));
     });
 
-    test('手写 35 秒算「吃力」', () async {
+    test('手写 40 秒算「吃力」', () async {
       await Prefs.write(
           BdcNotifier.answerModePrefKeyWord, AnswerMode.write.name);
       final (container, notifier) = await boot();
 
       final DateTime start = AppClock.now();
-      AppClock.setClock(FakeClock(start.add(const Duration(seconds: 35))));
+      AppClock.setClock(FakeClock(start.add(const Duration(seconds: 40))));
       addTearDown(AppClock.reset);
       await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
 
