@@ -12,7 +12,10 @@ import '../../word_detail.dart';
 
 class HandwritingOverlay extends StatefulWidget {
   final bool isDarkMode;
-  final double appBarHeight;
+
+  /// 页面底栏有主动作（如「下一组」）且宽度够并排放置：
+  /// 手写操作卡落在左下角、与那颗按钮同一行，书写区一直铺到屏幕最底。
+  final bool besidePageAction;
   final WordWrapper? activeWord;
   final int bookmarkedIndex;
   final List<WordWrapper> words;
@@ -29,7 +32,7 @@ class HandwritingOverlay extends StatefulWidget {
   const HandwritingOverlay({
     super.key,
     required this.isDarkMode,
-    required this.appBarHeight,
+    required this.besidePageAction,
     required this.activeWord,
     required this.bookmarkedIndex,
     required this.words,
@@ -95,7 +98,7 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
     final activeWord = widget.activeWord;
 
     return Positioned(
-      top: widget.appBarHeight,
+      top: 0,
       left: 0,
       right: 0,
       bottom: 0,
@@ -115,6 +118,8 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
                 showCloseButton: false, 
                 useBoxDecoration: false,
                 showCanvasButtons: true, 
+                compactControls: false,
+                besidePageAction: widget.besidePageAction,
                 enableNavigationGestures: false,
                 smartRightZoneWidth: 0, 
                 rightZoneVisibleNotifier: widget.rightZoneVisible, 

@@ -115,7 +115,9 @@ jobs:
       # 即使某个平台失败，其他平台继续构建
       fail-fast: false
       matrix:
-        platform: [android, windows, macos, linux]
+        # 暂时只构建 Android（2026-10-24 用户要求先停掉 Windows/macOS/Linux）。
+        # 恢复其它平台时把对应名字加回下面的列表即可，其余各步的 if 条件原本就已就位。
+        platform: [android]
     runs-on: ${{ matrix.platform == 'windows' && 'windows-latest' ||
       matrix.platform == 'macos' && 'macos-15' ||
       matrix.platform == 'linux' && 'ubuntu-22.04' ||

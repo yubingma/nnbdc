@@ -1319,27 +1319,6 @@ class WordListPageState extends State<WordListPage>
                         ),
                       ),
               ),
-              // 底部的按钮，固定在页面底部
-              if (args.injectedBtn != null)
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    // 与背单词页「下一词」落在同一个位置：iPad 等宽屏贴右下角（离屏幕右缘 28px），
-                    // 手机窄屏保持居中。宽屏居中会让按钮停在双手拇指都够不到的屏幕中段。
-                    // 28px = 页面已内缩的 rightPadding + 这里补足的差额。
-                    final isWide = constraints.maxWidth >= 560;
-                    return Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.fromLTRB(
-                        16.0,
-                        12.0,
-                        isWide ? (28.0 - rightPadding) : 16.0,
-                        24.0,
-                      ),
-                      alignment: isWide ? Alignment.centerRight : null,
-                      child: args.injectedBtn,
-                    );
-                  },
-                ),
             ],
           ),
         ),
@@ -1399,6 +1378,22 @@ class WordListPageState extends State<WordListPage>
             ),
           ),
       ],
+    );
+  }
+
+  /// 页面底部的主流转动作（目前只有阶段复习的「下一组」）。
+  ///
+  /// 它挂在 Scaffold.bottomNavigationBar 上，而不是列表 Column 的最后一行：
+  /// 手写覆盖层铺满的是内容区（宽屏时连底栏下面也铺到），底栏叠在它上面，于是写字时
+  /// 这颗按钮既不会被手写操作卡盖住，也仍然点得到；操作卡借用它左边那一大块空白。
+  Widget _buildInjectedActionBar(bool isWide) {
+    // 与背单词页「下一词」落在同一个位置：iPad 等宽屏贴右下角（离屏幕右缘 28px），
+    // 手机窄屏保持居中。宽屏居中会让按钮停在双手拇指都够不到的屏幕中段。
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(16.0, 12.0, isWide ? 28.0 : 16.0, 24.0),
+      alignment: isWide ? Alignment.centerRight : null,
+      child: args.injectedBtn,
     );
   }
 
@@ -3582,6 +3577,13 @@ class WordListPageState extends State<WordListPage>
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
     final bool selectionMode = _controllerInitialized && controller.selectionMode;
+    final bool handwritingSheetOpen =
+        studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen;
+    // 底栏主动作（「下一组」）在宽屏贴右下角、窄屏居中，所以只有宽屏才腾得出
+    // 它左边的空白放手写操作卡。断点与 _buildInjectedActionBar 里的 isWide 同一口径。
+    final bool wideActionBar = MediaQuery.sizeOf(context).width >= 560;
+    final bool besidePageAction =
+        handwritingSheetOpen && args.injectedBtn != null && wideActionBar;
 
     // 在页面build时，检查页面是否可见，如果可见且在语音模式下，确保ASR已启动
     // 如果不可见且在语音模式下，停止ASR（用于从页面离开时停止）
@@ -3604,6 +3606,9 @@ class WordListPageState extends State<WordListPage>
         ),
         Scaffold(
           resizeToAvoidBottomInset: false, // 禁止分屏或键盘变化导致的布局挤压，提升 iPad 稳定性
+          // 手写操作卡要和「下一组」并排：让画布（body）铺到屏幕最底、伸到底栏下面，
+          // 底栏再叠在画布之上——书写区不多占一行，那颗按钮也照样看得到、点得到。
+          extendBody: besidePageAction,
           backgroundColor: Colors.transparent,
           appBar: selectionMode
               ? _buildSelectionAppBar(themeConfig)
@@ -3875,42 +3880,51 @@ class WordListPageState extends State<WordListPage>
                           child: renderPage(isDarkMode),
                         ),
                 ),
+                // 手写覆盖层只铺满内容区（body），底栏在它下面：
+                // 写字时「下一组」既不被手写操作栏遮住，也仍然点得到。
+                if (handwritingSheetOpen)
+                  HandwritingOverlay(
+                    isDarkMode: isDarkMode,
+                    besidePageAction: besidePageAction,
+                    activeWord: (getBookMarkUiPosition() >= 0 && getBookMarkUiPosition() < words.length)
+                        ? words[getBookMarkUiPosition()]
+                        : null,
+                    bookmarkedIndex: getBookMarkUiPosition(),
+                    words: words,
+                    studyMode: studyMode,
+                    rightZoneVisible: _rightZoneVisible,
+                    handwritingBoardKey: _handwritingBoardKey,
+                    giveALittleHint: giveALittleHint,
+                    clearHint: clearHint,
+                    onCancel: () {
+                      setState(() {
+                        _isHandwritingOverlayOpen = false;
+                      });
+                    },
+                    onWordAnswered: (idx) {
+                      jumpToNextWord(idx, false, () {});
+                    },
+                    onWordPrevious: (idx) {
+                      jumpToPreviousWord(idx, false);
+                    },
+                  ),
               ],
             ),
           ),
-          bottomNavigationBar:
-              selectionMode ? _buildSelectionBar(themeConfig, isDarkMode) : null,
+          bottomNavigationBar: (args.injectedBtn == null && !selectionMode)
+              ? null
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (args.injectedBtn != null) _buildInjectedActionBar(),
+                    if (selectionMode) _buildSelectionBar(themeConfig, isDarkMode),
+                  ],
+                ),
           floatingActionButton: null,
         ),
         // 新手引导覆盖层 - 在Scaffold之上，覆盖整个屏幕包括AppBar
         if (showGuide) _buildGuideOverlay(),
         if (_isSwitchingMode) _buildSwitchingModeOverlay(isDarkMode, message: _switchingMessage),
-        if (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)
-          HandwritingOverlay(
-            isDarkMode: isDarkMode,
-            appBarHeight: MediaQuery.of(context).padding.top + kToolbarHeight,
-            activeWord: (getBookMarkUiPosition() >= 0 && getBookMarkUiPosition() < words.length)
-                ? words[getBookMarkUiPosition()]
-                : null,
-            bookmarkedIndex: getBookMarkUiPosition(),
-            words: words,
-            studyMode: studyMode,
-            rightZoneVisible: _rightZoneVisible,
-            handwritingBoardKey: _handwritingBoardKey,
-            giveALittleHint: giveALittleHint,
-            clearHint: clearHint,
-            onCancel: () {
-              setState(() {
-                _isHandwritingOverlayOpen = false;
-              });
-            },
-            onWordAnswered: (idx) {
-              jumpToNextWord(idx, false, () {});
-            },
-            onWordPrevious: (idx) {
-              jumpToPreviousWord(idx, false);
-            },
-          ),
       ],
       ),
     );
