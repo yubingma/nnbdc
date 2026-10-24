@@ -152,6 +152,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       },
                       // 「提示」：点一次露一个字（与答题卡内那块板同一口径）
                       onHint: () => notifier.giveALittleHint(),
+                      // 「重写」= 重新作答：笔迹、输入框内容与提示行一起清掉
+                      onRewrite: () => notifier.clearHint(),
                       // 分格模式提前回显：每识别完一格就把"已识别前缀"同步到输入框供用户反馈，不判题
                       onRecognizedPreview: (text) {
                         if (isStaleBoardResult()) return;
@@ -2300,6 +2302,8 @@ extension BdcPageStateUIComponents on BdcPageState {
       // 点一次「提示」露一个字：中英露字母（直接填进输入框），
       // 英译汉露汉字（显示在书写区上方的提示行里，见 _buildMaskedHintLine）
       onHint: () => notifier.giveALittleHint(),
+      // 「重写」= 重新作答：笔迹、输入框内容与提示行一起清掉
+      onRewrite: () => notifier.clearHint(),
       onRecognizeFailed: () {
         ToastUtil.error('手写识别失败，请重写');
         unawaited(reportClientFailure(

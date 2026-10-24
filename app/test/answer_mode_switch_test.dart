@@ -460,6 +460,12 @@ void main() {
     expect(find.text('；'), findsNothing);
     // 紧凑操作栏里有「提示」（只带图标）
     expect(find.byIcon(Icons.lightbulb_outline), findsOneWidget);
+
+    // 点画布上的「重写」：提示行也要跟着清空（重新作答）
+    await tester.tap(find.byIcon(Icons.delete_sweep_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('n. 苹＿'), findsNothing);
+    expect(find.text('v. ＿＿'), findsNothing);
   });
 
   testWidgets('答案行只把写对的释义项标绿，项之间用常用度圆点分隔', (tester) async {
