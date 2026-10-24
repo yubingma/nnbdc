@@ -274,4 +274,48 @@ void main() {
     expect(recognized, [recognizedChar],
         reason: '识别已恢复，重写后必须能提交；上一轮的失败标记不能跨轮次一直拦住提交');
   });
+
+  testWidgets('HandwritingToolBar 渲染时不发生 RenderFlex overflow 且尺寸契约准确', (tester) async {
+    final actions = [
+      HandwritingToolAction(icon: Icons.delete_sweep_outlined, label: '重写', onTap: () {}),
+      HandwritingToolAction(icon: Icons.undo_outlined, label: '回退', onTap: () {}),
+      HandwritingToolAction(icon: Icons.close, label: '关闭', onTap: () {}),
+      HandwritingToolAction(icon: Icons.lightbulb_outline, label: '提示', onTap: () {}),
+    ];
+
+    for (final compact in [false, true]) {
+      for (final dpr in [1.0, 2.0, 3.0, 3.5]) {
+        tester.view.devicePixelRatio = dpr;
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(ChangeNotifierProvider<DarkMode>.value(
+          value: DarkMode(),
+          child: MaterialApp(
+            theme: AppTheme.getThemeData(AppThemeStyle.emerald),
+            home: Scaffold(
+              body: Center(
+                child: HandwritingToolBar(
+                  key: ValueKey('toolbar_${compact}_$dpr'),
+                  actions: actions,
+                  compact: compact,
+                ),
+              ),
+            ),
+          ),
+        ));
+
+        // 如果发生 RenderFlex overflow，Flutter 会在 tester.takeException() 记录异常
+        expect(tester.takeException(), isNull,
+            reason: 'compact=$compact, dpr=$dpr 时不应有任何 RenderFlex 溢出或渲染异常');
+
+        final cardSize = tester.getSize(find.byKey(ValueKey('toolbar_${compact}_$dpr')));
+        final expectedSize = HandwritingToolBar.measure(actions.length, compact: compact);
+        expect(cardSize.width, closeTo(expectedSize.width, 0.01),
+            reason: '渲染宽度应与 measure 一致');
+        expect(cardSize.height, closeTo(expectedSize.height, 0.01),
+            reason: '渲染高度应与 measure 一致');
+      }
+    }
+  });
 }
+

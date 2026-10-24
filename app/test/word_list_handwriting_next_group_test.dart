@@ -20,10 +20,17 @@ import 'package:provider/provider.dart' as provider;
 /// 只保留一个 testWidgets：手写模式的入场会等一次音频会话释放，而音频会话是
 /// 进程级单例，同一个测试文件里反复进出会把它的队列拖住（后续用例卡在
 /// 「模式切换中…」）。所以这里只进一次手写，再改视口尺寸覆盖各形态。
-class _NoWordProvider with WordsProvider {
+class _WordsProvider with WordsProvider {
+  final List<WordWrapper> items;
+
+  _WordsProvider(this.items);
+
   @override
-  Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async =>
-      PagedResults<WordWrapper>(0);
+  Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
+    final result = PagedResults<WordWrapper>(items.length);
+    result.rows = items;
+    return result;
+  }
 
   @override
   Future<bool> deleteWord(WordWrapper wordWrapper) async => true;
@@ -62,7 +69,9 @@ Future<void> _pumpStageReview(WidgetTester tester, Size size) async {
 
   final args = WordListPageArgs(
     '本组小结',
-    _NoWordProvider(),
+    _WordsProvider(
+      List.generate(4, (i) => WordWrapper(WordVo.c2('apple')..id = 'id_$i', null)),
+    ),
     true,
     false,
     false,
@@ -167,6 +176,16 @@ void main() {
       // 宽屏按钮贴右 28px；窄屏工具条只画图标，按钮也收在右边
       expect(size.width - buttonRect.right, wide ? 28.0 : 16.0,
           reason: '$label：「下一组」右边距不对');
+
+      // 卡片右端的画笔按钮必须整颗待在右侧竖条里，且和分界线之间留出呼吸空间
+      final lineRect = tester.getRect(find.byKey(const Key('handwriting_right_zone_line')));
+      expect(size.width - lineRect.left, 92.0,
+          reason: '$label：右侧交互竖条的宽度应为 92px（76px 画笔位 + 16px 呼吸）');
+      final pencil = tester.getRect(find.byIcon(Icons.edit_rounded).first);
+      expect(pencil.left - lineRect.right, greaterThanOrEqualTo(20.0),
+          reason: '$label：分界线与画笔图标贴得太近');
+      expect(pencil.center.dx - 25.0, greaterThan(lineRect.right),
+          reason: '$label：画笔按钮左半截不能压在画布下面（否则点不到）');
 
       _nextGroupTapped = false;
       await tester.tap(find.byKey(_nextGroupKey));

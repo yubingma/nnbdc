@@ -92,8 +92,6 @@ class HandwritingToolBar extends StatelessWidget {
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            width: size.width,
-            height: size.height,
             padding: EdgeInsets.symmetric(
               horizontal: compact ? _compactPad : _padH,
               vertical: compact ? _compactPad : _padV,
@@ -107,6 +105,7 @@ class HandwritingToolBar extends StatelessWidget {
               ),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 for (int i = 0; i < actions.length; i++) ...[
                   if (i > 0) SizedBox(width: gap),

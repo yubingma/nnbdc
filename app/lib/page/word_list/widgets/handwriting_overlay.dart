@@ -46,8 +46,15 @@ class HandwritingOverlay extends StatefulWidget {
 
 class HandwritingOverlayState extends State<HandwritingOverlay> {
   final StudyAudioSessionController _sessionController = StudyAudioSessionController.instance;
-  
-  double _handwritingRightPadding = 60.0;
+
+  /// 右侧留给页面卡片交互（每张卡片右端那颗画笔按钮）的竖条宽度。
+  ///
+  /// 画笔按钮离屏幕右缘 = 页面右内边距 8 + 卡片外边距 10 + 卡片右内边距 8 + 按钮宽 50 = 76；
+  /// 取 84 让整颗按钮都露在画布外、点得到（原来 60 时按钮左半截压在画布下，点不到）。
+  /// 这条竖条不再画分界线：那条线要么压在画笔上、要么切进释义文字，怎么摆都局促。
+  static const double _rightActionRailWidth = 84.0;
+
+  double _handwritingRightPadding = _rightActionRailWidth;
   Timer? _handwritingPaddingTimer;
   WordVo? _detectedSimilarWord;
 
@@ -132,9 +139,9 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
                 onPointerUp: () {
                   _handwritingPaddingTimer?.cancel();
                   _handwritingPaddingTimer = Timer(const Duration(milliseconds: 500), () {
-                    if (mounted && _handwritingRightPadding != 60) {
+                    if (mounted && _handwritingRightPadding != _rightActionRailWidth) {
                       setState(() {
-                        _handwritingRightPadding = 60;
+                        _handwritingRightPadding = _rightActionRailWidth;
                       });
                     }
                   });
@@ -329,19 +336,6 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
               ),
             ),
 
-          Positioned(
-            right: _handwritingRightPadding > 0 ? _handwritingRightPadding - 1 : -1,
-            top: 0,
-            bottom: 0,
-            width: 1,
-            child: IgnorePointer(
-              child: Container(
-                color: widget.isDarkMode 
-                    ? Colors.white.withValues(alpha: 0.06) 
-                    : Colors.black.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
         ],
       ),
     );
