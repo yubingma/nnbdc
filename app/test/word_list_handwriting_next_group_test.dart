@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/result.dart';
@@ -17,7 +18,9 @@ import 'package:provider/provider.dart' as provider;
 /// 现在：底部这一条是页面底栏，独占一条纵向空间——手写工具条（重写/回退/关闭/提示）
 /// 在左、「下一组」在右，词卡与手写画布都止步于它上沿，谁也不会压到词卡上。
 /// 宽屏工具条带文字，窄屏只画图标（更小），两种宽度都能并排放得下。
-/// 手写区罩了一层极淡的半透明蒙版，与右侧卡片交互竖条在颜色上分开（原来那条分界线压着画笔）。
+/// 手写区罩了一层极淡的半透明蒙版，与右侧卡片交互竖条在颜色上分开（原来那条分界线压着画笔）；
+/// 蒙版还兼作状态提示：落笔时铺满全宽（右侧竖条此刻也算手写区），停笔约 0.5s 后退回
+/// （右侧竖条恢复为可拖动列表/点画笔的区域）。
 ///
 /// 只保留一个 testWidgets：手写模式的入场会等一次音频会话释放，而音频会话是
 /// 进程级单例，同一个测试文件里反复进出会把它的队列拖住（后续用例卡在
@@ -130,16 +133,44 @@ Future<void> _openHandwriting(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('手写工具条与「下一组」共用底部独立一条：不压词卡/画布，各尺寸都能点', (tester) async {
+  testWidgets('手写工具条与「下一组」共用底部独立一条，各尺寸都能点；蒙版随书写状态伸缩', (tester) async {
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
+    });
+
+    // 手写识别通道：本用例只验证蒙版状态，落笔触发的自动识别返回空串即可
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('nnbdc/ocr'), (call) async {
+      if (call.method == 'recognizeHandwriting') return '';
+      return null;
     });
 
     await _pumpStageReview(tester, const Size(1024, 768));
     await _openHandwriting(tester);
     expect(find.byType(HandwritingOverlay), findsOneWidget,
         reason: '切到手写模式后应出现手写覆盖层');
+
+    // 蒙版本身就是状态提示：
+    // 落笔 → 铺满全宽（右侧竖条暂时也算手写区）；停笔约 0.5s → 退回，右侧恢复为可拖动/可点画笔。
+    final veil = find.byKey(const Key('handwriting_area_veil'));
+    expect(tester.getRect(veil).right, 1024.0 - 60.0,
+        reason: '静止状态：右侧 60px 不应罩蒙版，提示这里可以拖动/点画笔');
+
+    final gesture = await tester.startGesture(const Offset(320, 320));
+    await gesture.moveBy(const Offset(40, 12));
+    await tester.pump(); // 落笔把蒙版目标值改成 0
+    await tester.pump(const Duration(milliseconds: 220)); // 180ms 位移过渡
+    expect(tester.getRect(veil).right, 1024.0,
+        reason: '落笔后：蒙版应铺满全宽，提示右侧竖条此刻也算手写区');
+
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 350)); // 停笔后的自动识别落地
+    await tester.pump(const Duration(milliseconds: 300)); // 停笔 0.5s → 竖条恢复
+    await tester.pump(); // 目标值改回 60，过渡开始
+    await tester.pump(const Duration(milliseconds: 220)); // 180ms 位移过渡
+    expect(tester.getRect(veil).right, 1024.0 - 60.0,
+        reason: '停笔一段时间后：蒙版应退回，重新提示右侧可以拖动/点画笔');
 
     for (final size in const <Size>[
       Size(1024, 768), // iPad 横屏
