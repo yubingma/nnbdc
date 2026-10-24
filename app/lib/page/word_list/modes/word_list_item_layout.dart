@@ -399,7 +399,8 @@ class _SlideProbe extends StatefulWidget {
   final Key slidableKey;
   final double extentRatio;
   final List<Widget> actions;
-  final void Function(Object token, double exposedWidth) onExposedChanged;
+  final void Function(Object token, double exposedWidth, VoidCallback closePane)
+      onExposedChanged;
   final Widget child;
 
   @override
@@ -428,7 +429,7 @@ class _SlideProbeState extends State<_SlideProbe>
     if (open == _reportedOpen || (!open && !closed)) return;
     _reportedOpen = open;
     if (!open) {
-      widget.onExposedChanged(this, 0);
+      widget.onExposedChanged(this, 0, () {});
       return;
     }
     final RenderBox? box = context.findRenderObject() as RenderBox?;
@@ -441,7 +442,9 @@ class _SlideProbeState extends State<_SlideProbe>
     final double boxRight = topLeft.dx + box.size.width;
     final double paneWidth = widget.extentRatio * box.size.width;
     widget.onExposedChanged(
-        this, (screenWidth - (boxRight - paneWidth)).clamp(0.0, screenWidth));
+        this,
+        (screenWidth - (boxRight - paneWidth)).clamp(0.0, screenWidth),
+        () => _controller.close());
   }
 
   @override
@@ -449,7 +452,7 @@ class _SlideProbeState extends State<_SlideProbe>
     _controller.animation.removeListener(_syncExposure);
     _controller.dispose();
     if (_reportedOpen) {
-      widget.onExposedChanged(this, 0);
+      widget.onExposedChanged(this, 0, () {});
     }
     super.dispose();
   }

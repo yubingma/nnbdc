@@ -14,6 +14,9 @@ import '../../word_detail.dart';
 class HandwritingOverlay extends StatefulWidget {
   final bool isDarkMode;
 
+  /// 用户开始在画布上落笔时回调：页面用它收回露出的左滑面板（书写优先）。
+  final VoidCallback? onWritingStarted;
+
   /// 左滑露出的操作面板需要让出的右侧宽度（0 = 没有打开的面板）。
   /// 面板整块必须落在画布与蒙版之外，否则「掌握 / 详情」这些按钮点不到。
   /// 用 listenable 而不是普通字段：页面不必为此整页重建，只让覆盖层自己刷新。
@@ -35,6 +38,7 @@ class HandwritingOverlay extends StatefulWidget {
     super.key,
     required this.isDarkMode,
     required this.slideActionsExposed,
+    this.onWritingStarted,
     required this.activeWord,
     required this.bookmarkedIndex,
     required this.words,
@@ -194,6 +198,7 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
                 onStartWriting: () {
                   _handwritingPaddingTimer?.cancel();
                   _clearHandwritingHints(activeWord);
+                  widget.onWritingStarted?.call();
                   if (_handwritingRightPadding != 0) {
                     setState(() {
                       _handwritingRightPadding = 0;

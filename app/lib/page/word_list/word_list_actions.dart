@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:nnbdc/util/word_util.dart';
 
 /// 定义词表页面中单词项的交互操作回调接口
@@ -19,5 +20,7 @@ mixin WordListActionHandler {
   /// 手写面板打开时画布铺满内容区，露出的「掌握 / 详情」等按钮大半压在画布下面点不到；
   /// 页面据此把画布和蒙版一起收窄，让整块面板露出来。[token] 区分是哪一行
   /// （同一时刻可能不止一行处于打开状态，页面按最大宽度让位）。
-  void onSlideActionsExposed(Object token, double exposedWidth) {}
+  /// [closePane] 用来收起这一行的面板：用户一落笔，页面会把所有打开的面板都收回。
+  void onSlideActionsExposed(
+      Object token, double exposedWidth, VoidCallback closePane) {}
 }

@@ -404,6 +404,9 @@ class WordListPageState extends State<WordListPage>
   /// 各行左滑露出的操作面板（token → 需要让出的宽度）。手写面板打开时按最大值收窄画布。
   final Map<Object, double> _openSlidePanes = <Object, double>{};
 
+  /// 各行面板的收起动作（token → close）：一落笔统一收回。
+  final Map<Object, VoidCallback> _slidePaneClosers = <Object, VoidCallback>{};
+
   /// 手写画布/蒙版需要让出的右侧宽度（0 = 没有打开的面板）。
   ///
   /// 用 ValueNotifier 而不是 setState：这里每变一次就整页重建会把列表项（连同左滑面板）
@@ -1399,16 +1402,32 @@ class WordListPageState extends State<WordListPage>
 
   /// 左滑面板弹开 / 收起时由 [_SlideProbe] 上报：记下每一行需要让出的宽度，取最大值。
   @override
-  void onSlideActionsExposed(Object token, double exposedWidth) {
+  void onSlideActionsExposed(
+      Object token, double exposedWidth, VoidCallback closePane) {
     if (!mounted) return;
     if (exposedWidth <= 0) {
-      if (_openSlidePanes.remove(token) == null) return;
+      final bool existed = _openSlidePanes.remove(token) != null;
+      _slidePaneClosers.remove(token);
+      if (!existed) return;
     } else {
       _openSlidePanes[token] = exposedWidth;
+      _slidePaneClosers[token] = closePane;
     }
     final double next = _openSlidePanes.values.fold(0.0, max);
     if ((next - _slideActionsExposed.value).abs() < 0.5) return;
     _slideActionsExposed.value = next;
+  }
+
+  /// 用户一落笔就把所有露出的左滑面板收回：书写优先，门板直接铺满。
+  void _closeSlideActionPanes() {
+    if (_slidePaneClosers.isEmpty && _openSlidePanes.isEmpty) return;
+    final List<VoidCallback> closers = _slidePaneClosers.values.toList();
+    _slidePaneClosers.clear();
+    _openSlidePanes.clear();
+    _slideActionsExposed.value = 0;
+    for (final VoidCallback close in closers) {
+      close();
+    }
   }
 
   /// 关闭手写覆盖层（底栏工具条的「关闭」与页面自己的退出路径共用）。
@@ -3968,6 +3987,7 @@ class WordListPageState extends State<WordListPage>
                     isDarkMode: isDarkMode,
                     activeWord: _activeWordForHandwriting(),
                     slideActionsExposed: _slideActionsExposed,
+                    onWritingStarted: _closeSlideActionPanes,
                     bookmarkedIndex: getBookMarkUiPosition(),
                     words: words,
                     studyMode: studyMode,

@@ -24,6 +24,10 @@ import Accelerate
     // ASR 会话代际：startSpeechRecognition 递增并捕获，async 发送前校验。
     // stopAsr 递增使已排队的遗留结果块失效，避免污染下一次 PTT 识别会话
     private var asrSessionId = 0
+
+    /// 系统「随手写（Scribble）」拦截器。`UIScribbleInteraction.delegate` 是弱引用，
+    /// 必须在这里强持有，否则挂上去也不会生效（拦截器本身由 UIView.addInteraction 持有）。
+    private let noScribbleDelegate = NoScribbleInteractionDelegate()
     private var currentLocale = "zh-CN" // 默认中文，用于识别单词释义
     private var isAudioEngineInitialized = false // 跟踪 audioEngine 是否已初始化
     private var skippedBufferCount = 0 // 跟踪跳过的缓冲区数量
@@ -110,7 +114,15 @@ import Accelerate
             window?.rootViewController = controller
         }
         window?.makeKeyAndVisible()
-        
+
+        // 关掉系统「随手写（Scribble）」。
+        // 背单词页自带手写板（画布 + 识别 + 判题）；而 iPadOS 的随手写会在"文本框已聚焦、
+        // 笔画又落在框内"时抢走这一笔，弹出它自己的全屏手写区 —— 用户以为在写我们的画布，
+        // 笔迹却变成了系统转出来的文字。App 内没有再需要随手写的场景（搜索等文本框都有输入法），
+        // 所以在这里统一关掉，让"笔落在哪里就归谁"变得确定。
+        controller.view.addInteraction(
+            UIScribbleInteraction(delegate: noScribbleDelegate))
+
         // 设置 ASR MethodChannel
         let methodChannel = FlutterMethodChannel(
             name: "nnbdc/asr_commands",
@@ -1352,5 +1364,18 @@ class SimpleStreamHandler: NSObject, FlutterStreamHandler {
     func onCancel(withArguments arguments: Any?) -> FlutterError? {
         onCancelHandler()
         return nil
+    }
+}
+
+/// 让 iPadOS 的「随手写」在 App 内一律不启动。
+///
+/// `shouldBeginAt` 返回 false 表示"这一笔不要收成系统手写"，于是 Pencil 的笔迹只会落到
+/// App 自己的画布上，不会再被系统接管成输入框里的文字。
+final class NoScribbleInteractionDelegate: NSObject, UIScribbleInteractionDelegate {
+    func scribbleInteraction(
+        _ interaction: UIScribbleInteraction,
+        shouldBeginAt location: CGPoint
+    ) -> Bool {
+        false
     }
 }
